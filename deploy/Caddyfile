@@ -1,0 +1,29 @@
+wemcp.cn, www.wemcp.cn {
+    # API 请求代理到后端
+    handle /api/* {
+        reverse_proxy wemcp_server:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 其他请求代理到前端
+    handle {
+        reverse_proxy wemcp_studio:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 启用访问日志
+    log {
+        output file /data/access.log {
+            roll_size 10MB
+            roll_keep 10
+        }
+    }
+}

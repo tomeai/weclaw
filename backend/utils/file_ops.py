@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+import os
+
+import aiofiles
+
+from common.enums import FileType
+from common.exception import errors
+from common.log import log
+from core.conf import settings
+from core.path_conf import UPLOAD_DIR
+from fastapi import UploadFile
+from sqlparse import split
+from utils.timezone import timezone
+
+
+def build_filename(file: UploadFile) -> str:
+    """
+    构建文件名
+
+    :param file: FastAPI 上传文件对象
+    :return:
+    """
+    timestamp = int(timezone.now().timestamp())
+    filename = file.filename
+    file_ext = filename.split('.')[-1].lower()
+    new_filename = f'{filename.replace(f".{file_ext}", f"_{timestamp}")}.{file_ext}'
+    return new_filename
+
+
+def file_verify(file: UploadFile, file_type: FileType) -> None:
+    """
+    文件验证
+
+    :param file: FastAPI 上传文件对象
+    :param file_type: 文件类型枚举
+    :return:
+    """
+    filename = file.filename
+    file_ext = filename.split('.')[-1].lower()
+    if not file_ext:
+        raise errors.ForbiddenError(msg='未知的文件类型')
+
+    if file_type == FileType.image:
+        if file_ext not in settings.UPLOAD_IMAGE_EXT_INCLUDE:
+            raise errors.ForbiddenError(msg='此图片格式暂不支持')
+        if file.size > settings.UPLOAD_IMAGE_SIZE_MAX:
+            raise errors.ForbiddenError(msg='图片超出最大限制，请重新选择')
+    elif file_type == FileType.video:
+        if file_ext not in settings.UPLOAD_VIDEO_EXT_INCLUDE:
+            raise errors.ForbiddenError(msg='此视频格式暂不支持')
+        if file.size > settings.UPLOAD_VIDEO_SIZE_MAX:
+            raise errors.ForbiddenError(msg='视频超出最大限制，请重新选择')
+
+
+async def upload_file(file: UploadFile) -> str:
+    """
+    上传文件
+
+    :param file: FastAPI 上传文件对象
+    :return:
+    """
+    filename = build_filename(file)
+    try:
+        async with aiofiles.open(os.path.join(UPLOAD_DIR, filename), mode='wb') as fb:
+            while True:
+                content = await file.read(settings.UPLOAD_READ_SIZE)
+                if not content:
+                    break
+                await fb.write(content)
+    except Exception as e:
+        log.error(f'上传文件 {filename} 失败：{str(e)}')
+        raise errors.RequestError(msg='上传文件失败')
+    finally:
+        await file.close()
+    return filename
+
+
+async def parse_sql_script(filepath: str) -> list[str]:
+    """
+    解析 SQL 脚本
+
+    :param filepath: 脚本文件路径
+    :return:
+    """
+    if not os.path.exists(filepath):
+        raise errors.NotFoundError(msg='SQL 脚本文件不存在')
+
+    async with aiofiles.open(filepath, mode='r', encoding='utf-8') as f:
+        contents = await f.read(1024)
+        while additional_contents := await f.read(1024):
+            contents += additional_contents
+
+    statements = split(contents)
+    for statement in statements:
+        if not any(statement.lower().startswith(_) for _ in ['select', 'insert']):
+            raise errors.RequestError(msg='SQL 脚本文件中存在非法操作，仅允许 SELECT 和 INSERT')
+
+    return statements

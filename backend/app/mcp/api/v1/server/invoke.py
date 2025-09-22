@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from app.mcp.schema.mcp import CallToolParam
-from app.mcp.service.mcp_server_service import mcp_server_service
-from common.response.response_schema import response_base
 from fastapi import APIRouter, Path
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+
+from app.mcp.schema.mcp import CallToolParam
+from app.mcp.service.mcp_server_service import mcp_server_service
+from common.response.response_schema import response_base
 
 router = APIRouter()
 
@@ -13,6 +14,7 @@ router = APIRouter()
 @router.post('/call/{mcp_id}')
 async def call_tool(mcp_id: Annotated[int, Path(description='mcp_id')], call_param: CallToolParam):
     """
+    mcp_gateway / serverless
     根据mcp_id查询 sse_url
     """
     mcp_server = await mcp_server_service.get_mcp(mcp_id)

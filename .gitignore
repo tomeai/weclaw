@@ -8,8 +8,6 @@
 **/.next/
 **/node_modules/
 
-tests/
-
 logs/
 # Test binary, built with `go test -c`
 *.test

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from common.schema import SchemaBase
 from pydantic import BaseModel, Field, validator
+
+from common.schema import SchemaBase
 
 
 class GetMcpSearchDetail(SchemaBase):
@@ -83,9 +85,16 @@ class UpdateMcpServerParam(SchemaBase):
     is_public: bool = Field(None, description='是否公开')
 
 
+class DeployType(str, Enum):
+    mcp_gateway = "mcp_gateway"
+    aliyun_serverless = "aliyun_serverless"
+    tencent_serverless = "tencent_serverless"
+
+
 class AddMcpServerParam(BaseModel):
     git: str | None = Field(None, description='git address')
     description: str | None = Field(None, description='描述')
+    deploy_type: DeployType | None = Field(default=DeployType.mcp_gateway, description="部署类型")
     mcpServers: Dict[str, MCPServersConfig] = Field(None, description='mcp server config')
 
     @validator('mcpServers')

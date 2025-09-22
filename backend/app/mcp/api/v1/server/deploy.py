@@ -1,10 +1,11 @@
+from fastapi import APIRouter
+from loguru import logger
+from starlette.requests import Request
+
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.mcp.service.mcp_server_service import mcp_server_service
 from app.task.celery_task.tasks import create_serverless
 from common.response.response_schema import ResponseModel, response_base
-from fastapi import APIRouter
-from loguru import logger
-from starlette.requests import Request
 
 router = APIRouter()
 
@@ -18,13 +19,13 @@ router = APIRouter()
 
 
 @router.post(
-    '/stdio',
-    summary='编译mcp server stdio',
+    '/package',
+    summary='编译mcp package',
 )
 async def compile_stdio(request: Request, obj: AddMcpServerParam) -> ResponseModel:
     """
     编译：
-    1. 提交到阿里云serverless
+    1. 提交到阿里云serverless/mcp_gateway
     2. 查询可用的资源 使用官方API
     3. 如果有tool 则获取tool_list
     :param request:
@@ -52,24 +53,12 @@ async def compile_stdio(request: Request, obj: AddMcpServerParam) -> ResponseMod
 
 
 @router.post(
-    '/package',
-    summary='编译mcp package',
+    '/remote',
+    summary='编译mcp remote',
 )
 async def compile_package(request: Request) -> ResponseModel:
     """
-    编译
-    :param request:
-    :return:
-    """
-
-
-@router.post(
-    '/git',
-    summary='编译mcp git',
-)
-async def compile_git(request: Request) -> ResponseModel:
-    """
-    编译
+    转换
     :param request:
     :return:
     """

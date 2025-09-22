@@ -42,10 +42,10 @@ export function NaviMenu() {
                 {/* <Link href="/pricing" className={isActive("/pricing") ? activeLinkClass : linkClass}>
                    定价
                 </Link> */}
-                <Link href="/docs" className={isActive("/docs") ? activeLinkClass : linkClass}>
-                    文档
-                </Link>
-                <Link href="/blog" className={isActive("/blog") ? activeLinkClass : linkClass}>
+                {/*<Link href="/docs" className={isActive("/docs") ? activeLinkClass : linkClass}>*/}
+                {/*    文档*/}
+                {/*</Link>*/}
+                <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
                     动态
                 </Link>
             </div>
@@ -81,16 +81,16 @@ export function NaviMenu() {
                             >
                                定价
                             </Link> */}
+                            {/*<Link*/}
+                            {/*    href="/docs"*/}
+                            {/*    className={isActive("/docs") ? mobileActiveLinkClass : mobileLinkClass}*/}
+                            {/*    onClick={() => setOpen(false)}*/}
+                            {/*>*/}
+                            {/*    文档*/}
+                            {/*</Link>*/}
                             <Link
-                                href="/docs"
-                                className={isActive("/docs") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                文档
-                            </Link>
-                            <Link
-                                href="/blog"
-                                className={isActive("/blog") ? mobileActiveLinkClass : mobileLinkClass}
+                                href="/news"
+                                className={isActive("/news") ? mobileActiveLinkClass : mobileLinkClass}
                                 onClick={() => setOpen(false)}
                             >
                                 动态

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import asyncio
+
 from typing import Any
 
 from celery import Task
-from sqlalchemy.exc import SQLAlchemyError
-
 from common.socketio.actions import task_notification
 from core.conf import settings
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class TaskBase(Task):

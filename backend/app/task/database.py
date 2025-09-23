@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from app.task.model.result import Task, TaskExtended, TaskSet
+from app.task.session import SessionManager
 from celery import states
 from celery.backends.base import BaseBackend
 from celery.backends.database import retry, session_cleanup
 from celery.exceptions import ImproperlyConfigured
 from celery.utils.time import maybe_timedelta
-
-from app.task.model.result import Task, TaskExtended, TaskSet
-from app.task.session import SessionManager
 
 """
 重写 from celery.backends.database 内部 DatabaseBackend 类，此类实现与模型配合不佳，导致 fba 创建表和 alembic 迁移困难

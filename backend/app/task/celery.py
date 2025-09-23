@@ -5,8 +5,9 @@ import os
 import celery
 import celery_aio_pool
 
-from backend.core.path_conf import BASE_PATH
 from core.conf import settings
+
+from backend.core.path_conf import BASE_PATH
 
 
 def find_task_packages():
@@ -35,10 +36,10 @@ def init_celery() -> celery.Celery:
         broker_url=f'redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}',
         broker_connection_retry_on_startup=True,
         result_backend=f'db+{settings.DATABASE_TYPE}+{"pymysql" if settings.DATABASE_TYPE == "mysql" else "psycopg"}'
-                       f'://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}',
+        f'://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}',
         result_extended=True,
         task_cls='app.task.tasks.base:TaskBase',
-        task_track_started=True
+        task_track_started=True,
     )
     app.loader.override_backends = {'db': 'app.task.database:DatabaseBackend'}
 

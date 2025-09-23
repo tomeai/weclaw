@@ -5,6 +5,7 @@ import os
 import celery
 import celery_aio_pool
 
+from app.task.tasks.beat import LOCAL_BEAT_SCHEDULE
 from core.conf import settings
 
 from backend.core.path_conf import BASE_PATH
@@ -38,6 +39,8 @@ def init_celery() -> celery.Celery:
         result_backend=f'db+{settings.DATABASE_TYPE}+{"pymysql" if settings.DATABASE_TYPE == "mysql" else "psycopg"}'
         f'://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}',
         result_extended=True,
+        beat_schedule=LOCAL_BEAT_SCHEDULE,
+        beat_scheduler='app.task.schedulers:DatabaseScheduler',
         task_cls='app.task.tasks.base:TaskBase',
         task_track_started=True,
     )

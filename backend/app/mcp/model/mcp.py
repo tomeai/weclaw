@@ -5,10 +5,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+from common.model import Base, id_key
 from sqlalchemy import JSON, Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from common.model import Base, id_key
 
 if TYPE_CHECKING:
     from app.mcp.model import McpCategory
@@ -34,9 +33,9 @@ class CompileTypeEnum(Enum):
 
 
 class DeployMethod(str, Enum):
-    mcp_gateway = "mcp_gateway"
-    aliyun_serverless = "aliyun_serverless"
-    tencent_serverless = "tencent_serverless"
+    mcp_gateway = 'mcp_gateway'
+    aliyun_serverless = 'aliyun_serverless'
+    tencent_serverless = 'tencent_serverless'
 
 
 class McpServer(Base):

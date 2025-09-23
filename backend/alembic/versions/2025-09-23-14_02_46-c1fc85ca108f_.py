@@ -5,8 +5,10 @@ Revises: 401cd3678a27
 Create Date: 2025-09-23 14:02:46.882531
 
 """
-from alembic import op
+
 import sqlalchemy as sa
+
+from alembic import op
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
@@ -21,26 +23,38 @@ def upgrade():
     op.add_column('mcp_server', sa.Column('compile_type', sa.String(length=20), nullable=True, comment='编译类型'))
     op.add_column('mcp_server', sa.Column('server_config', sa.JSON(), nullable=True, comment='server config'))
     op.add_column('mcp_server', sa.Column('readme', sa.Text(), nullable=True, comment='项目介绍'))
-    op.alter_column('mcp_server', 'transport',
-               existing_type=mysql.VARCHAR(length=20),
-               comment='streamable-http、sse、stdio',
-               existing_comment='mcp transport type',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'server_type',
-               existing_type=mysql.VARCHAR(length=20),
-               comment='hosted、local',
-               existing_comment='mcp server type',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'avatar',
-               existing_type=mysql.VARCHAR(length=255),
-               comment='项目头像',
-               existing_comment='头像',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'description',
-               existing_type=mysql.TEXT(),
-               comment='项目描述',
-               existing_comment='描述',
-               existing_nullable=True)
+    op.alter_column(
+        'mcp_server',
+        'transport',
+        existing_type=mysql.VARCHAR(length=20),
+        comment='streamable-http、sse、stdio',
+        existing_comment='mcp transport type',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'server_type',
+        existing_type=mysql.VARCHAR(length=20),
+        comment='hosted、local',
+        existing_comment='mcp server type',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'avatar',
+        existing_type=mysql.VARCHAR(length=255),
+        comment='项目头像',
+        existing_comment='头像',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'description',
+        existing_type=mysql.TEXT(),
+        comment='项目描述',
+        existing_comment='描述',
+        existing_nullable=True,
+    )
     op.drop_column('mcp_server', 'image')
     op.drop_column('mcp_server', 'build_cmd')
     op.drop_column('mcp_server', 'overview')
@@ -58,26 +72,38 @@ def downgrade():
     op.add_column('mcp_server', sa.Column('overview', mysql.TEXT(), nullable=True, comment='介绍'))
     op.add_column('mcp_server', sa.Column('build_cmd', mysql.TEXT(), nullable=True, comment='构建命令'))
     op.add_column('mcp_server', sa.Column('image', mysql.VARCHAR(length=255), nullable=True, comment='镜像地址'))
-    op.alter_column('mcp_server', 'description',
-               existing_type=mysql.TEXT(),
-               comment='描述',
-               existing_comment='项目描述',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'avatar',
-               existing_type=mysql.VARCHAR(length=255),
-               comment='头像',
-               existing_comment='项目头像',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'server_type',
-               existing_type=mysql.VARCHAR(length=20),
-               comment='mcp server type',
-               existing_comment='hosted、local',
-               existing_nullable=True)
-    op.alter_column('mcp_server', 'transport',
-               existing_type=mysql.VARCHAR(length=20),
-               comment='mcp transport type',
-               existing_comment='streamable-http、sse、stdio',
-               existing_nullable=True)
+    op.alter_column(
+        'mcp_server',
+        'description',
+        existing_type=mysql.TEXT(),
+        comment='描述',
+        existing_comment='项目描述',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'avatar',
+        existing_type=mysql.VARCHAR(length=255),
+        comment='头像',
+        existing_comment='项目头像',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'server_type',
+        existing_type=mysql.VARCHAR(length=20),
+        comment='mcp server type',
+        existing_comment='hosted、local',
+        existing_nullable=True,
+    )
+    op.alter_column(
+        'mcp_server',
+        'transport',
+        existing_type=mysql.VARCHAR(length=20),
+        comment='mcp transport type',
+        existing_comment='streamable-http、sse、stdio',
+        existing_nullable=True,
+    )
     op.drop_column('mcp_server', 'readme')
     op.drop_column('mcp_server', 'server_config')
     op.drop_column('mcp_server', 'compile_type')

@@ -1,6 +1,6 @@
 import asyncio
 
-from fastmcp import Client, FastMCP
+from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
 
 # In-memory server (ideal for testing)
@@ -12,15 +12,10 @@ from fastmcp.mcp_config import MCPConfig
 
 mcp_config = MCPConfig(
     mcpServers={
-        "wuying-agentbay-mcp-server": {
-            "args": [
-                "-y",
-                "wuying-agentbay-mcp-server"
-            ],
-            "command": "npx",
-            "env": {
-                "APIKEY": "APIKEY"
-            }
+        'wuying-agentbay-mcp-server': {
+            'args': ['-y', 'wuying-agentbay-mcp-server'],
+            'command': 'npx',
+            'env': {'APIKEY': 'APIKEY'},
         }
     }
 )

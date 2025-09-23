@@ -2,6 +2,7 @@ from contextlib import AsyncExitStack
 from typing import Optional
 
 import pytest
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -29,11 +30,7 @@ class MCPClient:
         }
         """
         server_params = StdioServerParameters(
-            command="npx",
-            args=["-y", "@amap/amap-maps-mcp-server"],
-            env={
-                "AMAP_MAPS_API_KEY": "test"
-            }
+            command='npx', args=['-y', '@amap/amap-maps-mcp-server'], env={'AMAP_MAPS_API_KEY': 'test'}
         )
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
@@ -42,25 +39,25 @@ class MCPClient:
 
         response = await self.session.initialize()
         capabilities = response.capabilities
-        print("capabilities:", capabilities)
+        print('capabilities:', capabilities)
 
         # List available tools
         if capabilities.tools:
             response = await self.session.list_tools()
             tools = response.tools
-            print("\n✅ Connected to server with tools:", [tool.name for tool in tools])
+            print('\n✅ Connected to server with tools:', [tool.name for tool in tools])
 
         if capabilities.prompts:
             prompts = self.session.list_prompts
-            print("prompts:", prompts)
+            print('prompts:', prompts)
 
         if capabilities.resources:
             resources = self.session.list_resources
-            print("resources:", resources)
+            print('resources:', resources)
 
         if capabilities.logging:
             logging = self.session.list_logging
-            print("logging:", logging)
+            print('logging:', logging)
 
     async def close(self):
         await self.exit_stack.aclose()

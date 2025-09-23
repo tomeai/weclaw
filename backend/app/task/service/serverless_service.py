@@ -1,19 +1,19 @@
 import traceback
+
 from typing import Any, List
 
 from alibabacloud_tea_openapi import models as open_api_models
 from alibabacloud_tea_openapi.client import Client as OpenApiClient
 from alibabacloud_tea_util import models as util_models
-from loguru import logger
-from mcp import ClientSession
-from mcp.client.sse import sse_client
-from tenacity import retry, stop_after_attempt, wait_fixed
-
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.schema.mcp import UpdateMcpServerParam
 from app.task.schema.task import CustomContainerConfig, ServerlessParam
 from core.conf import settings
 from database.db import async_db_session
+from loguru import logger
+from mcp import ClientSession
+from mcp.client.sse import sse_client
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 
 class ServerlessService:
@@ -27,7 +27,7 @@ class ServerlessService:
 
     @staticmethod
     def create_trigger_api_info(
-            function_name: str,
+        function_name: str,
     ) -> open_api_models.Params:
         """
         API 相关

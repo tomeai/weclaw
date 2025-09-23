@@ -1,9 +1,8 @@
-from fastapi import APIRouter
-from starlette.requests import Request
-
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.task.celery_task.tasks import compile_mcp_server
 from common.response.response_schema import ResponseModel, response_base
+from fastapi import APIRouter
+from starlette.requests import Request
 
 router = APIRouter()
 
@@ -72,10 +71,7 @@ async def compile_package(request: Request, obj: AddMcpServerParam) -> ResponseM
     # 根据用户判断创建的 mcpServer
 
     result = compile_mcp_server.apply_async(('gage', obj.model_dump()))
-    return response_base.success(data={
-        "task_id": result.id,
-        "status": result.status
-    })
+    return response_base.success(data={'task_id': result.id, 'status': result.status})
 
 
 @router.post(

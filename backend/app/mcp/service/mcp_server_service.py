@@ -1,11 +1,10 @@
-from fastmcp.mcp_config import StdioMCPServer
-from sqlalchemy import Select
-
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.user.crud.crud_user import user_dao
 from database.db import async_db_session
+from fastmcp.mcp_config import StdioMCPServer
+from sqlalchemy import Select
 
 
 class McpServerService:
@@ -70,11 +69,7 @@ class McpServerService:
                 await db.flush()  # 确保更新被提交
                 return True, mcp_server_exist.id
             else:
-                mcp_server = McpServer(
-                    title=mcp_title,
-                    description=obj.description,
-                    git=obj.git
-                )
+                mcp_server = McpServer(title=mcp_title, description=obj.description, git=obj.git)
                 # 关联mcp_server
                 mcp_server.user = user
                 # 如果不存在，新增 mcp_server

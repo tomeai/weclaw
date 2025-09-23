@@ -3,10 +3,9 @@
 from functools import lru_cache
 from typing import Any, Literal
 
+from core.path_conf import BASE_PATH
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from core.path_conf import BASE_PATH
 
 
 class Settings(BaseSettings):

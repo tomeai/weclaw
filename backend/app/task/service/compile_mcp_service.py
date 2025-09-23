@@ -1,13 +1,12 @@
-from fastmcp import Client
-from fastmcp.mcp_config import MCPConfig
-from loguru import logger
-
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
-from app.mcp.model.mcp import TransportTypeEnum, CompileTypeEnum, ServerTypeEnum
+from app.mcp.model.mcp import CompileTypeEnum, ServerTypeEnum, TransportTypeEnum
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.user.crud.crud_user import user_dao
 from database.db import async_db_session
+from fastmcp import Client
+from fastmcp.mcp_config import MCPConfig
+from loguru import logger
 
 
 class CompileMcpService:
@@ -22,9 +21,9 @@ class CompileMcpService:
                 server_meta = client.initialize_result
 
                 capability_map = {
-                    "tools": client.list_tools_mcp,
-                    "resources": client.list_resources_mcp,
-                    "prompts": client.list_prompts_mcp,
+                    'tools': client.list_tools_mcp,
+                    'resources': client.list_resources_mcp,
+                    'prompts': client.list_prompts_mcp,
                 }
 
                 results = {}
@@ -36,7 +35,7 @@ class CompileMcpService:
                     try:
                         results[name] = (await fetch_fn()).model_dump()
                     except Exception as e:
-                        logger.warning(f"Fetch {name} failed: {e}")
+                        logger.warning(f'Fetch {name} failed: {e}')
                         results[name] = None
 
                 mcp_server = McpServer(
@@ -48,13 +47,11 @@ class CompileMcpService:
                     server_config=mcp_config.model_dump(),
                     envs=mcp_config.mcpServers[mcp_name].env,
                     server_meta=server_meta.model_dump(),
-                    tools=results["tools"],
-                    resources=results["resources"],
-                    prompts=results["prompts"],
-
+                    tools=results['tools'],
+                    resources=results['resources'],
+                    prompts=results['prompts'],
                     git=mcp_server_param.git,
                     description=mcp_server_param.description,
-
                 )
                 logger.info(f'compile mcp_server success: {mcp_server}')
                 async with async_db_session.begin() as db:
@@ -64,7 +61,7 @@ class CompileMcpService:
                 return 'success'
 
         except Exception as e:
-            logger.exception(f"Failed to compile MCP server for user={mcp_user}, server={mcp_server}, error={e}")
+            logger.exception(f'Failed to compile MCP server for user={mcp_user}, server={mcp_server}, error={e}')
             return None
 
 

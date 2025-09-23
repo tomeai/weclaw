@@ -3,11 +3,10 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastmcp.mcp_config import StdioMCPServer
-from pydantic import BaseModel, Field, field_validator
-
 from app.mcp.model.mcp import DeployMethod
 from common.schema import SchemaBase
+from fastmcp.mcp_config import StdioMCPServer
+from pydantic import BaseModel, Field, field_validator
 
 
 class GetMcpSearchDetail(SchemaBase):
@@ -83,7 +82,7 @@ class UpdateMcpServerParam(SchemaBase):
 class AddMcpServerParam(BaseModel):
     git: str | None = Field(None, description='git address')
     description: str | None = Field(None, description='描述')
-    deploy_method: DeployMethod | None = Field(default=DeployMethod.mcp_gateway, description="部署类型")
+    deploy_method: DeployMethod | None = Field(default=DeployMethod.mcp_gateway, description='部署类型')
     mcpServers: Dict[str, StdioMCPServer] = Field(description='mcp server config')
 
     @field_validator('mcpServers')

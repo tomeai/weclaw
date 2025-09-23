@@ -7,13 +7,13 @@ from core.conf import settings
 from database.db import async_db_session
 from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
-from github import Github
+from github import Auth, Github
 from loguru import logger
 
 
 class CompileMcpService:
     def __init__(self):
-        self.github = Github(login_or_token=settings.GITHUB_ACCESS_TOKEN, timeout=10)
+        self.github = Github(auth=Auth.Token(settings.GITHUB_ACCESS_TOKEN), timeout=10)
 
     async def compile_mcp_by_mcp_config(self, mcp_user: str, obj_data: dict):
         try:

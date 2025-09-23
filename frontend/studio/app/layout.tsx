@@ -5,6 +5,7 @@ import { APP_DESCRIPTION, APP_NAME } from "@/app/lib/config"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "next-themes"
 import { UserProvider } from "./providers/user-provider"
+import { GoogleAnalytics } from "@next/third-parties/google"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default async function RootLayout({
           >
             <Toaster position="top-center" />
             {children}
+            <GoogleAnalytics gaId="G-LP938NM4ZC" />
           </ThemeProvider>
         </UserProvider>
       </body>

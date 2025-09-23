@@ -19,10 +19,10 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 class ServerlessService:
     def __init__(self):
         config = open_api_models.Config(
-            access_key_id=settings.ACCESS_KEY_ID,
-            access_key_secret=settings.ACCESS_KEY_SECRET,
+            endpoint=settings.SERVERLESS_ENDPOINT,
+            access_key_id=settings.SERVERLESS_ACCESS_KEY_ID,
+            access_key_secret=settings.SERVERLESS_ACCESS_KEY_SECRET,
         )
-        config.endpoint = '1718551483493269.cn-beijing.fc.aliyuncs.com'
         self.openai_client = OpenApiClient(config)
 
     @staticmethod

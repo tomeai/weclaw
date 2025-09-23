@@ -3,8 +3,10 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.mcp.model.mcp import DeployMethod
 from common.schema import SchemaBase
-from pydantic import BaseModel, Field, validator
+from fastmcp.mcp_config import StdioMCPServer
+from pydantic import BaseModel, Field, field_validator
 
 
 class GetMcpSearchDetail(SchemaBase):
@@ -68,12 +70,6 @@ class SearchMcpParam(SchemaBase):
     keyword: str | None = Field(None, description='搜索词')
 
 
-class MCPServersConfig(SchemaBase):
-    command: str = Field(description='命令')
-    args: List[str] = Field(description='参数')
-    env: Optional[Dict[str, str]] | None = Field({}, description='Environment variables')
-
-
 class UpdateMcpServerParam(SchemaBase):
     mcp_endpoint: str = Field(None, description='mcp server endpoint')
     capabilities: Optional[Dict[str, Any]] | None = Field(None, description='能力')
@@ -86,9 +82,10 @@ class UpdateMcpServerParam(SchemaBase):
 class AddMcpServerParam(BaseModel):
     git: str | None = Field(None, description='git address')
     description: str | None = Field(None, description='描述')
-    mcpServers: Dict[str, MCPServersConfig] = Field(None, description='mcp server config')
+    deploy_method: DeployMethod | None = Field(default=DeployMethod.mcp_gateway, description='部署类型')
+    mcpServers: Dict[str, StdioMCPServer] = Field(description='mcp server config')
 
-    @validator('mcpServers')
+    @field_validator('mcpServers')
     def validate_mcpservers(cls, v):
         if not v:
             raise ValueError('mcpServers cannot be empty')

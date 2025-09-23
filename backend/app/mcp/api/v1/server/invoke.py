@@ -13,6 +13,7 @@ router = APIRouter()
 @router.post('/call/{mcp_id}')
 async def call_tool(mcp_id: Annotated[int, Path(description='mcp_id')], call_param: CallToolParam):
     """
+    mcp_gateway / serverless
     根据mcp_id查询 sse_url
     """
     mcp_server = await mcp_server_service.get_mcp(mcp_id)

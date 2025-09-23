@@ -1,10 +1,10 @@
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
-from app.mcp.schema.mcp import AddMcpServerParam, MCPServersConfig
+from app.mcp.schema.mcp import AddMcpServerParam
 from app.user.crud.crud_user import user_dao
 from database.db import async_db_session
+from fastmcp.mcp_config import StdioMCPServer
 from sqlalchemy import Select
-from starlette.requests import Request
 
 
 class McpServerService:
@@ -20,7 +20,7 @@ class McpServerService:
         return base_image[cmd]
 
     @staticmethod
-    def compile_command(mcp_conf: MCPServersConfig):
+    def compile_command(mcp_conf: StdioMCPServer):
         base_command = [
             'mcp-proxy',
             '--sse-port',
@@ -53,7 +53,7 @@ class McpServerService:
             return await mcp_server_dao.get_mcp(db, pk)
 
     @staticmethod
-    async def add_mcp(request: Request, mcp_title: str, obj: AddMcpServerParam, base_command, image) -> (bool, int):
+    async def add_mcp(mcp_title: str, obj: AddMcpServerParam) -> (bool, int):
         # todo: 从cookie获取jwt鉴权信息
         username = 'gage'
 
@@ -65,19 +65,11 @@ class McpServerService:
                 # 如果已存在，执行更新操作
                 mcp_server_exist.description = obj.description
                 mcp_server_exist.git = obj.git
-                mcp_server_exist.run_cmd = ' '.join(base_command)
-                mcp_server_exist.base_image = image
                 # 更新其他字段，如果需要的话
                 await db.flush()  # 确保更新被提交
                 return True, mcp_server_exist.id
             else:
-                mcp_server = McpServer(
-                    title=mcp_title,
-                    description=obj.description,
-                    git=obj.git,
-                    run_cmd=' '.join(base_command),
-                    image=image,
-                )
+                mcp_server = McpServer(title=mcp_title, description=obj.description, git=obj.git)
                 # 关联mcp_server
                 mcp_server.user = user
                 # 如果不存在，新增 mcp_server

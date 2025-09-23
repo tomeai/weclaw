@@ -56,15 +56,20 @@ class Settings(BaseSettings):
     FASTAPI_OPENAPI_URL: str | None = '/openapi'
     FASTAPI_STATIC_FILES: bool = True
 
-    # aly
-    ACCESS_KEY_ID: str
-    ACCESS_KEY_SECRET: str
+    # serverless
+    SERVERLESS_PROVIDER: str
+    SERVERLESS_ENDPOINT: str
+    SERVERLESS_ACCESS_KEY_ID: str
+    SERVERLESS_ACCESS_KEY_SECRET: str
 
     # 数据库
     DATABASE_ECHO: bool = False
     DATABASE_POOL_ECHO: bool = False
     DATABASE_SCHEMA: str = 'wemcp'
     DATABASE_CHARSET: str = 'utf8mb4'
+
+    # github
+    GITHUB_ACCESS_TOKEN: str
 
     # Redis
     REDIS_TIMEOUT: int = 5

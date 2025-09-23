@@ -1,0 +1,14 @@
+import requests
+
+api = 'https://modelscope.cn/api/v1/dolphin/mcpServers'
+payload = {'PageSize': 30, 'PageNumber': 2, 'Query': '', 'Criterion': []}
+
+headers = {
+    'accept': 'application/json, text/plain, */*',
+    'content-type': 'application/json',
+    'cookie': 'acw_tc=0b62601e17586262904112755e64bb6d09e16d25ff4402ba1c2a58827cd679; _ga=GA1.1.746620833.1758626292; _gcl_au=1.1.1194297780.1758626292; csrf_session=MTc1ODYyNjI5MnxEWDhFQVFMX2dBQUJFQUVRQUFBeV80QUFBUVp6ZEhKcGJtY01DZ0FJWTNOeVpsTmhiSFFHYzNSeWFXNW5EQklBRUhWNmNWWnlWak5vZUZKWWIyeDNkMEU9fMxXOw4j_YNAkW4m52OztSwz3CFHD2aQqSxYnhPt5Ehr; csrf_token=CchNkyG5YtSQx2rYcsxriANsfAM%3D; acw_sc__v2=197d84838-b82b29812772ad902488fde52d091de6b80a6df1322e272f78; xlly_s=1; _ga_K9CSTSKFC5=GS2.1.s1758626292$o1$g1$t1758626345$j7$l0$h0; ssxmod_itna=1-YqjxBD2DnDcD0iCti7YitF0=ePiQdiOQFDzxC5750CDmxjKidqDUDQuQb=dobKwxh4qjG7GhbcQRqDsY7i4GzDiqKGhDBeo73QBG5hQt7BeruxOYb8GqU=1t7gS9C1nmZbOj=eHXkK3BL=eiBUSl8DbDB3DbqDyb_eqYxGGU4GwDGoD34DiDDPDbfrDAqeD7qDFBWnb=cTDm4GWFPDgFWP7vPDjDhTdE14DGTfPx7Qa/nxD0T4oj7bPj7FDY8r8xEBrLOSxgeDMWxGX7YC5BQ72oyxavzMxw1odxB=gxBQTMan_vgTFN=FcDAxADbCYo2GIWqeCePBG80xbe68imV7GQi_8BqdU08WqohDzebXDDABhqDgG37erDxY2lj5/Faw9Hm_eGQnbQeKuixeuxiqNY7N/riYi=7iKCRTKhPBDNOD_tmPeD; ssxmod_itna2=1-YqjxBD2DnDcD0iCti7YitF0=ePiQdiOQFDzxC5750CDmxjKidqDUDQuQb=dobKwxh4qjG7GhbcQb4DWmQ0GnidDFO0IE3_YxDs07Q73j8WLEAL_QhLg78681LpFIh9XprYlD0UMtG=Qe7AU//d09QqigSOi7Aqie7Wh0ALjUGeixgMbZKWbOGjbN5AIxuOf_tcDqR7dKKL=5bLKqC7L8YY=eQiRO57ddeWI9_7LxUWbeG0FgY6Ke/crzO7deYY7WLn4bhxX3ODN7mZ6X4LS9laxrOLIEZkRx1yLqd/NRl=z3ZcCUkkSKv_td04vxb=GrOAGW4r3GWS87ZxNYDWNqirWF/4i=eQ3G_=C3QBOVxN/Gaxu=6haAbQmO8VOW6ompwbXOktMhGMpoOdt3vcb_ghHjRrK_NWorvkvpLOnQQlS=5k3F0Dkh=j2a63=qiibp_teib4HFRxz31Q8Wt3xYaQokb1wDinAFqdYR4UQT1nDGoYTOqHa_jE5MgEMc7RS6dYHOAOIEjGeI6SWS18iRYZw8v_XTatWx=WPuS2QGx0OAmaxd/euO0QjERCQEWgDWThq3ocOiWED5j3F6FD4uN0bTx0hZoD=f37G4uyKBEpk1NPQRi0PdSjuRQ7ulzde0W_rxxj5j_WG24Y4bPewAOyfc1Wfy4bbqAudiBH5utL7cNd9f/ySRjgM/XfGFUQsMFYxeRaBhudqt_f04DwmrsDjzYTfLN_DDKfglf09B4HGvh6zDmxHGpaOqVA2SW32TC=Fr5iiK4FuxfIv2IfK7lxxQZ0F7wQAlDAZ3O_pE2I/roxY_0rh8DQHhQ3ryDKr2DgaUpn7HYxb0xnbUCxBxsYooD9oxh_6CddhQidPD; tfstk=gWnmp8wIeqzXG_IfodqXkvEj8bT8DoZ_ofIT6lFwz7P7kSd6hdVZ_bNtkARjSbc-15hiCKwa_flg6qLJvxMbflRKsHKKh8BLozcgu-Py4Yw17s88uKkGcxAp9HKR16ObpBhTRFIzzRNz3RSa7LfzhJEaQ-rwE7ygdN5q_lJkERyLQNP47grzIJEa_frwEYP7Ilyq_lJoU7wZBoW4TcuZ4ClSNaCL6Ni8nrVE3SkxH0RYSZMgZGSZq4cuTHFlbGounAXdnZSHWWuQMyFIa3I0jYyiZy3DticiQvgarcf2HXkZG0qbxFpb-4u-Jr0kgGV-DR4UbzXNbYqZuPogYH5uF4kx7mGcIGyjDDUgOzvNfPErvyuEiO9IUoyZ1yi9OiNqQviIJkxcO-0rKujz9a7FvPj_UdnP5Na4F8VKr2u--RjtnR9kEwg_u8w39Lvl5m1CbMVpELbB1ry7KWC..; isg=BHJyuP12Tl9aQnJj7U6TEwY1w7hUA3adSA4XQzxPjSXmzxvJJJXFrBdpv2vzv-41',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+}
+response = requests.put(api, headers=headers, json=payload)
+
+print(response.text)

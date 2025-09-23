@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from fastmcp.mcp_config import StdioMCPServer
+from pydantic import BaseModel, Field, field_validator
 
+from app.mcp.model.mcp import DeployMethod
 from common.schema import SchemaBase
 
 
@@ -70,12 +71,6 @@ class SearchMcpParam(SchemaBase):
     keyword: str | None = Field(None, description='搜索词')
 
 
-class MCPServersConfig(SchemaBase):
-    command: str = Field(description='命令')
-    args: List[str] = Field(description='参数')
-    env: Optional[Dict[str, str]] | None = Field({}, description='Environment variables')
-
-
 class UpdateMcpServerParam(SchemaBase):
     mcp_endpoint: str = Field(None, description='mcp server endpoint')
     capabilities: Optional[Dict[str, Any]] | None = Field(None, description='能力')
@@ -85,19 +80,13 @@ class UpdateMcpServerParam(SchemaBase):
     is_public: bool = Field(None, description='是否公开')
 
 
-class DeployType(str, Enum):
-    mcp_gateway = "mcp_gateway"
-    aliyun_serverless = "aliyun_serverless"
-    tencent_serverless = "tencent_serverless"
-
-
 class AddMcpServerParam(BaseModel):
     git: str | None = Field(None, description='git address')
     description: str | None = Field(None, description='描述')
-    deploy_type: DeployType | None = Field(default=DeployType.mcp_gateway, description="部署类型")
-    mcpServers: Dict[str, MCPServersConfig] = Field(None, description='mcp server config')
+    deploy_method: DeployMethod | None = Field(default=DeployMethod.mcp_gateway, description="部署类型")
+    mcpServers: Dict[str, StdioMCPServer] = Field(description='mcp server config')
 
-    @validator('mcpServers')
+    @field_validator('mcpServers')
     def validate_mcpservers(cls, v):
         if not v:
             raise ValueError('mcpServers cannot be empty')

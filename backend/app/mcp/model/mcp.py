@@ -3,20 +3,40 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from common.model import Base, id_key
 from sqlalchemy import JSON, Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from common.model import Base, id_key
 
 if TYPE_CHECKING:
     from app.mcp.model import McpCategory
     from app.user.model import User
 
 
-class DeployMethodEnum(Enum):
-    pip = 'pip'
-    npm = 'npm'
+class TransportTypeEnum(Enum):
+    sse = 'sse'
+    http = 'streamable-http'
+    stdio = 'stdio'
+
+
+class ServerTypeEnum(Enum):
+    hosted = 'hosted'
+    local = 'local'
+
+
+class CompileTypeEnum(Enum):
+    package = 'package'
+    remote = 'remote'
+    artifact = 'artifact'
+    openapi = 'openapi'
+
+
+class DeployMethod(str, Enum):
+    mcp_gateway = "mcp_gateway"
+    aliyun_serverless = "aliyun_serverless"
+    tencent_serverless = "tencent_serverless"
 
 
 class McpServer(Base):
@@ -24,35 +44,36 @@ class McpServer(Base):
 
     __tablename__ = 'mcp_server'
     id: Mapped[id_key] = mapped_column(init=False)
-    # mcp server title
+    # 默认mcp server title 可以修改
     title: Mapped[str] = mapped_column(String(255), comment='mcp server title')
-    # 提交人填写的
-    description: Mapped[str | None] = mapped_column(Text, default=None, comment='描述')
-    # stdio：本地调用 sse：远程调用 api: 支持配置现有的api
-    transport: Mapped[str | None] = mapped_column(String(20), default=None, comment='mcp transport type')
-    # mcp类型 remote local  对于 playwright 等必须在本地执行
-    server_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='mcp server type')
-    # 含有环境变量的mcp server需要用户单独部署
+
+    # 原始协议: streamable-http、sse、stdio
+    transport: Mapped[str | None] = mapped_column(String(20), default=None, comment='streamable-http、sse、stdio')
+    # mcp类型 hosted、local  对于 playwright、文件操作 等必须在本地执行
+    # local 类型的不进行编译，不会生成代理路由
+    server_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='hosted、local')
+    # 编译类型: package、remote、artifact、openapi
+    compile_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='编译类型')
+    # 部署方式
+    deploy_method: Mapped[str] = mapped_column(String(20), default=None, comment='部署方式')
+    # server信息
+    server_config: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='server config')
+    # 环境变量
     envs: Mapped[str | None] = mapped_column(JSON, default=None, comment='环境变量')
 
-    # 镜像信息
-    # npx uvx 不需要构建
-    image: Mapped[str | None] = mapped_column(String(255), default=None, comment='镜像地址')
-    build_cmd: Mapped[str | None] = mapped_column(Text, default=None, comment='构建命令')
-    run_cmd: Mapped[str | None] = mapped_column(Text, default=None, comment='运行命令')
-
-    # git汇总
+    # 异步git信息写入
     git: Mapped[str | None] = mapped_column(String(255), default=None, comment='项目地址')
-    overview: Mapped[str | None] = mapped_column(Text, default=None, comment='介绍')
-    summary: Mapped[str | None] = mapped_column(Text, default=None, comment='AI总结的结果')
-    avatar: Mapped[str | None] = mapped_column(String(255), default=None, comment='头像')
+    readme: Mapped[str | None] = mapped_column(Text, default=None, comment='项目介绍')
+    # 默认像素头像
+    avatar: Mapped[str | None] = mapped_column(String(255), default=None, comment='项目头像')
+    # 异步ai总结信息写入: 允许用户填写
+    description: Mapped[str | None] = mapped_column(Text, default=None, comment='项目描述')
 
-    # 异步写入
-    mcp_endpoint: Mapped[str | None] = mapped_column(Text, default=None, comment='sse url')
-    capabilities: Mapped[str | None] = mapped_column(JSON, default=None, comment='能力')
-    tools: Mapped[str | None] = mapped_column(JSON, default=None, comment='工具列表')
-    prompts: Mapped[str | None] = mapped_column(JSON, default=None, comment='提示词列表')
-    resources: Mapped[str | None] = mapped_column(JSON, default=None, comment='资源列表')
+    # 异步mcp信息写入
+    server_meta: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='mcp server config')
+    tools: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='工具列表')
+    prompts: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='提示词列表')
+    resources: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='资源列表')
 
     # 是否公开
     is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')

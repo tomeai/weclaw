@@ -3,9 +3,10 @@
 from functools import lru_cache
 from typing import Any, Literal
 
-from core.path_conf import BASE_PATH
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from core.path_conf import BASE_PATH
 
 
 class Settings(BaseSettings):
@@ -56,9 +57,11 @@ class Settings(BaseSettings):
     FASTAPI_OPENAPI_URL: str | None = '/openapi'
     FASTAPI_STATIC_FILES: bool = True
 
-    # aly
-    ACCESS_KEY_ID: str
-    ACCESS_KEY_SECRET: str
+    # serverless
+    SERVERLESS_PROVIDER: str
+    SERVERLESS_ENDPOINT: str
+    SERVERLESS_ACCESS_KEY_ID: str
+    SERVERLESS_ACCESS_KEY_SECRET: str
 
     # 数据库
     DATABASE_ECHO: bool = False

@@ -1,8 +1,9 @@
-from app.mcp.schema.mcp import AddMcpServerParam
-from app.task.celery_task.tasks import compile_mcp_server
-from common.response.response_schema import ResponseModel, response_base
 from fastapi import APIRouter
 from starlette.requests import Request
+
+from app.mcp.schema.mcp import AddMcpServerParam
+from app.task.tasks.tasks import compile_mcp_server
+from common.response.response_schema import ResponseModel, response_base
 
 router = APIRouter()
 

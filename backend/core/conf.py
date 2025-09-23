@@ -3,9 +3,10 @@
 from functools import lru_cache
 from typing import Any, Literal
 
-from core.path_conf import BASE_PATH
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from core.path_conf import BASE_PATH
 
 
 class Settings(BaseSettings):
@@ -31,9 +32,11 @@ class Settings(BaseSettings):
     # .env Redis
     REDIS_HOST: str
     REDIS_PORT: int
-    REDIS_USER: str
     REDIS_PASSWORD: str
     REDIS_DATABASE: int
+
+    CELERY_BROKER_REDIS_DATABASE: int
+    CELERY_TASK_MAX_RETRIES: int = 5
 
     # .env Token
     TOKEN_SECRET_KEY: str  # 密钥 secrets.token_urlsafe(32)

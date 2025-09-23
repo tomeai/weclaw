@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import socketio
 
-from app.task.conf import task_settings
 from common.log import log
 from common.security.jwt import jwt_authentication
 from core.conf import settings
@@ -13,7 +12,7 @@ sio = socketio.AsyncServer(
     # 集成 Celery 实现消息订阅
     client_manager=socketio.AsyncRedisManager(
         f'redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:'
-        f'{settings.REDIS_PORT}/{task_settings.CELERY_BROKER_REDIS_DATABASE}'
+        f'{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}'
     ),
     async_mode='asgi',
     cors_allowed_origins=settings.CORS_ALLOWED_ORIGINS,

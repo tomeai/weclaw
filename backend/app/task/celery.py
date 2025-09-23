@@ -1,40 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from typing import Any
+import os
 
 import celery
 import celery_aio_pool
 
-from app.task.conf import task_settings
 from core.conf import settings
 
-__all__ = ['celery_app']
+from backend.core.path_conf import BASE_PATH
 
 
-def get_broker_url() -> str:
-    """获取消息代理 URL"""
-    return (
-        f'redis://{settings.REDIS_USER}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:'
-        f'{settings.REDIS_PORT}/{task_settings.CELERY_BROKER_REDIS_DATABASE}'
-    )
-
-
-def get_result_backend() -> str:
-    """获取结果后端 URL"""
-    return (
-        f'redis://{settings.REDIS_USER}:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:'
-        f'{settings.REDIS_PORT}/{task_settings.CELERY_BACKEND_REDIS_DATABASE}'
-    )
-
-
-def get_result_backend_transport_options() -> dict[str, Any]:
-    """获取结果后端传输选项"""
-    return {
-        'global_keyprefix': task_settings.CELERY_BACKEND_REDIS_PREFIX,
-        'retry_policy': {
-            'timeout': task_settings.CELERY_BACKEND_REDIS_TIMEOUT,
-        },
-    }
+def find_task_packages():
+    packages = []
+    task_dir = os.path.join(BASE_PATH, 'app', 'task', 'tasks')
+    for root, dirs, files in os.walk(task_dir):
+        if 'tasks.py' in files:
+            package = root.replace(str(BASE_PATH.parent) + os.path.sep, '').replace(os.path.sep, '.')
+            packages.append(package)
+    return packages
 
 
 def init_celery() -> celery.Celery:
@@ -50,18 +33,19 @@ def init_celery() -> celery.Celery:
         'wemcp_celery',
         enable_utc=False,
         timezone=settings.DATETIME_TIMEZONE,
-        beat_schedule=task_settings.CELERY_SCHEDULE,
-        broker_url=get_broker_url(),
+        broker_url=f'redis://:{settings.REDIS_PASSWORD}@{settings.REDIS_HOST}:{settings.REDIS_PORT}/{settings.CELERY_BROKER_REDIS_DATABASE}',
         broker_connection_retry_on_startup=True,
-        result_backend=get_result_backend(),
-        result_backend_transport_options=get_result_backend_transport_options(),
-        task_cls='app.task.celery_task.base:TaskBase',
+        result_backend=f'db+{settings.DATABASE_TYPE}+{"pymysql" if settings.DATABASE_TYPE == "mysql" else "psycopg"}'
+        f'://{settings.DATABASE_USER}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_SCHEMA}',
+        result_extended=True,
+        task_cls='app.task.tasks.base:TaskBase',
         task_track_started=True,
     )
+    app.loader.override_backends = {'db': 'app.task.database:DatabaseBackend'}
 
     # 自动发现任务
-    app.autodiscover_tasks(task_settings.CELERY_TASK_PACKAGES)
-
+    packages = find_task_packages()
+    app.autodiscover_tasks(packages)
     return app
 
 

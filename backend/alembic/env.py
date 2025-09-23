@@ -17,6 +17,7 @@ from database.db import SQLALCHEMY_DATABASE_URL
 
 from app.mcp.model import *  # noqa: F401
 from app.user.model import *  # noqa: F401
+from app.task.model import *  # noqa: F401
 
 if not os.path.exists(path_conf.ALEMBIC_VERSION_DIR):
     os.makedirs(path_conf.ALEMBIC_VERSION_DIR)

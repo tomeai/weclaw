@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import asyncio
+
 from typing import Any
 
-from app.task.conf import task_settings
 from celery import Task
 from common.socketio.actions import task_notification
+from core.conf import settings
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -12,7 +14,7 @@ class TaskBase(Task):
     """Celery 任务基类"""
 
     autoretry_for = (SQLAlchemyError,)
-    max_retries = task_settings.CELERY_TASK_MAX_RETRIES
+    max_retries = settings.CELERY_TASK_MAX_RETRIES
 
     async def before_start(self, task_id: str, args, kwargs) -> None:
         """
@@ -33,7 +35,7 @@ class TaskBase(Task):
         """
         await task_notification(msg=f'任务 {task_id} 执行成功')
 
-    async def on_failure(self, exc: Exception, task_id: str, args, kwargs, einfo) -> None:
+    def on_failure(self, exc: Exception, task_id: str, args, kwargs, einfo) -> None:
         """
         任务失败后执行钩子
 
@@ -42,4 +44,4 @@ class TaskBase(Task):
         :param einfo: 异常信息
         :return:
         """
-        await task_notification(msg=f'任务 {task_id} 执行失败')
+        asyncio.create_task(task_notification(msg=f'任务 {task_id} 执行失败'))

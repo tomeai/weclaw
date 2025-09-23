@@ -22,3 +22,10 @@ uv sync
 alembic revision --autogenerate
 alembic upgrade head
 ```
+
+## lint
+
+```
+pre-commit install
+pre-commit run --all-files
+```

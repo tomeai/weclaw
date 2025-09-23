@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     DATABASE_SCHEMA: str = 'wemcp'
     DATABASE_CHARSET: str = 'utf8mb4'
 
+    # github
+    GITHUB_ACCESS_TOKEN: str
+
     # Redis
     REDIS_TIMEOUT: int = 5
 

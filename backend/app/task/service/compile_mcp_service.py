@@ -3,17 +3,35 @@ from app.mcp.model import McpServer
 from app.mcp.model.mcp import CompileTypeEnum, ServerTypeEnum, TransportTypeEnum
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.user.crud.crud_user import user_dao
+from core.conf import settings
 from database.db import async_db_session
 from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
+from github import Github
 from loguru import logger
 
 
 class CompileMcpService:
-    @staticmethod
-    async def compile_mcp_by_mcp_config(mcp_user: str, obj_data: dict):
+    def __init__(self):
+        self.github = Github(login_or_token=settings.GITHUB_ACCESS_TOKEN, timeout=10)
+
+    async def compile_mcp_by_mcp_config(self, mcp_user: str, obj_data: dict):
         try:
             mcp_server_param = AddMcpServerParam(**obj_data)
+
+            try:
+                repo = mcp_server_param.git.replace('https://github.com/', '')
+                repo = self.github.get_repo(repo)
+                if not mcp_server_param.description:
+                    mcp_server_param.description = repo.description
+
+                avatar_url = repo.owner.avatar_url
+                readme = repo.get_readme().decoded_content.decode()
+            except Exception as e:
+                logger.error(e)
+                avatar_url = ''
+                readme = ''
+
             mcp_config = MCPConfig(mcpServers=mcp_server_param.mcpServers)
             mcp_name = list(mcp_config.mcpServers.keys())[0]
             async with Client(mcp_config) as client:
@@ -52,6 +70,8 @@ class CompileMcpService:
                     prompts=results['prompts'],
                     git=mcp_server_param.git,
                     description=mcp_server_param.description,
+                    readme=readme,
+                    avatar=avatar_url,
                 )
                 logger.info(f'compile mcp_server success: {mcp_server}')
                 async with async_db_session.begin() as db:

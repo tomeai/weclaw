@@ -14,25 +14,25 @@ if TYPE_CHECKING:
     from app.user.model import User
 
 
-class TransportTypeEnum(Enum):
+class TransportType(Enum):
     sse = 'sse'
     http = 'streamable-http'
     stdio = 'stdio'
 
 
-class ServerTypeEnum(Enum):
+class ServerType(Enum):
     hosted = 'hosted'
     local = 'local'
 
 
-class CompileTypeEnum(Enum):
+class CompileType(Enum):
     package = 'package'
     remote = 'remote'
     artifact = 'artifact'
     openapi = 'openapi'
 
 
-class DeployMethod(str, Enum):
+class RuntimeType(str, Enum):
     mcp_gateway = 'mcp_gateway'
     aliyun_serverless = 'aliyun_serverless'
     tencent_serverless = 'tencent_serverless'
@@ -43,18 +43,21 @@ class McpServer(Base):
 
     __tablename__ = 'mcp_server'
     id: Mapped[id_key] = mapped_column(init=False)
-    # 默认mcp server title 可以修改
-    title: Mapped[str] = mapped_column(String(255), comment='mcp server title')
+
+    # 前端搜索名称，可以编辑、修改
+    server_title: Mapped[str] = mapped_column(String(255), comment='mcp server title')
+    # 默认mcp server name 不可以修改
+    server_name: Mapped[str] = mapped_column(String(255), comment='mcp server name')
 
     # 原始协议: streamable-http、sse、stdio
     transport: Mapped[str | None] = mapped_column(String(20), default=None, comment='streamable-http、sse、stdio')
-    # mcp类型 hosted、local  对于 playwright、文件操作 等必须在本地执行
+    # mcp server 类型 hosted、local  对于 playwright、文件操作 等必须在本地执行
     # local 类型的不进行编译，不会生成代理路由
     server_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='hosted、local')
     # 编译类型: package、remote、artifact、openapi
     compile_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='编译类型')
-    # 部署方式
-    deploy_method: Mapped[str] = mapped_column(String(20), default=None, comment='部署方式')
+    # 运行环境
+    runtime_type: Mapped[str] = mapped_column(String(20), default=None, comment='运行环境')
     # server信息
     server_config: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='server config')
     # 环境变量
@@ -93,4 +96,4 @@ class McpServer(Base):
 
     user: Mapped[User | None] = relationship(init=False, back_populates='mcps')
 
-    __table_args__ = (UniqueConstraint('user_id', 'title', name='uix_user_title'),)
+    __table_args__ = (UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),)

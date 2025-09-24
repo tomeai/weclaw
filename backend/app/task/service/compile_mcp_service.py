@@ -1,6 +1,6 @@
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
-from app.mcp.model.mcp import CompileTypeEnum, ServerTypeEnum, TransportTypeEnum
+from app.mcp.model.mcp import CompileType, RuntimeType, ServerType, TransportType
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.user.crud.crud_user import user_dao
 from core.conf import settings
@@ -25,12 +25,13 @@ class CompileMcpService:
                 if not mcp_server_param.description:
                     mcp_server_param.description = repo.description
 
+                if not mcp_server_param.readme:
+                    mcp_server_param.readme = repo.get_readme().decoded_content.decode()
+
                 avatar_url = repo.owner.avatar_url
-                readme = repo.get_readme().decoded_content.decode()
             except Exception as e:
                 logger.error(e)
                 avatar_url = ''
-                readme = ''
 
             mcp_config = MCPConfig(mcpServers=mcp_server_param.mcpServers)
             mcp_name = list(mcp_config.mcpServers.keys())[0]
@@ -57,11 +58,12 @@ class CompileMcpService:
                         results[name] = None
 
                 mcp_server = McpServer(
-                    title=mcp_name,
-                    transport=TransportTypeEnum.stdio.name,
-                    server_type=ServerTypeEnum.hosted.name,
-                    compile_type=CompileTypeEnum.package.name,
-                    deploy_method=mcp_server_param.deploy_method,
+                    server_title=mcp_server_param.server_title,
+                    server_name=mcp_name,
+                    transport=TransportType.stdio.name,
+                    server_type=ServerType.hosted.name,
+                    compile_type=CompileType.package.name,
+                    runtime_type=RuntimeType.mcp_gateway.name,
                     server_config=mcp_config.model_dump(),
                     envs=mcp_config.mcpServers[mcp_name].env,
                     server_meta=server_meta.model_dump(),
@@ -70,7 +72,7 @@ class CompileMcpService:
                     prompts=results['prompts'],
                     git=mcp_server_param.git,
                     description=mcp_server_param.description,
-                    readme=readme,
+                    readme=mcp_server_param.readme,
                     avatar=avatar_url,
                 )
                 logger.info(f'compile mcp_server success: {mcp_server}')

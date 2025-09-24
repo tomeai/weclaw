@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from app.user.schema.token import GetLoginToken, GetNewToken
+from app.user.schema.token import GetNewToken
 from app.user.schema.user import AuthLoginParam
 from app.user.service.auth_service import auth_service
 from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
@@ -19,7 +19,7 @@ router = APIRouter()
 )
 async def login(
     request: Request, response: Response, obj: AuthLoginParam, background_tasks: BackgroundTasks
-) -> ResponseSchemaModel[GetLoginToken]:
+) -> ResponseSchemaModel[GetNewToken]:
     data = await auth_service.login(request=request, response=response, obj=obj, background_tasks=background_tasks)
     return response_base.success(data=data)
 

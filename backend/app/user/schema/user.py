@@ -19,8 +19,6 @@ class AuthSchemaBase(SchemaBase):
 class AuthLoginParam(AuthSchemaBase):
     """用户登录参数"""
 
-    captcha: str = Field(description='验证码')
-
 
 class AddUserParam(AuthSchemaBase):
     """添加用户参数"""
@@ -28,8 +26,6 @@ class AddUserParam(AuthSchemaBase):
     nickname: str | None = Field(None, description='昵称')
     email: CustomEmailStr | None = Field(None, description='邮箱')
     phone: CustomPhoneNumber | None = Field(None, description='手机号码')
-    dept_id: int = Field(description='部门 ID')
-    roles: list[int] = Field(description='角色 ID 列表')
 
 
 class AddOAuth2UserParam(AuthSchemaBase):

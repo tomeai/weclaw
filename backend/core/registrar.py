@@ -134,7 +134,7 @@ def register_middleware(app: FastAPI) -> None:
     :return:
     """
     # Opera log
-    # app.add_middleware(OperaLogMiddleware)
+    app.add_middleware(OperaLogMiddleware)
 
     # State
     app.add_middleware(StateMiddleware)

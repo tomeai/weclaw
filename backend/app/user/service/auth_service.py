@@ -9,7 +9,6 @@ from common.enums import LoginLogStatusType
 from common.exception import errors
 from common.i18n import t
 from common.log import log
-from common.response.response_code import CustomErrorCode
 from common.security.jwt import (
     create_access_token,
     create_new_token,
@@ -90,12 +89,6 @@ class AuthService:
             user = None
             try:
                 user = await self.user_verify(db, obj.username, obj.password)
-                captcha_code = await redis_client.get(f'{settings.CAPTCHA_LOGIN_REDIS_PREFIX}:{request.state.ip}')
-                if not captcha_code:
-                    raise errors.RequestError(msg=t('error.captcha.expired'))
-                if captcha_code.lower() != obj.captcha.lower():
-                    raise errors.CustomError(error=CustomErrorCode.CAPTCHA_ERROR)
-                await redis_client.delete(f'{settings.CAPTCHA_LOGIN_REDIS_PREFIX}:{request.state.ip}')
                 await user_dao.update_login_time(db, obj.username)
                 await db.refresh(user)
                 access_token = await create_access_token(

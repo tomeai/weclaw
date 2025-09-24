@@ -5,7 +5,6 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from app.mcp.model.mcp import ServerType
 from common.schema import SchemaBase
 from fastmcp.mcp_config import StdioMCPServer
 from pydantic import BaseModel, Field, field_validator
@@ -86,7 +85,7 @@ class AddMcpServerParam(BaseModel):
     description: str | None = Field(None, description='描述')
     git: str = Field(None, description='git address')
     readme: str | None = Field(None, description='说明')
-    server_type: ServerType = Field(default=ServerType.hosted.name, description='部署类型')
+    server_type: str = Field(description='部署类型')
     mcpServers: Dict[str, StdioMCPServer] = Field(description='mcp server config')
 
     @field_validator('git')

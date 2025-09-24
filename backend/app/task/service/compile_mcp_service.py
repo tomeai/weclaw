@@ -32,7 +32,6 @@ class CompileMcpService:
             except Exception as e:
                 logger.error(e)
                 avatar_url = ''
-                readme = ''
 
             mcp_config = MCPConfig(mcpServers=mcp_server_param.mcpServers)
             mcp_name = list(mcp_config.mcpServers.keys())[0]
@@ -59,7 +58,8 @@ class CompileMcpService:
                         results[name] = None
 
                 mcp_server = McpServer(
-                    title=mcp_name,
+                    server_title=mcp_server_param.server_title,
+                    server_name=mcp_name,
                     transport=TransportType.stdio.name,
                     server_type=ServerType.hosted.name,
                     compile_type=CompileType.package.name,
@@ -72,7 +72,7 @@ class CompileMcpService:
                     prompts=results['prompts'],
                     git=mcp_server_param.git,
                     description=mcp_server_param.description,
-                    readme=readme,
+                    readme=mcp_server_param.readme,
                     avatar=avatar_url,
                 )
                 logger.info(f'compile mcp_server success: {mcp_server}')

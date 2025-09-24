@@ -272,8 +272,6 @@ class CRUDUser(CRUDPlus[User]):
 
         return await self.select_model_by_column(
             db,
-            # load_options=[selectinload(self.model.roles).options(selectinload(Role.menus), selectinload(Role.scopes))],
-            load_strategies=['dept'],
             **filters,
         )
 

@@ -1,5 +1,6 @@
-from app.mcp.api.v1.server import router as mcp_router
+from app.mcp.api.v1.server import router as server_router
+from core.conf import settings
 from fastapi import APIRouter
 
-v1 = APIRouter()
-v1.include_router(mcp_router)
+v1 = APIRouter(prefix=settings.FASTAPI_API_V1_PATH)
+v1.include_router(server_router)

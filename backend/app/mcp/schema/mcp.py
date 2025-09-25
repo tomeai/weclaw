@@ -59,9 +59,9 @@ class GetMcpFeedDetail(SchemaBase):
     """ """
 
     id: int = Field(description='id')
-    title: str | None = Field(None, description='名称')
+    server_title: str | None = Field(None, description='名称')
     description: str | None = Field(None, description='描述')
-    capabilities: Dict[str, Any] | None = Field(None, description='能力')
+    # server_config: Dict[str, Any] | None = Field(None, description='元信息')
     created_time: datetime = Field(description='创建时间')
     updated_time: datetime | None = Field(None, description='更新时间')
 
@@ -87,6 +87,7 @@ class AddMcpServerParam(BaseModel):
     readme: str | None = Field(None, description='说明')
     server_type: str = Field(description='部署类型')
     mcpServers: Dict[str, StdioMCPServer] = Field(description='mcp server config')
+    category_id: int = Field(None, description='mcp分类')
 
     @field_validator('git')
     def validate_git(cls, v: Optional[str]) -> Optional[str]:

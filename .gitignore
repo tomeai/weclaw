@@ -104,6 +104,9 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# note
+NOTE.md
+
 # IPython
 profile_default/
 ipython_config.py

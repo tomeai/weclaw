@@ -18,8 +18,7 @@ async def compile_package(request: Request, obj: AddMcpServerParam) -> ResponseM
     :param obj:
     :return:
     """
-    # 注意校验 不支持传入多个  mcp-gateway支持
-    # 根据用户判断创建的 mcpServer
+    # 前端做校验，默认只编译第一个mcpServer
     username = request.user.username
     result = compile_mcp_server.apply_async((username, obj.model_dump()))
     return response_base.success(data={'task_id': result.id, 'status': result.status})

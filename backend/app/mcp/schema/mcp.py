@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from app.mcp.schema.category import GetCategoryBase
+from app.mcp.schema.user import GetUserInfo
 from common.schema import SchemaBase
 from fastmcp.mcp_config import StdioMCPServer
 from pydantic import BaseModel, Field, field_validator
@@ -31,10 +33,10 @@ class GetMcpDetail(SchemaBase):
     title: str | None = Field(None, description='名称')
     description: str | None = Field(None, description='描述')
     server_type: str | None = Field(None, description='类型')
-    capabilities: Dict[str, Any] | None = Field(None, description='能力')
-    tools: Dict[str, Any] | None = Field(None, description='工具')
-    prompts: Dict[str, Any] | None = Field(None, description='提示词')
-    resources: Dict[str, Any] | None = Field(None, description='资源')
+    server_metadata: Dict[str, Any] | None = Field(None, description='能力')
+    tools: List[Dict[str, Any]] | None = Field(None, description='工具')
+    prompts: List[Dict[str, Any]] | None = Field(None, description='提示词')
+    resources: List[Dict[str, Any]] | None = Field(None, description='资源')
     envs: Dict[str, Any] | None = Field(None, description='环境变量')
 
 
@@ -46,6 +48,8 @@ class McpBaseDetail(SchemaBase):
     server_type: str = Field(description='类型')
     server_metadata: Dict[str, Any] | None = Field(None, description='能力')
     tools: List[Dict[str, Any]] | None = Field(None, description='工具')
+    user: GetUserInfo = Field(description='用户信息')
+    category: GetCategoryBase = Field(description='分类')
 
 
 class GetMcpRecommendDetail(SchemaBase):

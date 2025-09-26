@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, List
 
-from app.mcp.schema.mcp import GetMcpDetail, McpBaseDetail, SearchMcpParam
+from app.mcp.schema.mcp import GetMcpDetail, GetMcpFeedDetail, GetMcpRecommendDetail, McpBaseDetail, SearchMcpParam
+from app.mcp.service.mcp_category_service import mcp_category_service
 from app.mcp.service.mcp_server_service import mcp_server_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
@@ -32,8 +33,7 @@ async def search_mcp(
     Returns:
 
     """
-    keyword = obj.keyword
-    mcp_select = await mcp_server_service.get_select(keyword=keyword)
+    mcp_select = await mcp_server_service.get_select(keyword=obj.keyword)
     page_data = await paging_data(db, mcp_select)
     return response_base.success(data=page_data)
 
@@ -44,4 +44,26 @@ async def search_mcp(
 )
 async def get_mcp(mcp_id: Annotated[int, Path(description='mcp_id')]) -> ResponseSchemaModel[GetMcpDetail | None]:
     result = await mcp_server_service.get_mcp(mcp_id)
+    return response_base.success(data=result)
+
+
+@router.get('/feed', summary='feed')
+async def get_feed() -> ResponseSchemaModel[List[GetMcpFeedDetail] | None]:
+    """
+    仅显示最近一周的
+    """
+    result = await mcp_server_service.get_mcp_last_7_day()
+    return response_base.success(data=result)
+
+
+@router.get('/recommend', summary='recommend mcp')
+async def get_recommend_category_mcp() -> ResponseSchemaModel[List[GetMcpRecommendDetail] | None]:
+    """
+
+    Args:
+
+    Returns:
+
+    """
+    result = await mcp_category_service.get_recommend_category()
     return response_base.success(data=result)

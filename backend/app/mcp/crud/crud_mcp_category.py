@@ -20,7 +20,7 @@ class CRUDMcpCategory(CRUDPlus[McpCategory]):
             .where(self.model.is_recommend.is_(True))
             .options(
                 # 预加载 servers，避免 N+1 查询
-                selectinload(self.model.servers)
+                selectinload(self.model.servers),
             )
         )
         return stmt

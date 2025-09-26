@@ -91,7 +91,7 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 trace_id=get_request_trace_id(request),
                 username=username,
                 method=method,
-                title=summary,
+                title=summary or '',
                 path=path,
                 ip=request.state.ip,
                 country=request.state.country,

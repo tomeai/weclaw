@@ -49,7 +49,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
         )
 
         if keyword:
-            stmt = stmt.filter(self.model.title.ilike(f'%{keyword}%'))
+            stmt = stmt.filter(self.model.server_title.ilike(f'%{keyword}%'))
 
         stmt = stmt.where(self.model.is_public.is_(True)).order_by(desc(self.model.updated_time))
         return stmt

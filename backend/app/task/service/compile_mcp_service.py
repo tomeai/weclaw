@@ -53,7 +53,11 @@ class CompileMcpService:
                         results[name] = None
                         continue
                     try:
-                        results[name] = (await fetch_fn()).model_dump()
+                        fn_result = (await fetch_fn()).model_dump().get(name)
+                        if fn_result:
+                            results[name] = fn_result
+                        else:
+                            results[name] = None
                     except Exception as e:
                         logger.warning(f'Fetch {name} failed: {e}')
                         results[name] = None
@@ -67,7 +71,7 @@ class CompileMcpService:
                     runtime_type=RuntimeType.mcp_gateway.name,
                     server_config=mcp_config.model_dump(),
                     envs=mcp_config.mcpServers[mcp_name].env,
-                    server_meta=server_meta.model_dump(),
+                    server_metadata=server_meta.model_dump(),
                     tools=results['tools'],
                     resources=results['resources'],
                     prompts=results['prompts'],
@@ -76,7 +80,7 @@ class CompileMcpService:
                     readme=mcp_server_param.readme,
                     avatar=avatar_url,
                 )
-                logger.info(f'compile mcp_server success: {mcp_server}')
+                logger.info('compile mcp_server success')
                 async with async_db_session.begin() as db:
                     user = await user_dao.get_by_username(db, mcp_user)
                     category = await mcp_category_dao.get_mcp_category(db, mcp_server_param.category_id)
@@ -86,7 +90,7 @@ class CompileMcpService:
                 return 'success'
 
         except Exception as e:
-            logger.exception(f'Failed to compile MCP server for user={mcp_user}, server={mcp_server}, error={e}')
+            logger.exception(f'Failed to compile MCP server for user={mcp_user}, error={e}')
             return None
 
 

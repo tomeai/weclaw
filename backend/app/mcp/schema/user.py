@@ -25,3 +25,7 @@ class RegisterUserParam(AuthSchemaBase):
     nickname: str | None = Field(None, description='昵称')
     avatar: str | None = Field(None, description='昵称')
     email: EmailStr = Field(examples=['user@example.com'], description='邮箱')
+
+
+class GetUserInfo(SchemaBase):
+    username: str = Field(description='用户名')

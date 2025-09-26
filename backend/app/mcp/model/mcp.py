@@ -72,7 +72,7 @@ class McpServer(Base):
     description: Mapped[str | None] = mapped_column(Text, default=None, comment='项目描述')
 
     # 异步mcp信息写入
-    server_meta: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='mcp server config')
+    server_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='mcp server config')
     tools: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='工具列表')
     prompts: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='提示词列表')
     resources: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='资源列表')

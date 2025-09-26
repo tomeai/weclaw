@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta
 
-from app.mcp.model import McpServer
+from app.mcp.model import McpCategory, McpServer
 from app.mcp.schema.mcp import UpdateMcpServerParam
 from app.user.model import User
 from sqlalchemy import Select, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import noload
+from sqlalchemy.orm import noload, selectinload
 from sqlalchemy_crud_plus import CRUDPlus
 
 
@@ -43,16 +43,19 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
         return stmt
 
     async def get_list(self, keyword: str | None = None) -> Select:
-        stmt = select(self.model).options(
-            noload(self.model.category),
-            noload(self.model.user),
-        )
+        filters = {'is_public': 1}
 
         if keyword:
-            stmt = stmt.filter(self.model.title.ilike(f'%{keyword}%'))
-
-        stmt = stmt.where(self.model.is_public.is_(True)).order_by(desc(self.model.updated_time))
-        return stmt
+            filters['server_title__like'] = f'%{keyword}%'
+        return await self.select_order(
+            'updated_time',
+            'desc',
+            load_options=[
+                selectinload(self.model.category).options(noload(McpCategory.servers)),
+                selectinload(self.model.user).options(noload(User.mcps)),
+            ],
+            **filters,
+        )
 
 
 mcp_server_dao: CRUDMcpServer = CRUDMcpServer(McpServer)

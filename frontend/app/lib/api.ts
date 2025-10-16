@@ -3,13 +3,13 @@ import { MODEL_DEFAULT } from "@/app/lib/config"
 import {
   API_ROUTE_CREATE_CHAT,
   API_ROUTE_CREATE_GUEST,
+  API_ROUTE_GITHUB_OAUTH2_LOGIN,
   API_ROUTE_MCP_SEARCH,
   API_ROUTE_MCP_SERVER_CALL,
   API_ROUTE_MCP_SERVER_DETAIL,
   API_ROUTE_MCP_SERVER_FEED,
   API_ROUTE_MCP_SERVER_RECOMMEND,
   API_ROUTE_OAUTH_USER,
-  API_ROUTE_OAUTH2_LOGIN,
   API_ROUTE_UPDATE_CHAT_MODEL,
 } from "./routes"
 
@@ -157,7 +157,7 @@ export async function signInWithGithub() {
       code: number
       msg: string
       data: string
-    }>(API_ROUTE_OAUTH2_LOGIN)
+    }>(API_ROUTE_GITHUB_OAUTH2_LOGIN)
 
     // Check if the request was successful
     if (response.code !== 200) {

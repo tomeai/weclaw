@@ -9,7 +9,7 @@ from fastapi_limiter.depends import RateLimiter
 from fastapi_oauth20 import FastAPIOAuth20, GitHubOAuth20
 from starlette.responses import RedirectResponse
 
-router = APIRouter()
+router = APIRouter(prefix='/github')
 
 github_client = GitHubOAuth20(settings.OAUTH2_GITHUB_CLIENT_ID, settings.OAUTH2_GITHUB_CLIENT_SECRET)
 

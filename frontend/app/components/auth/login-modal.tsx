@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import Link from "next/link"
 import { useState } from "react"
 
 interface LoginModalProps {
@@ -44,22 +45,24 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-bold">Welcome to {APP_NAME}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            Welcome to {APP_NAME}
+          </DialogTitle>
           <DialogDescription className="text-base">
             Sign in below to increase your message limits.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           {error && (
-            <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm text-center">
+            <div className="bg-destructive/10 text-destructive rounded-md p-3 text-center text-sm">
               {error}
             </div>
           )}
-          
+
           <Button
             variant="secondary"
-            className="w-full text-base h-12"
+            className="h-12 w-full text-base"
             size="lg"
             onClick={handleSignInWithGithub}
             disabled={isLoading}
@@ -71,20 +74,18 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
               height={20}
               className="mr-2 size-4"
             />
-            <span>
-              {isLoading ? "Connecting..." : "Continue with Github"}
-            </span>
+            <span>{isLoading ? "Connecting..." : "Continue with Github"}</span>
           </Button>
-          
-          <div className="text-center text-xs text-muted-foreground leading-relaxed">
+
+          <div className="text-muted-foreground text-center text-xs leading-relaxed">
             By continuing, you agree to our{" "}
-            <a href="/" className="text-foreground hover:underline">
+            <Link href="/terms" className="text-foreground hover:underline">
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="/" className="text-foreground hover:underline">
+            <Link href="/privacy" className="text-foreground hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </div>
         </div>
       </DialogContent>

@@ -25,7 +25,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./web/studio/deploy/.env.production:/app/.env
+      - ./web/studio/.env.production:/app/.env
     environment:
       TZ: Asia/Shanghai
     networks:

@@ -1,4 +1,4 @@
-wemcp.cn, www.wemcp.cn {
+:80 {
     # API 请求代理到后端
     handle /api/* {
         reverse_proxy wemcp_server:8000 {

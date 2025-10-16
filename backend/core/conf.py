@@ -117,6 +117,16 @@ class Settings(BaseSettings):
         'updated_time',
     ]
 
+    # OAuth2
+    # github oauth
+    OAUTH2_GITHUB_CLIENT_ID: str = ''
+    OAUTH2_GITHUB_CLIENT_SECRET: str = ''
+    # gitee oauth
+    OAUTH2_GITEE_CLIENT_ID: str = ''
+    OAUTH2_GITEE_CLIENT_SECRET: str = ''
+    # oauth callback
+    OAUTH2_FRONTEND_REDIRECT_URI: str = 'http://localhost:3000/auth/callback'
+
     # Socket.IO
     WS_NO_AUTH_MARKER: str = 'internal'
 

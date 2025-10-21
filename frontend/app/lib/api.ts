@@ -1,6 +1,7 @@
 import { ApiClient } from "@/app/lib/client"
 import { MODEL_DEFAULT } from "@/app/lib/config"
 import {
+  API_ROUTE_AUTH_ME,
   API_ROUTE_CREATE_CHAT,
   API_ROUTE_CREATE_GUEST,
   API_ROUTE_GITHUB_OAUTH2_LOGIN,
@@ -73,15 +74,6 @@ export async function createGuestUser(guestId: string) {
   } catch (err) {
     console.error("Error creating guest user:", err)
     throw err
-  }
-}
-
-export class UsageLimitError extends Error {
-  code: string
-
-  constructor(message: string) {
-    super(message)
-    this.code = "DAILY_LIMIT_REACHED"
   }
 }
 
@@ -406,14 +398,61 @@ export async function getCurrentUser(): Promise<GetCurrentUserResponse> {
   }
 }
 
+export interface GetAuthMeResponse {
+  code: number
+  msg: string
+  data: {
+    id: string
+    nickname: string
+    avatar: string
+    email?: string
+    [key: string]: any
+  }
+}
+
+/**
+ * Gets current user information using the auth/me endpoint
+ * This endpoint requires a Bearer token in the Authorization header
+ */
+export async function getAuthMe(): Promise<GetAuthMeResponse> {
+  try {
+    const response = await ApiClient.get<GetAuthMeResponse>(API_ROUTE_AUTH_ME)
+    return response
+  } catch (error) {
+    console.error("Error getting auth me:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Server capabilities interface for recommend API
+ */
+export interface McpRecommendServerCapabilities {
+  tools?: {
+    listChanged?: boolean
+  }
+  logging?: any
+  prompts?: {
+    listChanged?: boolean
+  } | null
+  resources?: {
+    subscribe?: boolean
+    listChanged?: boolean
+  } | null
+  completions?: any
+  experimental?: Record<string, any> | null
+}
+
 /**
  * MCP Server item interface for recommend API
  */
 export interface McpRecommendServer {
-  id: number
-  title: string
+  server_title: string
+  server_name: string
   description: string
-  server_type: string
+  server_type: "hosted" | "local"
+  capabilities: McpRecommendServerCapabilities
+  tools: number
 }
 
 /**

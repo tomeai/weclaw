@@ -52,7 +52,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             'desc',
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps)),
+                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
             ],
             **filters,
         )

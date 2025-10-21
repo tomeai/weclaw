@@ -101,7 +101,7 @@ export class ApiClient {
       localStorage.removeItem("auth_token")
 
       // Redirect to login page
-      window.location.href = "/auth/login"
+      // window.location.href = "/auth/login"
     }
   }
 

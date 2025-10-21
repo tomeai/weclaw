@@ -77,10 +77,10 @@ class DateTimeMixin(MappedAsDataclass):
     """日期时间 Mixin 数据类"""
 
     created_time: Mapped[datetime] = mapped_column(
-        TimeZone, init=False, default_factory=timezone.now, sort_order=999, comment='创建时间'
+        DateTime(timezone=True), init=False, default_factory=timezone.now, sort_order=999, comment='创建时间'
     )
     updated_time: Mapped[datetime | None] = mapped_column(
-        TimeZone, init=False, onupdate=timezone.now, sort_order=999, comment='更新时间'
+        DateTime(timezone=True), init=False, onupdate=timezone.now, sort_order=999, comment='更新时间'
     )
 
 

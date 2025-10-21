@@ -1,7 +1,7 @@
-from app.mcp.model import McpCategory
+from app.mcp.model import McpCategory, McpServer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import noload, selectinload
 from sqlalchemy_crud_plus import CRUDPlus
 
 
@@ -19,8 +19,9 @@ class CRUDMcpCategory(CRUDPlus[McpCategory]):
             select(self.model)
             .where(self.model.is_recommend.is_(True))
             .options(
-                # 预加载 servers，避免 N+1 查询
-                selectinload(self.model.servers),
+                selectinload(self.model.servers),  # 加载 servers
+                noload(self.model.servers, McpServer.category),  # 从 root 到 category 的完整路径
+                noload(self.model.servers, McpServer.user),  # 从 root 到 user 的完整路径
             )
         )
         return stmt

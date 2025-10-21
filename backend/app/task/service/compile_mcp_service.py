@@ -34,7 +34,8 @@ class CompileMcpService:
                 logger.error(e)
                 avatar_url = ''
 
-            mcp_config = MCPConfig(mcpServers=mcp_server_param.mcpServers)
+            mcpServers = mcp_server_param.mcpServers.mcpServers
+            mcp_config = MCPConfig(mcpServers=mcpServers)
             mcp_name = list(mcp_config.mcpServers.keys())[0]
             async with Client(mcp_config) as client:
                 await client.ping()

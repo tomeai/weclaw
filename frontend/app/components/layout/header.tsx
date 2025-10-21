@@ -7,12 +7,26 @@ import {APP_NAME} from "../../lib/config"
 import {useEffect, useState} from "react";
 import { LoginModal } from "@/app/components/auth/login-modal";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { AddMcpButton } from "@/components/mcp/add-mcp-button";
 
 export function Header() {
-    const {user, isJwtAuthenticated} = useUser()
+    const {user, isJwtAuthenticated, signOut} = useUser()
     const isLoggedIn = !!user || isJwtAuthenticated
     const [isScrolled, setIsScrolled] = useState(false)
     const [showLoginModal, setShowLoginModal] = useState(false)
+
+    const handleSignOut = async () => {
+        await signOut()
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -78,6 +92,46 @@ export function Header() {
                         </>
                     ) : (
                         <>
+                            <AddMcpButton variant="link" />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={user?.avatar} alt={user?.nickname} />
+                                            <AvatarFallback>
+                                                {user?.nickname?.charAt(0)?.toUpperCase() || "U"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end" forceMount>
+                                    <div className="flex items-center justify-start gap-2 p-2">
+                                        <div className="flex flex-col space-y-1 leading-none">
+                                            {user?.nickname && (
+                                                <p className="font-medium">{user.nickname}</p>
+                                            )}
+                                            {user?.email && (
+                                                <p className="w-[200px] truncate text-sm text-muted-foreground">
+                                                    {user.email}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/agent" className="cursor-pointer">
+                                            MCP管理
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                        className="cursor-pointer text-red-600 focus:text-red-600"
+                                        onClick={handleSignOut}
+                                    >
+                                        退出登录
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <div className="md:hidden ml-4">
                                 <NaviMenu/>
                             </div>

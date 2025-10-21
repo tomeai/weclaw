@@ -36,9 +36,9 @@ export function NaviMenu() {
                 <Link href="/agent" className={isActive("/agent") ? activeLinkClass : linkClass}>
                     智能体
                 </Link>
-                <Link href="/leaderboards" className={isActive("/leaderboards") ? activeLinkClass : linkClass}>
-                    排行榜
-                </Link>
+                {/*<Link href="/leaderboards" className={isActive("/leaderboards") ? activeLinkClass : linkClass}>*/}
+                {/*    排行榜*/}
+                {/*</Link>*/}
                 {/* <Link href="/pricing" className={isActive("/pricing") ? activeLinkClass : linkClass}>
                    定价
                 </Link> */}
@@ -67,13 +67,13 @@ export function NaviMenu() {
                             >
                                 智能体
                             </Link>
-                            <Link
-                                href="/leaderboards"
-                                className={isActive("/leaderboards") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                排行榜
-                            </Link>
+                            {/*<Link*/}
+                            {/*    href="/leaderboards"*/}
+                            {/*    className={isActive("/leaderboards") ? mobileActiveLinkClass : mobileLinkClass}*/}
+                            {/*    onClick={() => setOpen(false)}*/}
+                            {/*>*/}
+                            {/*    排行榜*/}
+                            {/*</Link>*/}
                             {/* <Link
                                href="/pricing"
                                className={isActive("/pricing") ? mobileActiveLinkClass : mobileLinkClass}

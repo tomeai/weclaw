@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from typing import Any
 
 from common.enums import StatusType
 from common.schema import CustomEmailStr, CustomPhoneNumber, SchemaBase
-from pydantic import ConfigDict, Field, HttpUrl, model_validator
-from typing_extensions import Self
+from pydantic import ConfigDict, Field, HttpUrl
 
 
 class AuthSchemaBase(SchemaBase):
@@ -82,27 +80,3 @@ class GetUserInfoWithRelationDetail(GetUserInfoDetail):
     """用户信息关联详情"""
 
     model_config = ConfigDict(from_attributes=True)
-
-    # dept: GetDeptDetail | None = Field(None, description='部门信息')
-    # roles: list[GetRoleWithRelationDetail] = Field(description='角色列表')
-
-
-class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):
-    """当前用户信息关联详情"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    dept: str | None = Field(None, description='部门名称')
-    roles: list[str] = Field(description='角色名称列表')
-
-    @model_validator(mode='before')
-    @classmethod
-    def handel(cls, data: Any) -> Self:
-        """处理部门和角色数据"""
-        dept = data['dept']
-        if dept:
-            data['dept'] = dept['name']
-        roles = data['roles']
-        if roles:
-            data['roles'] = [role['name'] for role in roles]
-        return data

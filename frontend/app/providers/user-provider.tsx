@@ -1,14 +1,16 @@
 // app/providers/user-provider.tsx
 "use client"
 
-import { getCurrentUser } from "@/app/lib/api"
+import { getAuthMe } from "@/app/lib/api"
 import { createContext, useContext, useEffect, useState } from "react"
+import { UserProfile } from "@/app/types/user"
 
 type UserContextType = {
   user: UserProfile | null
   isLoading: boolean
   signOut: () => Promise<void>
   isJwtAuthenticated: boolean
+  setUser: (user: UserProfile | null) => void
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -34,12 +36,18 @@ export function UserProvider({
 
         if (!user) {
           try {
-            const currentUserData = await getCurrentUser()
+            const currentUserData = await getAuthMe()
             console.log(`[UserData]: ${currentUserData}`)
-            // setUser({
-            //   avatar: currentUserData.data.avatar || "",
-            //   nickname: currentUserData.data.nickname || "",
-            // })
+            
+            if (currentUserData.code === 200 && currentUserData.data) {
+              setUser({
+                id: currentUserData.data.id || currentUserData.data.nickname || "",
+                nickname: currentUserData.data.nickname || "",
+                avatar: currentUserData.data.avatar || "",
+                email: currentUserData.data.email || "",
+                daily_message_count: 0,
+              })
+            }
           } catch (error) {
             console.error("Failed to fetch user data with JWT token:", error)
             // If token is invalid, clear it
@@ -75,6 +83,7 @@ export function UserProvider({
         isLoading,
         signOut,
         isJwtAuthenticated,
+        setUser,
       }}
     >
       {children}

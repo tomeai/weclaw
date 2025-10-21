@@ -5,6 +5,7 @@ from app.mcp.service.mcp_category_service import mcp_category_service
 from app.mcp.service.mcp_server_service import mcp_server_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
+from common.security.jwt import DependsJwtAuth
 from database.db import CurrentSession
 from fastapi import APIRouter, Path
 
@@ -14,9 +15,7 @@ router = APIRouter()
 @router.post(
     '/search',
     summary='搜索mcp',
-    dependencies=[
-        DependsPagination,
-    ],
+    dependencies=[DependsPagination],
 )
 async def search_mcp(
     db: CurrentSession,
@@ -38,16 +37,13 @@ async def search_mcp(
     return response_base.success(data=page_data)
 
 
-@router.get(
-    '/detail/{mcp_id}',
-    summary='mcp detail',
-)
+@router.get('/detail/{mcp_id}', summary='mcp detail')
 async def get_mcp(mcp_id: Annotated[int, Path(description='mcp_id')]) -> ResponseSchemaModel[GetMcpDetail | None]:
     result = await mcp_server_service.get_mcp(mcp_id)
     return response_base.success(data=result)
 
 
-@router.get('/feed', summary='feed')
+@router.get('/feed', summary='feed', dependencies=[DependsJwtAuth])
 async def get_feed() -> ResponseSchemaModel[List[GetMcpFeedDetail] | None]:
     """
     仅显示最近一周的
@@ -59,7 +55,7 @@ async def get_feed() -> ResponseSchemaModel[List[GetMcpFeedDetail] | None]:
 @router.get('/recommend', summary='recommend mcp')
 async def get_recommend_category_mcp() -> ResponseSchemaModel[List[GetMcpRecommendDetail] | None]:
     """
-
+    根据分类推荐mcp
     Args:
 
     Returns:

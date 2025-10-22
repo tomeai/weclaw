@@ -13,7 +13,6 @@ from common.i18n import t
 from common.security import jwt
 from core.conf import settings
 from database.db import async_db_session
-from database.redis import redis_client
 from fast_captcha import text_captcha
 from fastapi import BackgroundTasks, Request, Response
 from utils.timezone import timezone
@@ -122,7 +121,7 @@ class OAuth2Service:
                 msg=t('success.login.oauth2_success'),
             )
             background_tasks.add_task(login_log_service.create, **login_log)
-            await redis_client.delete(f'{settings.CAPTCHA_LOGIN_REDIS_PREFIX}:{request.state.ip}')
+            # await redis_client.delete(f'{settings.CAPTCHA_LOGIN_REDIS_PREFIX}:{request.state.ip}')
             response.set_cookie(
                 key=settings.COOKIE_REFRESH_TOKEN_KEY,
                 value=refresh_token.refresh_token,

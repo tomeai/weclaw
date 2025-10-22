@@ -1,14 +1,17 @@
 // app/providers/user-provider.tsx
 "use client"
 
-import { getCurrentUser } from "@/app/lib/api"
+import { getAuthMe } from "@/app/lib/api"
 import { createContext, useContext, useEffect, useState } from "react"
+import { UserProfile } from "@/app/types/user"
 
 type UserContextType = {
   user: UserProfile | null
   isLoading: boolean
   signOut: () => Promise<void>
   isJwtAuthenticated: boolean
+  setUser: (user: UserProfile | null) => void
+  isInitialized: boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -23,23 +26,32 @@ export function UserProvider({
   const [user, setUser] = useState<UserProfile | null>(initialUser)
   const [isLoading, setIsLoading] = useState(false)
   const [isJwtAuthenticated, setIsJwtAuthenticated] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false) // 添加初始化状态
 
   useEffect(() => {
     const checkJwtToken = async () => {
       if (typeof window === "undefined") return
 
       const token = localStorage.getItem("auth_token")
+      console.log('[UserProvider] 检查 JWT token:', !!token)
+      
       if (token) {
         setIsJwtAuthenticated(true)
 
         if (!user) {
           try {
-            const currentUserData = await getCurrentUser()
+            const currentUserData = await getAuthMe()
             console.log(`[UserData]: ${currentUserData}`)
-            // setUser({
-            //   avatar: currentUserData.data.avatar || "",
-            //   nickname: currentUserData.data.nickname || "",
-            // })
+            
+            if (currentUserData.code === 200 && currentUserData.data) {
+              setUser({
+                id: currentUserData.data.id || currentUserData.data.nickname || "",
+                nickname: currentUserData.data.nickname || "",
+                avatar: currentUserData.data.avatar || "",
+                email: currentUserData.data.email || "",
+                daily_message_count: 0,
+              })
+            }
           } catch (error) {
             console.error("Failed to fetch user data with JWT token:", error)
             // If token is invalid, clear it
@@ -47,11 +59,16 @@ export function UserProvider({
             setIsJwtAuthenticated(false)
           }
         }
+      } else {
+        setIsJwtAuthenticated(false)
       }
+      
+      // 标记初始化完成
+      setIsInitialized(true)
     }
 
     checkJwtToken()
-  }, [user])
+  }, []) // 只在组件挂载时执行一次
 
   const signOut = async () => {
     setIsLoading(true)
@@ -75,6 +92,8 @@ export function UserProvider({
         isLoading,
         signOut,
         isJwtAuthenticated,
+        setUser,
+        isInitialized,
       }}
     >
       {children}

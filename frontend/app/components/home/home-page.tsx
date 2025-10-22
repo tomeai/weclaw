@@ -124,14 +124,14 @@ export default function HomePage() {
 
                   {/* Servers Grid - 2 rows, 4 cards per row */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {category.servers.slice(0, 8).map((server) => {
+                    {category.servers.slice(0, 8).map((server, index) => {
                       // Generate a seed for the avatar based on the server title
-                      const avatarSeed = server.title
+                      const avatarSeed = server.server_title
                         .replace(/\s+/g, "-")
                         .toLowerCase()
 
                       return (
-                        <Link href={`/mcp/${server.id}`} key={server.id}>
+                        <Link href={`/mcp/${server.server_name}`} key={`${server.server_name}-${index}`}>
                           <Card className="group h-[200px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg">
                             <CardContent className="flex h-full flex-col p-5">
                               <div className="flex h-full flex-col">
@@ -141,10 +141,10 @@ export default function HomePage() {
                                     <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-100 transition-all group-hover:ring-blue-200">
                                       <AvatarImage
                                         src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                                        alt={server.title}
+                                        alt={server.server_title}
                                       />
                                       <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700">
-                                        {server.title
+                                        {server.server_title
                                           .substring(0, 2)
                                           .toUpperCase()}
                                       </AvatarFallback>
@@ -153,13 +153,13 @@ export default function HomePage() {
                                       <div className="flex w-full items-center gap-2 overflow-hidden">
                                         <h3
                                           className="min-w-0 flex-1 truncate text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700"
-                                          title={server.title}
+                                          title={server.server_title}
                                         >
-                                          {server.title}
+                                          {server.server_title}
                                         </h3>
                                         <Badge
                                           variant={
-                                            server.server_type === "python"
+                                            server.server_type === "hosted"
                                               ? "default"
                                               : "secondary"
                                           }
@@ -180,6 +180,16 @@ export default function HomePage() {
                                   >
                                     {server.description}
                                   </p>
+                                </div>
+
+                                {/* Tools count badge */}
+                                <div className="mt-2">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-50 text-blue-700 border-blue-200"
+                                  >
+                                    {server.tools} tools
+                                  </Badge>
                                 </div>
                               </div>
                             </CardContent>

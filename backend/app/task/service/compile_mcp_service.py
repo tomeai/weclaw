@@ -1,4 +1,3 @@
-from app.mcp.crud.crud_mcp_category import mcp_category_dao
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
 from app.mcp.model.mcp import CompileType, RuntimeType, ServerType, TransportType
@@ -34,7 +33,8 @@ class CompileMcpService:
                 logger.error(e)
                 avatar_url = ''
 
-            mcp_config = MCPConfig(mcpServers=mcp_server_param.mcpServers)
+            mcpServers = mcp_server_param.mcpServers.mcpServers
+            mcp_config = MCPConfig(mcpServers=mcpServers)
             mcp_name = list(mcp_config.mcpServers.keys())[0]
             async with Client(mcp_config) as client:
                 await client.ping()
@@ -83,9 +83,7 @@ class CompileMcpService:
                 logger.info('compile mcp_server success')
                 async with async_db_session.begin() as db:
                     user = await user_dao.get_by_username(db, mcp_user)
-                    category = await mcp_category_dao.get_mcp_category(db, mcp_server_param.category_id)
                     mcp_server.user = user
-                    mcp_server.category = category
                     await mcp_server_dao.add_mcp(db, mcp_server)
                 return 'success'
 

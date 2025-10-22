@@ -1,23 +1,22 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# ruff: noqa: F403, F401, I001, RUF100
 import asyncio
 import os
+
 from logging.config import fileConfig
 
 from alembic import context
+from app import get_app_models
+from common.model import MappedBase
+from core import path_conf
+from database.db import SQLALCHEMY_DATABASE_URL
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from common.model import MappedBase
-from common.model import TimeZone
-from core import path_conf
-from database.db import SQLALCHEMY_DATABASE_URL
-
-from app.mcp.model import *  # noqa: F401
-from app.user.model import *  # noqa: F401
-from app.task.model import *  # noqa: F401
+# import models
+for cls in get_app_models():
+    class_name = cls.__name__
+    if class_name not in globals():
+        globals()[class_name] = cls
 
 if not os.path.exists(path_conf.ALEMBIC_VERSION_DIR):
     os.makedirs(path_conf.ALEMBIC_VERSION_DIR)
@@ -37,18 +36,12 @@ target_metadata = MappedBase.metadata
 
 # other values from the config, defined by the needs of env.py,
 alembic_config.set_main_option(
-    'sqlalchemy.url', SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace('%21', '!')
+    'sqlalchemy.url',
+    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace('%21', '!'),
 )
 
 
-def render_item(type_, obj, autogen_context):
-    """让 Alembic 渲染 TimeZone 为标准 DateTime"""
-    if isinstance(obj, TimeZone):
-        return 'sa.DateTime(timezone=True)'
-    return False
-
-
-def run_migrations_offline():
+def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
     This configures the context with just a URL
@@ -64,7 +57,6 @@ def run_migrations_offline():
     context.configure(
         url=url,
         target_metadata=target_metadata,
-        render_item=render_item,
         literal_binds=True,
         dialect_opts={'paramstyle': 'named'},
         compare_type=True,
@@ -78,7 +70,7 @@ def run_migrations_offline():
 
 def do_run_migrations(connection: Connection) -> None:
     # 当迁移无变化时，不生成迁移记录
-    def process_revision_directives(context, revision, directives):
+    def process_revision_directives(context, revision, directives) -> None:
         if alembic_config.cmd_opts.autogenerate:
             script = directives[0]
             if script.upgrade_ops.is_empty():
@@ -88,7 +80,6 @@ def do_run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
-        render_item=render_item,
         compare_type=True,
         compare_server_default=True,
         transaction_per_migration=True,

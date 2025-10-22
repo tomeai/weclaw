@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: c85ea8356210
+Revision ID: 5d1fde65b10c
 Revises:
-Create Date: 2025-09-24 10:29:06.387086
+Create Date: 2025-10-17 18:27:10.336677
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import mysql, postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'c85ea8356210'
+revision = '5d1fde65b10c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -92,6 +92,19 @@ def upgrade():
     )
     op.create_index(op.f('ix_sys_opera_log_id'), 'sys_opera_log', ['id'], unique=True)
     op.create_table(
+        'sys_role',
+        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
+        sa.Column('name', sa.String(length=20), nullable=False, comment='角色名称'),
+        sa.Column('status', sa.Integer(), nullable=False, comment='角色状态（0停用 1正常）'),
+        sa.Column('remark', mysql.LONGTEXT().with_variant(sa.TEXT(), 'postgresql'), nullable=True, comment='备注'),
+        sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
+        sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('name'),
+        comment='角色表',
+    )
+    op.create_index(op.f('ix_sys_role_id'), 'sys_role', ['id'], unique=True)
+    op.create_table(
         'sys_user',
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
         sa.Column('uuid', sa.String(length=50), nullable=False),
@@ -127,7 +140,7 @@ def upgrade():
             comment='是否重复登陆(0否 1是)',
         ),
         sa.Column('join_time', sa.DateTime(timezone=True), nullable=False, comment='注册时间'),
-        sa.Column('last_login_time', sa.DateTime(timezone=True), nullable=True, comment='上次登录'),
+        sa.Column('last_login_time', sa.DateTime(timezone=True), nullable=True, comment='上次登录时间'),
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
         sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
         sa.PrimaryKeyConstraint('id'),
@@ -138,6 +151,67 @@ def upgrade():
     op.create_index(op.f('ix_sys_user_id'), 'sys_user', ['id'], unique=True)
     op.create_index(op.f('ix_sys_user_status'), 'sys_user', ['status'], unique=False)
     op.create_index(op.f('ix_sys_user_username'), 'sys_user', ['username'], unique=True)
+    op.create_table(
+        'task_result',
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column('task_id', sa.String(length=155), nullable=True),
+        sa.Column('status', sa.String(length=50), nullable=True),
+        sa.Column('result', sa.PickleType(), nullable=True),
+        sa.Column('date_done', sa.DateTime(), nullable=True),
+        sa.Column('traceback', sa.Text(), nullable=True),
+        sa.Column('name', sa.String(length=155), nullable=True),
+        sa.Column('args', sa.LargeBinary(), nullable=True),
+        sa.Column('kwargs', sa.LargeBinary(), nullable=True),
+        sa.Column('worker', sa.String(length=155), nullable=True),
+        sa.Column('retries', sa.Integer(), nullable=True),
+        sa.Column('queue', sa.String(length=155), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('task_id'),
+        comment='任务结果表',
+    )
+    op.create_table(
+        'task_scheduler',
+        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
+        sa.Column('name', sa.String(length=50), nullable=False, comment='任务名称'),
+        sa.Column('task', sa.String(length=255), nullable=False, comment='要运行的 Celery 任务'),
+        sa.Column('args', sa.JSON(), nullable=True, comment='任务可接收的位置参数'),
+        sa.Column('kwargs', sa.JSON(), nullable=True, comment='任务可接收的关键字参数'),
+        sa.Column('queue', sa.String(length=255), nullable=True, comment='CELERY_TASK_QUEUES 中定义的队列'),
+        sa.Column('exchange', sa.String(length=255), nullable=True, comment='低级别 AMQP 路由的交换机'),
+        sa.Column('routing_key', sa.String(length=255), nullable=True, comment='低级别 AMQP 路由的路由密钥'),
+        sa.Column('start_time', sa.DateTime(timezone=True), nullable=True, comment='任务开始触发的时间'),
+        sa.Column('expire_time', sa.DateTime(timezone=True), nullable=True, comment='任务不再触发的截止时间'),
+        sa.Column('expire_seconds', sa.Integer(), nullable=True, comment='任务不再触发的秒数时间差'),
+        sa.Column('type', sa.Integer(), nullable=False, comment='调度类型（0间隔 1定时）'),
+        sa.Column('interval_every', sa.Integer(), nullable=True, comment='任务再次运行前的间隔周期数'),
+        sa.Column('interval_period', sa.String(length=255), nullable=True, comment='任务运行之间的周期类型'),
+        sa.Column('crontab', sa.String(length=50), nullable=True, comment='任务运行的 Crontab 计划'),
+        sa.Column(
+            'one_off', sa.Boolean().with_variant(sa.INTEGER(), 'postgresql'), nullable=False, comment='是否仅运行一次'
+        ),
+        sa.Column(
+            'enabled', sa.Boolean().with_variant(sa.INTEGER(), 'postgresql'), nullable=False, comment='是否启用任务'
+        ),
+        sa.Column('total_run_count', sa.Integer(), nullable=False, comment='任务触发的总次数'),
+        sa.Column('last_run_time', sa.DateTime(timezone=True), nullable=True, comment='任务最后触发的时间'),
+        sa.Column('remark', mysql.LONGTEXT().with_variant(sa.TEXT(), 'postgresql'), nullable=True, comment='备注'),
+        sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
+        sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('name'),
+        comment='任务调度表',
+    )
+    op.create_index(op.f('ix_task_scheduler_id'), 'task_scheduler', ['id'], unique=True)
+    op.create_table(
+        'task_set_result',
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column('taskset_id', sa.String(length=155), nullable=True),
+        sa.Column('result', sa.PickleType(), nullable=True),
+        sa.Column('date_done', sa.DateTime(), nullable=True),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('taskset_id'),
+        comment='任务集结果表',
+    )
     op.create_table(
         'mcp_server',
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
@@ -153,7 +227,7 @@ def upgrade():
         sa.Column('readme', sa.Text(), nullable=True, comment='项目介绍'),
         sa.Column('avatar', sa.String(length=255), nullable=True, comment='项目头像'),
         sa.Column('description', sa.Text(), nullable=True, comment='项目描述'),
-        sa.Column('server_meta', sa.JSON(), nullable=True, comment='mcp server config'),
+        sa.Column('server_metadata', sa.JSON(), nullable=True, comment='mcp server config'),
         sa.Column('tools', sa.JSON(), nullable=True, comment='工具列表'),
         sa.Column('prompts', sa.JSON(), nullable=True, comment='提示词列表'),
         sa.Column('resources', sa.JSON(), nullable=True, comment='资源列表'),
@@ -168,6 +242,16 @@ def upgrade():
         sa.UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),
     )
     op.create_index(op.f('ix_mcp_server_id'), 'mcp_server', ['id'], unique=True)
+    op.create_table(
+        'sys_user_role',
+        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键ID'),
+        sa.Column('user_id', sa.BigInteger(), nullable=False, comment='用户ID'),
+        sa.Column('role_id', sa.BigInteger(), nullable=False, comment='角色ID'),
+        sa.ForeignKeyConstraint(['role_id'], ['sys_role.id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['user_id'], ['sys_user.id'], ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id', 'user_id', 'role_id'),
+    )
+    op.create_index(op.f('ix_sys_user_role_id'), 'sys_user_role', ['id'], unique=True)
     op.create_table(
         'sys_user_social',
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
@@ -188,13 +272,21 @@ def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_sys_user_social_id'), table_name='sys_user_social')
     op.drop_table('sys_user_social')
+    op.drop_index(op.f('ix_sys_user_role_id'), table_name='sys_user_role')
+    op.drop_table('sys_user_role')
     op.drop_index(op.f('ix_mcp_server_id'), table_name='mcp_server')
     op.drop_table('mcp_server')
+    op.drop_table('task_set_result')
+    op.drop_index(op.f('ix_task_scheduler_id'), table_name='task_scheduler')
+    op.drop_table('task_scheduler')
+    op.drop_table('task_result')
     op.drop_index(op.f('ix_sys_user_username'), table_name='sys_user')
     op.drop_index(op.f('ix_sys_user_status'), table_name='sys_user')
     op.drop_index(op.f('ix_sys_user_id'), table_name='sys_user')
     op.drop_index(op.f('ix_sys_user_email'), table_name='sys_user')
     op.drop_table('sys_user')
+    op.drop_index(op.f('ix_sys_role_id'), table_name='sys_role')
+    op.drop_table('sys_role')
     op.drop_index(op.f('ix_sys_opera_log_id'), table_name='sys_opera_log')
     op.drop_table('sys_opera_log')
     op.drop_index(op.f('ix_sys_login_log_id'), table_name='sys_login_log')

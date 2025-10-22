@@ -5,15 +5,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from common.model import Base, TimeZone, id_key
+from app.user.model.m2m import sys_user_role
+from common.model import Base, id_key
 from database.db import uuid4_str
-from sqlalchemy import VARBINARY, Boolean, String
+from sqlalchemy import VARBINARY, Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import BYTEA, INTEGER
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from utils.timezone import timezone
 
 if TYPE_CHECKING:
     from app.mcp.model import McpServer
+    from app.user.model import Role
 
 
 class User(Base):
@@ -40,9 +42,13 @@ class User(Base):
     is_multi_login: Mapped[bool] = mapped_column(
         Boolean().with_variant(INTEGER, 'postgresql'), default=False, comment='是否重复登陆(0否 1是)'
     )
-    join_time: Mapped[datetime] = mapped_column(TimeZone, init=False, default_factory=timezone.now, comment='注册时间')
+    join_time: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), init=False, default_factory=timezone.now, comment='注册时间'
+    )
     last_login_time: Mapped[datetime | None] = mapped_column(
-        TimeZone, init=False, onupdate=timezone.now, comment='上次登录'
+        DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次登录时间'
     )
     # 用户mcp一对多
     mcps: Mapped[list[McpServer]] = relationship(init=False, back_populates='user')
+
+    roles: Mapped[list[Role]] = relationship(init=False, secondary=sys_user_role, back_populates='users')

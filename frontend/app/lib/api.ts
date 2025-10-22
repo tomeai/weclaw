@@ -1,9 +1,12 @@
 import { ApiClient } from "@/app/lib/client"
 import { MODEL_DEFAULT } from "@/app/lib/config"
 import {
+  API_ROUTE_AUTH_ME,
   API_ROUTE_CREATE_CHAT,
   API_ROUTE_CREATE_GUEST,
   API_ROUTE_GITHUB_OAUTH2_LOGIN,
+  API_ROUTE_MCP_ADMIN_CATEGORY,
+  API_ROUTE_MCP_ADMIN_SERVERS,
   API_ROUTE_MCP_SEARCH,
   API_ROUTE_MCP_SERVER_CALL,
   API_ROUTE_MCP_SERVER_DETAIL,
@@ -73,15 +76,6 @@ export async function createGuestUser(guestId: string) {
   } catch (err) {
     console.error("Error creating guest user:", err)
     throw err
-  }
-}
-
-export class UsageLimitError extends Error {
-  code: string
-
-  constructor(message: string) {
-    super(message)
-    this.code = "DAILY_LIMIT_REACHED"
   }
 }
 
@@ -201,12 +195,12 @@ export interface McpSearchResponse {
  */
 export interface McpServerItem {
   id: Number
-  title: string
+  server_title: string
   description: string
   server_type?: "hosted" | "local"
   mcp_endpoint?: string
   envs?: Record<string, string>
-  capabilities: {
+  server_metadata: {
     meta: any
     protocolVersion: string
     capabilities: {
@@ -224,15 +218,11 @@ export interface McpServerItem {
     }
     instructions: any
   }
-  tools?: {
-    meta: any
-    nextCursor: any
-    tools: Array<{
-      name: string
-      description: string
-      inputSchema: Record<string, any>
-    }>
-  }
+  tools?: Array<{
+    name: string
+    description: string
+    inputSchema: Record<string, any>
+  }>
   prompts?: any
   resources?: any
   created_time?: string
@@ -406,14 +396,61 @@ export async function getCurrentUser(): Promise<GetCurrentUserResponse> {
   }
 }
 
+export interface GetAuthMeResponse {
+  code: number
+  msg: string
+  data: {
+    id: string
+    nickname: string
+    avatar: string
+    email?: string
+    [key: string]: any
+  }
+}
+
+/**
+ * Gets current user information using the auth/me endpoint
+ * This endpoint requires a Bearer token in the Authorization header
+ */
+export async function getAuthMe(): Promise<GetAuthMeResponse> {
+  try {
+    const response = await ApiClient.get<GetAuthMeResponse>(API_ROUTE_AUTH_ME)
+    return response
+  } catch (error) {
+    console.error("Error getting auth me:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Server capabilities interface for recommend API
+ */
+export interface McpRecommendServerCapabilities {
+  tools?: {
+    listChanged?: boolean
+  }
+  logging?: any
+  prompts?: {
+    listChanged?: boolean
+  } | null
+  resources?: {
+    subscribe?: boolean
+    listChanged?: boolean
+  } | null
+  completions?: any
+  experimental?: Record<string, any> | null
+}
+
 /**
  * MCP Server item interface for recommend API
  */
 export interface McpRecommendServer {
-  id: number
-  title: string
+  server_title: string
+  server_name: string
   description: string
-  server_type: string
+  server_type: "hosted" | "local"
+  capabilities: McpRecommendServerCapabilities
+  tools: number
 }
 
 /**
@@ -447,6 +484,170 @@ export async function getMcpServerRecommend(): Promise<McpRecommendResponse> {
     return response
   } catch (error) {
     console.error("Error getting MCP server recommend:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Admin Server item interface
+ */
+export interface McpAdminServerItem {
+  id: number
+  server_title: string
+  server_name: string
+  description: string
+  server_type: "hosted" | "local"
+  compile_type: "package" | "stdio"
+  git?: string
+  created_time: string
+  updated_time?: string | null
+}
+
+/**
+ * MCP Admin Servers response interface
+ */
+export interface McpAdminServersResponse {
+  code: number
+  msg: string
+  data: {
+    items: McpAdminServerItem[]
+    total: number
+    page: number
+    size: number
+    total_pages: number
+    links: {
+      first: string
+      last: string
+      self: string
+      next: string | null
+      prev: string | null
+    }
+  }
+}
+
+/**
+ * MCP Admin Servers parameters interface
+ */
+export interface McpAdminServersParams {
+  page?: number
+  size?: number
+  keyword?: string
+  server_type?: "hosted" | "local"
+  compile_type?: "package" | "stdio"
+  is_public?: number
+  transport?: "stdio" | "sse" | "streamable"
+}
+
+/**
+ * Gets all MCP servers for admin management
+ *
+ * @param params - Query parameters
+ * @returns MCP admin servers list
+ */
+export async function getMcpAdminServers(
+  params: McpAdminServersParams = {}
+): Promise<McpAdminServersResponse> {
+  try {
+    // Set default values for pagination if not provided
+    const queryParams: McpAdminServersParams = {
+      page: params.page || 1,
+      size: params.size || 20,
+      keyword: params.keyword || "",
+      ...params,
+    }
+
+    // Filter out undefined and null values
+    const filteredParams: Record<string, any> = {}
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        filteredParams[key] = value
+      }
+    })
+
+    // Make POST request to MCP admin servers API
+    const response = await ApiClient.post<McpAdminServersResponse>(
+      API_ROUTE_MCP_ADMIN_SERVERS,
+      filteredParams
+    )
+    return response
+  } catch (error) {
+    console.error("Error getting MCP admin servers:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Admin Category item interface
+ */
+export interface McpAdminCategoryItem {
+  id: number
+  name: string
+  is_recommend: number
+  created_time: string
+  updated_time?: string | null
+}
+
+/**
+ * MCP Admin Category response interface
+ */
+export interface McpAdminCategoryResponse {
+  code: number
+  msg: string
+  data: {
+    items: McpAdminCategoryItem[]
+    total: number
+    page: number
+    size: number
+    total_pages: number
+    links: {
+      first: string
+      last: string
+      self: string
+      next: string | null
+      prev: string | null
+    }
+  }
+}
+
+/**
+ * MCP Admin Category parameters interface
+ */
+export interface McpAdminCategoryParams {
+  is_recommend?: number
+}
+
+/**
+ * Gets all MCP categories for admin management
+ *
+ * @param params - Query parameters
+ * @returns MCP admin categories list
+ */
+export async function getMcpAdminCategories(
+  params: McpAdminCategoryParams = {}
+): Promise<McpAdminCategoryResponse> {
+  try {
+    // Set default values
+    const queryParams: McpAdminCategoryParams = {
+      is_recommend: params.is_recommend ?? -1,
+      ...params,
+    }
+
+    // Filter out undefined and null values
+    const filteredParams: Record<string, any> = {}
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        filteredParams[key] = value
+      }
+    })
+
+    // Make POST request to MCP admin category API
+    const response = await ApiClient.post<McpAdminCategoryResponse>(
+      `${API_ROUTE_MCP_ADMIN_CATEGORY}`,
+      filteredParams
+    )
+    return response
+  } catch (error) {
+    console.error("Error getting MCP admin categories:", error)
     throw error
   }
 }

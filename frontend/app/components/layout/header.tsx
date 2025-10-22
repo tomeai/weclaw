@@ -5,7 +5,6 @@ import {useUser} from "@/app/providers/user-provider";
 import Link from "next/link";
 import {APP_NAME} from "../../lib/config"
 import {useEffect, useState} from "react";
-import { LoginModal } from "@/app/components/auth/login-modal";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ export function Header() {
     const {user, isJwtAuthenticated, signOut} = useUser()
     const isLoggedIn = !!user || isJwtAuthenticated
     const [isScrolled, setIsScrolled] = useState(false)
-    const [showLoginModal, setShowLoginModal] = useState(false)
 
     const handleSignOut = async () => {
         await signOut()
@@ -75,24 +73,26 @@ export function Header() {
 
                 <div className="flex items-center gap-2">
                     <ThemeToggle />
+                    <div className="hidden md:flex items-center gap-4">
+                        <AddMcpButton 
+                            variant="link" 
+                            onClick={!isLoggedIn ? () => window.location.href = '/auth/login' : undefined}
+                        />
+                        {!isLoggedIn && (
+                            <Link
+                                href="/auth/login"
+                                className="font-base text-muted-foreground hover:text-foreground text-base transition-colors"
+                            >
+                                登录
+                            </Link>
+                        )}
+                    </div>
                     {!isLoggedIn ? (
-                        <>
-                            <div className="hidden md:flex items-center gap-4">
-
-                                <button
-                                    onClick={() => setShowLoginModal(true)}
-                                    className="font-base text-muted-foreground hover:text-foreground text-base transition-colors"
-                                >
-                                    登录
-                                </button>
-                            </div>
-                            <div className="md:hidden">
-                                <NaviMenu/>
-                            </div>
-                        </>
+                        <div className="md:hidden">
+                            <NaviMenu/>
+                        </div>
                     ) : (
                         <>
-                            <AddMcpButton variant="link" />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -119,7 +119,7 @@ export function Header() {
                                     </div>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
-                                        <Link href="/agent" className="cursor-pointer">
+                                        <Link href="/admin/mcp" className="cursor-pointer">
                                             MCP管理
                                         </Link>
                                     </DropdownMenuItem>
@@ -139,11 +139,6 @@ export function Header() {
                     )}
                 </div>
             </div>
-            
-            <LoginModal 
-                open={showLoginModal} 
-                onOpenChange={setShowLoginModal} 
-            />
         </header>
     )
 }

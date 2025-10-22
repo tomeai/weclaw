@@ -1,6 +1,19 @@
 # Base Node.js image
 FROM node:20-alpine AS base
 
+# ======================
+# Set build arguments for COS credentials
+# ======================
+ARG COS_SECRET_ID
+ARG COS_SECRET_KEY
+ARG COS_BUCKET
+ARG COS_REGION
+
+ENV COS_SECRET_ID=$COS_SECRET_ID
+ENV COS_SECRET_KEY=$COS_SECRET_KEY
+ENV COS_BUCKET=$COS_BUCKET
+ENV COS_REGION=$COS_REGION
+
 # Install dependencies only when needed
 FROM base AS deps
 
@@ -44,6 +57,18 @@ RUN ls -la .next/ && \
       echo "ERROR: .next/standalone directory not found. Make sure output: 'standalone' is set in next.config.ts"; \
       exit 1; \
     fi
+
+RUN wget https://cosbrowser.cloud.tencent.com/software/coscli/coscli-linux-amd64 -O /usr/local/bin/coscli && \
+    chmod +x /usr/local/bin/coscli && \
+    coscli --version
+
+# ======================
+# Upload static files to COS
+# ======================
+RUN coscli sync .next/static cos://${COS_BUCKET}/next-static/ \
+      --region $COS_REGION --force && \
+    coscli sync public cos://${COS_BUCKET}/public/ \
+      --region $COS_REGION --force
 
 # Production image, copy all the files and run next
 FROM base AS runner

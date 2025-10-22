@@ -41,6 +41,12 @@ class McpServerService:
         return await mcp_server_dao.get_list(keyword)
 
     @staticmethod
+    async def get_all_select(*, keyword: str, transport: str, server_type: str, is_public: int) -> Select:
+        return await mcp_server_dao.get_filter_list(
+            keyword=keyword, transport=transport, server_type=server_type, is_public=is_public
+        )
+
+    @staticmethod
     async def get_mcp_last_7_day():
         async with async_db_session() as db:
             stmt = await mcp_server_dao.get_mcp_last_7_day()

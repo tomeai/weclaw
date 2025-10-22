@@ -7,9 +7,26 @@ import Link from "next/link"
 interface AddMcpButtonProps {
   className?: string
   variant?: "dialog" | "link"
+  onClick?: () => void
 }
 
-export function AddMcpButton({ className, variant = "link" }: AddMcpButtonProps) {
+export function AddMcpButton({ className, variant = "link", onClick }: AddMcpButtonProps) {
+  // 如果提供了onClick处理函数，使用Button而不是Link
+  if (onClick) {
+    return (
+      <Button 
+        variant="outline" 
+        size="sm" 
+        className={`gap-2 ${className}`}
+        onClick={onClick}
+      >
+        <Server className="h-4 w-4" />
+        <Plus className="h-4 w-4" />
+        <span className="hidden sm:inline">添加MCP</span>
+      </Button>
+    )
+  }
+
   // 为了避免可能的循环依赖和性能问题，暂时只使用 link 模式
   // 如果需要对话框模式，可以创建一个单独的组件
   return (

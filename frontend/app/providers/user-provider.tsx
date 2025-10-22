@@ -11,6 +11,7 @@ type UserContextType = {
   signOut: () => Promise<void>
   isJwtAuthenticated: boolean
   setUser: (user: UserProfile | null) => void
+  isInitialized: boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -25,12 +26,15 @@ export function UserProvider({
   const [user, setUser] = useState<UserProfile | null>(initialUser)
   const [isLoading, setIsLoading] = useState(false)
   const [isJwtAuthenticated, setIsJwtAuthenticated] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false) // 添加初始化状态
 
   useEffect(() => {
     const checkJwtToken = async () => {
       if (typeof window === "undefined") return
 
       const token = localStorage.getItem("auth_token")
+      console.log('[UserProvider] 检查 JWT token:', !!token)
+      
       if (token) {
         setIsJwtAuthenticated(true)
 
@@ -55,11 +59,16 @@ export function UserProvider({
             setIsJwtAuthenticated(false)
           }
         }
+      } else {
+        setIsJwtAuthenticated(false)
       }
+      
+      // 标记初始化完成
+      setIsInitialized(true)
     }
 
     checkJwtToken()
-  }, [user])
+  }, []) // 只在组件挂载时执行一次
 
   const signOut = async () => {
     setIsLoading(true)
@@ -84,6 +93,7 @@ export function UserProvider({
         signOut,
         isJwtAuthenticated,
         setUser,
+        isInitialized,
       }}
     >
       {children}

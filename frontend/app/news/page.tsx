@@ -14,7 +14,7 @@ export default function NewsPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              博客
+              动态
             </h1>
             <p className="text-gray-600">
               Compiled notes from the team

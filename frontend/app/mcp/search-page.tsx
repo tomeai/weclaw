@@ -178,12 +178,12 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {mcpServers.map((server, index) => {
                 // Count the number of tools, prompts, and resources
-                const toolsCount = server.tools?.tools?.length || 0
+                const toolsCount = server.tools?.length || 0
                 const promptsCount = server.prompts ? 1 : 0 // Simplified, adjust based on actual structure
                 const resourcesCount = server.resources ? 1 : 0 // Simplified, adjust based on actual structure
 
                 // Generate a seed for the avatar based on the server title
-                const avatarSeed = server.title
+                const avatarSeed = server.server_title
                   .replace(/\s+/g, "-")
                   .toLowerCase()
 
@@ -198,19 +198,19 @@ export default function SearchPage() {
                               <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-100 transition-all group-hover:ring-blue-200 dark:ring-gray-700 dark:group-hover:ring-blue-600">
                                 <AvatarImage
                                   src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                                  alt={server.title}
+                                  alt={server.server_title}
                                 />
                                 <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                  {server.title.substring(0, 2).toUpperCase()}
+                                  {server.server_title.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex w-full min-w-0 flex-col overflow-hidden">
                                 <div className="flex w-full items-center gap-2 overflow-hidden">
                                   <h3
                                     className="min-w-0 flex-1 truncate text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700 dark:text-gray-100 dark:group-hover:text-blue-400"
-                                    title={server.title}
+                                    title={server.server_title}
                                   >
-                                    {server.title}
+                                    {server.server_title}
                                   </h3>
                                 </div>
                               </div>

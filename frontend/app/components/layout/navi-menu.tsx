@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
 import {List} from "@phosphor-icons/react"
@@ -6,14 +6,13 @@ import Link from "next/link"
 import {usePathname} from "next/navigation"
 import {useState} from "react"
 import {useUser} from "@/app/providers/user-provider"
-import { LoginModal } from "@/app/components/auth/login-modal"
+import { AddMcpButton } from "@/components/mcp/add-mcp-button"
 
 export function NaviMenu() {
     const pathname = usePathname()
     const {user, isJwtAuthenticated} = useUser()
     const isLoggedIn = !!user || isJwtAuthenticated
     const [open, setOpen] = useState(false)
-    const [showLoginModal, setShowLoginModal] = useState(false)
 
     const linkClass =
         "font-base text-muted-foreground hover:text-foreground text-base transition-colors"
@@ -39,14 +38,11 @@ export function NaviMenu() {
                 {/*<Link href="/leaderboards" className={isActive("/leaderboards") ? activeLinkClass : linkClass}>*/}
                 {/*    排行榜*/}
                 {/*</Link>*/}
-                {/* <Link href="/pricing" className={isActive("/pricing") ? activeLinkClass : linkClass}>
-                   定价
-                </Link> */}
-                {/*<Link href="/docs" className={isActive("/docs") ? activeLinkClass : linkClass}>*/}
-                {/*    文档*/}
-                {/*</Link>*/}
-                <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
+              <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
                     动态
+                </Link>
+                <Link href="/docs" className={isActive("/docs") ? activeLinkClass : linkClass}>
+                    文档
                 </Link>
             </div>
 
@@ -74,20 +70,6 @@ export function NaviMenu() {
                             {/*>*/}
                             {/*    排行榜*/}
                             {/*</Link>*/}
-                            {/* <Link
-                               href="/pricing"
-                               className={isActive("/pricing") ? mobileActiveLinkClass : mobileLinkClass}
-                               onClick={() => setOpen(false)}
-                            >
-                               定价
-                            </Link> */}
-                            {/*<Link*/}
-                            {/*    href="/docs"*/}
-                            {/*    className={isActive("/docs") ? mobileActiveLinkClass : mobileLinkClass}*/}
-                            {/*    onClick={() => setOpen(false)}*/}
-                            {/*>*/}
-                            {/*    文档*/}
-                            {/*</Link>*/}
                             <Link
                                 href="/news"
                                 className={isActive("/news") ? mobileActiveLinkClass : mobileLinkClass}
@@ -95,23 +77,34 @@ export function NaviMenu() {
                             >
                                 动态
                             </Link>
-                            {!isLoggedIn && (
-                                <button
-                                    onClick={() => {
+                            <Link
+                                href="/docs"
+                                className={isActive("/docs") ? mobileActiveLinkClass : mobileLinkClass}
+                                onClick={() => setOpen(false)}
+                            >
+                                文档
+                            </Link>
+                            <div className="py-2">
+                                <AddMcpButton 
+                                    onClick={!isLoggedIn ? () => {
                                         setOpen(false)
-                                        setShowLoginModal(true)
+                                        window.location.href = '/auth/login'
+                                    } : () => {
+                                        setOpen(false)
+                                        window.location.href = '/mcp/submit'
                                     }}
+                                />
+                            </div>
+                            {!isLoggedIn && (
+                                <Link
+                                    href="/auth/login"
+                                    onClick={() => setOpen(false)}
                                     className="font-base text-foreground text-lg py-3 block text-left hover:text-primary transition-colors"
                                 >
                                     登录
-                                </button>
+                                </Link>
                             )}
                         </nav>
-                        
-                        <LoginModal 
-                            open={showLoginModal} 
-                            onOpenChange={setShowLoginModal} 
-                        />
                     </SheetContent>
                 </Sheet>
             </div>

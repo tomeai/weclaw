@@ -28,7 +28,7 @@ class GetMcpSearchDetail(SchemaBase):
 
 class GetMcpDetail(SchemaBase):
     id: int = Field(description='id')
-    title: str | None = Field(None, description='名称')
+    server_title: str | None = Field(None, description='名称')
     description: str | None = Field(None, description='描述')
     server_type: str | None = Field(None, description='类型')
     server_metadata: Dict[str, Any] | None = Field(None, description='能力')
@@ -48,6 +48,18 @@ class McpBaseDetail(SchemaBase):
     tools: List[Dict[str, Any]] | None = Field(None, description='工具')
     # user: GetUserInfo = Field(description='用户信息')
     # category: GetCategoryBase = Field(description='分类')
+
+
+class AdminMcpBaseDetail(SchemaBase):
+    id: int = Field(description='id')
+    server_title: str = Field(description='名称')
+    server_name: str = Field(description='mcp name')
+    description: str | None = Field(None, description='描述')
+    server_type: str = Field(description='类型')
+    compile_type: str = Field(description='编译类型')
+    git: str | None = Field(None, description='git地址')
+    created_time: datetime = Field(description='创建时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
 
 
 class McpRecommendDetail(SchemaBase):
@@ -90,6 +102,14 @@ class SearchMcpParam(SchemaBase):
     keyword: str | None = Field(None, description='搜索词')
 
 
+class AdminSearchMcpParam(SchemaBase):
+    # category_id: int | None = Field(None, description='分类id')
+    keyword: str | None = Field(None, description='搜索词')
+    transport: str | None = Field(None, description='协议类型')
+    server_type: str | None = Field(None, description='部署类型')
+    is_public: int | None = Field(None, description='是否公开')
+
+
 class UpdateMcpServerParam(SchemaBase):
     mcp_endpoint: str = Field(None, description='mcp server endpoint')
     capabilities: Optional[Dict[str, Any]] | None = Field(None, description='能力')
@@ -110,7 +130,6 @@ class AddMcpServerParam(BaseModel):
     readme: str | None = Field(None, description='说明')
     server_type: str = Field(description='部署类型')
     mcpServers: McpServersWrapper = Field(description='mcp server config')
-    category_id: int = Field(None, description='mcp分类')
 
     @field_validator('git')
     def validate_git(cls, v: Optional[str]) -> Optional[str]:

@@ -3,7 +3,6 @@ import { ApiClient } from "./client"
 export interface McpSubmitData {
   server_title: string
   server_type: "hosted" | "local"
-  category_id: number
   git: string
   mcpServers: any
 }
@@ -112,7 +111,6 @@ export class McpApiService {
 
     return {
       ...cleanData,
-      category_id: 2, // 默认分类ID，可以根据需要调整
     }
   }
 

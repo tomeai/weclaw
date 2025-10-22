@@ -57,10 +57,10 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
         setServerDetail(response)
 
         // Initialize tool inputs with default values
-        if (response.data.tools?.tools) {
+        if (response.data.tools) {
           const initialInputs: Record<string, Record<string, any>> = {}
 
-          response.data.tools.tools.forEach((tool) => {
+          response.data.tools.forEach((tool) => {
             const toolName = tool.name
             const inputs: Record<string, any> = {}
 
@@ -273,10 +273,10 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
   const { data: server } = serverDetail
 
   // Count the number of tools
-  const toolsCount = server.tools?.tools?.length || 0
+  const toolsCount = server.tools?.length || 0
 
   // Generate a seed for the avatar based on the server title
-  const avatarSeed = server.title.replace(/\s+/g, "-").toLowerCase()
+  const avatarSeed = server.server_title.replace(/\s+/g, "-").toLowerCase()
 
   return (
     <div
@@ -290,7 +290,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
           items={[
             { label: "Home", href: "/", icon: <Home className="h-4 w-4" /> },
             { label: "MCP Servers", href: "/mcp" },
-            { label: server.title },
+            { label: server.server_title },
           ]}
           className="mt-5 mb-6"
         />
@@ -301,22 +301,22 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
             <Avatar className="h-16 w-16">
               <AvatarImage
                 src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                alt={server.title}
+                alt={server.server_title}
               />
               <AvatarFallback>
-                {server.title.substring(0, 2).toUpperCase()}
+                {server.server_title.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
               <h1 className="mb-2 text-left text-3xl font-bold">
-                {server.title}
+                {server.server_title}
               </h1>
               <div className="mb-2 flex flex-wrap gap-2">
                 <Badge variant="secondary" className="px-3 py-1">
                   {toolsCount} tools
                 </Badge>
                 <Badge variant="outline" className="px-3 py-1">
-                  v{server.capabilities.serverInfo.version}
+                  v{server.server_metadata.serverInfo.version}
                 </Badge>
                 {server.server_type && (
                   <Badge
@@ -335,11 +335,11 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
           <div className="text-muted-foreground text-sm">
             <div>
               <span className="font-medium">Server Name:</span>{" "}
-              {server.capabilities.serverInfo.name}
+              {server.server_metadata.serverInfo.name}
             </div>
             <div>
               <span className="font-medium">Protocol Version:</span>{" "}
-              {server.capabilities.protocolVersion}
+              {server.server_metadata.protocolVersion}
             </div>
           </div>
         </div>
@@ -356,8 +356,8 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
 
               {/* Tools Tab */}
               <TabsContent value="tools" className="space-y-6">
-                {server.tools && server.tools.tools.length > 0 ? (
-                  server.tools.tools.map((tool, index) => (
+                {server.tools && server.tools.length > 0 ? (
+                  server.tools.map((tool, index) => (
                     <div
                       key={index}
                       className="rounded-lg border p-4 transition-shadow hover:shadow-sm"
@@ -504,7 +504,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                         Protocol Version
                       </h4>
                       <p className="text-muted-foreground">
-                        {server.capabilities.protocolVersion}
+                        {server.server_metadata.protocolVersion}
                       </p>
                     </div>
 
@@ -515,13 +515,13 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                       <div className="border-border mt-2 border-l-2 pl-4">
                         <p>
                           <span className="text-muted-foreground">Name:</span>{" "}
-                          {server.capabilities.serverInfo.name}
+                          {server.server_metadata.serverInfo.name}
                         </p>
                         <p>
                           <span className="text-muted-foreground">
                             Version:
                           </span>{" "}
-                          {server.capabilities.serverInfo.version}
+                          {server.server_metadata.serverInfo.version}
                         </p>
                       </div>
                     </div>
@@ -533,25 +533,25 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                       <div className="border-border mt-2 space-y-2 border-l-2 pl-4">
                         <div className="flex items-center">
                           <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.tools ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.tools ? "bg-green-500" : "bg-gray-300"}`}
                           ></div>
                           <span>Tools</span>
                         </div>
                         <div className="flex items-center">
                           <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.resources ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.resources ? "bg-green-500" : "bg-gray-300"}`}
                           ></div>
                           <span>Resources</span>
                         </div>
                         <div className="flex items-center">
                           <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.prompts ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.prompts ? "bg-green-500" : "bg-gray-300"}`}
                           ></div>
                           <span>Prompts</span>
                         </div>
                         <div className="flex items-center">
                           <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.logging ? "bg-green-500" : "bg-gray-300"}`}
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.logging ? "bg-green-500" : "bg-gray-300"}`}
                           ></div>
                           <span>Logging</span>
                         </div>
@@ -559,7 +559,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                     </div>
 
                     {Object.keys(
-                      server.capabilities.capabilities.experimental || {}
+                      server.server_metadata.capabilities.experimental || {}
                     ).length > 0 && (
                       <div>
                         <h4 className="text-foreground font-medium">
@@ -568,7 +568,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                         <div className="border-border mt-2 border-l-2 pl-4">
                           <pre className="bg-muted/50 overflow-x-auto rounded border p-2 text-sm">
                             {JSON.stringify(
-                              server.capabilities.capabilities.experimental,
+                              server.server_metadata.capabilities.experimental,
                               null,
                               2
                             )}

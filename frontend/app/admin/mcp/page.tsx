@@ -7,6 +7,8 @@ import {
   McpAdminServerItem,
   McpAdminServersParams,
 } from "@/app/lib/api"
+import { McpDetailModal } from "@/components/mcp/mcp-detail-modal"
+import { McpEditModal } from "@/components/mcp/mcp-edit-modal"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -66,6 +68,10 @@ export default function McpAdminPage() {
   const [transport, setTransport] = useState<
     "stdio" | "sse" | "streamable" | "all"
   >("all")
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedEditServerId, setSelectedEditServerId] = useState<number | null>(null)
 
   // 获取 MCP 服务器列表
   const fetchServers = async (params: McpAdminServersParams = {}) => {
@@ -175,6 +181,36 @@ export default function McpAdminPage() {
         {type === "package" ? "包" : "STDIO"}
       </Badge>
     )
+  }
+
+  // 处理查看详情
+  const handleViewDetail = (serverId: number) => {
+    console.log('查看详情被点击，服务器ID:', serverId)
+    setSelectedServerId(serverId)
+    setDetailModalOpen(true)
+  }
+
+  // 关闭详情模态框
+  const handleCloseDetailModal = () => {
+    setDetailModalOpen(false)
+    setSelectedServerId(null)
+  }
+
+  // 处理编辑服务器
+  const handleEditServer = (serverId: number) => {
+    setSelectedEditServerId(serverId)
+    setEditModalOpen(true)
+  }
+
+  // 关闭编辑模态框
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false)
+    setSelectedEditServerId(null)
+  }
+
+  // 编辑成功回调
+  const handleEditSuccess = () => {
+    fetchServers() // 重新加载服务器列表
   }
 
   return (
@@ -377,10 +413,18 @@ export default function McpAdminPage() {
                         <TableCell>{formatDate(server.updated_time)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewDetail(server.id)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditServer(server.id)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
@@ -435,6 +479,21 @@ export default function McpAdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* MCP详情模态框 */}
+      <McpDetailModal
+        open={detailModalOpen}
+        onOpenChange={handleCloseDetailModal}
+        serverId={selectedServerId}
+      />
+
+      {/* MCP编辑模态框 */}
+      <McpEditModal
+        open={editModalOpen}
+        onOpenChange={handleCloseEditModal}
+        serverId={selectedEditServerId}
+        onSuccess={handleEditSuccess}
+      />
     </AdminLayout>
   )
 }

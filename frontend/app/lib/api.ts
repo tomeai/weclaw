@@ -6,7 +6,9 @@ import {
   API_ROUTE_CREATE_GUEST,
   API_ROUTE_GITHUB_OAUTH2_LOGIN,
   API_ROUTE_MCP_ADMIN_CATEGORY,
+  API_ROUTE_MCP_ADMIN_CATEGORY_CREATE,
   API_ROUTE_MCP_ADMIN_SERVERS,
+  API_ROUTE_MCP_ADMIN_SERVER_DETAIL,
   API_ROUTE_MCP_SEARCH,
   API_ROUTE_MCP_SERVER_CALL,
   API_ROUTE_MCP_SERVER_DETAIL,
@@ -648,6 +650,133 @@ export async function getMcpAdminCategories(
     return response
   } catch (error) {
     console.error("Error getting MCP admin categories:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Admin Category create parameters interface
+ */
+export interface McpAdminCategoryCreateParams {
+  name: string
+  is_recommend: boolean
+}
+
+/**
+ * MCP Admin Category create response interface
+ */
+export interface McpAdminCategoryCreateResponse {
+  code: number
+  msg: string
+  data: null
+}
+
+/**
+ * Creates a new MCP category
+ *
+ * @param params - Category creation parameters
+ * @returns Create category response
+ */
+export async function createMcpAdminCategory(
+  params: McpAdminCategoryCreateParams
+): Promise<McpAdminCategoryCreateResponse> {
+  try {
+    const response = await ApiClient.post<McpAdminCategoryCreateResponse>(
+      API_ROUTE_MCP_ADMIN_CATEGORY_CREATE,
+      params
+    )
+    return response
+  } catch (error) {
+    console.error("Error creating MCP admin category:", error)
+    throw error
+  }
+}
+
+/**
+ * MCP Admin Server Detail item interface
+ */
+export interface McpAdminServerDetailItem {
+  id: number
+  server_name: string
+  server_title: string
+  description: string
+  server_type: "hosted" | "local"
+  compile_type: "package" | "stdio"
+  git?: string
+  user: {
+    username: string
+    avatar: string
+  }
+  category: {
+    id: number
+    name: string
+    is_recommend: number
+  }
+}
+
+/**
+ * MCP Admin Server Detail response interface
+ */
+export interface McpAdminServerDetailResponse {
+  code: number
+  msg: string
+  data: McpAdminServerDetailItem
+}
+
+/**
+ * Gets details for a specific MCP server for admin management
+ *
+ * @param serverId - The ID of the MCP server
+ * @returns MCP admin server details
+ */
+export async function getMcpAdminServerDetail(
+  serverId: string | number
+): Promise<McpAdminServerDetailResponse> {
+  try {
+    const url = `${API_ROUTE_MCP_ADMIN_SERVER_DETAIL}/${serverId}`
+    const response = await ApiClient.get<McpAdminServerDetailResponse>(url)
+    return response
+  } catch (error) {
+    console.error(`Error getting MCP admin server details for ID ${serverId}:`, error)
+    throw error
+  }
+}
+
+/**
+ * MCP Admin Server Update parameters interface
+ */
+export interface McpAdminServerUpdateParams {
+  category_id: number
+  description: string
+  server_title: string
+}
+
+/**
+ * MCP Admin Server Update response interface
+ */
+export interface McpAdminServerUpdateResponse {
+  code: number
+  msg: string
+  data: null
+}
+
+/**
+ * Updates a specific MCP server for admin management
+ *
+ * @param serverId - The ID of the MCP server
+ * @param params - Update parameters
+ * @returns Update response
+ */
+export async function updateMcpAdminServer(
+  serverId: string | number,
+  params: McpAdminServerUpdateParams
+): Promise<McpAdminServerUpdateResponse> {
+  try {
+    const url = `${API_ROUTE_MCP_ADMIN_SERVER_DETAIL}/${serverId}`
+    const response = await ApiClient.put<McpAdminServerUpdateResponse>(url, params)
+    return response
+  } catch (error) {
+    console.error(`Error updating MCP admin server ${serverId}:`, error)
     throw error
   }
 }

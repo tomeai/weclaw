@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from utils.timezone import timezone
 
 if TYPE_CHECKING:
-    from app.mcp.model import McpServer
+    from app.admin.model import McpServer
     from app.user.model import Role
 
 

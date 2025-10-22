@@ -1,5 +1,5 @@
-from app.mcp.schema.category import AddCategoryParam, CategoryDetail, GetAllCategoryParam
-from app.mcp.service.mcp_category_service import mcp_category_service
+from app.admin.schema.category import AddCategoryParam, CategoryDetail, GetAllCategoryParam
+from app.admin.service.admin_category_service import mcp_admin_category_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from common.security.jwt import DependsJwtAuth
@@ -15,7 +15,7 @@ router = APIRouter()
     dependencies=[DependsJwtAuth],
 )
 async def add_category(request: Request, obj: AddCategoryParam) -> ResponseModel:
-    await mcp_category_service.create(request=request, obj=obj)
+    await mcp_admin_category_service.create(request=request, obj=obj)
     return response_base.success()
 
 
@@ -27,6 +27,6 @@ async def add_category(request: Request, obj: AddCategoryParam) -> ResponseModel
 async def get_all_category(
     db: CurrentSession, obj: GetAllCategoryParam
 ) -> ResponseSchemaModel[PageData[CategoryDetail]]:
-    result = await mcp_category_service.get_list(obj.is_recommend)
+    result = await mcp_admin_category_service.get_list(obj.is_recommend)
     page_data = await paging_data(db, result)
     return response_base.success(data=page_data)

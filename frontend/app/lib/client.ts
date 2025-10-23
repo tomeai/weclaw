@@ -287,4 +287,79 @@ export class ApiClient {
       return {} as T // Return empty object to prevent further errors
     }
   }
+
+  /**
+   * Makes a PUT request to the specified URL with a JSON body
+   *
+   * @param url - The URL for the request (relative or absolute)
+   * @param body - The request body to send as JSON
+   * @returns The response data
+   */
+  static async put<T>(
+    url: string,
+    body: Record<string, any> = {}
+  ): Promise<T> {
+    try {
+      // Determine if we need to use a custom URL or let axios handle it
+      const config: AxiosRequestConfig = {}
+
+      // If it's an absolute URL, use it directly
+      if (url.startsWith("http://") || url.startsWith("https://")) {
+        config.url = url
+        config.baseURL = undefined
+      }
+
+      const response: AxiosResponse<T> = await this.axiosInstance.put<T>(
+        url,
+        body,
+        config
+      )
+      return response.data
+    } catch (error: any) {
+      console.error(`Error making PUT request to ${url}:`, error)
+
+      // If the error has already been handled by the interceptor, just return an empty object
+      if (error.isHandled) {
+        return {} as T
+      }
+
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Server responded with an error status code
+          throw new Error(
+            error.response.data?.error ||
+              `Request failed with status: ${error.response.status}`
+          )
+        } else if (error.request) {
+          // Request was made but no response received (network error)
+          toast({
+            title: "Network Error",
+            description:
+              "Unable to connect to the server. Please check your internet connection.",
+            status: "error",
+          })
+          return {} as T // Return empty object to prevent further errors
+        } else {
+          // Error in setting up the request
+          toast({
+            title: "Request Error",
+            description:
+              error.message ||
+              "An error occurred while setting up the request.",
+            status: "error",
+          })
+          return {} as T // Return empty object to prevent further errors
+        }
+      }
+
+      // For non-axios errors, show toast and return empty object
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "An unknown error occurred.",
+        status: "error",
+      })
+      return {} as T // Return empty object to prevent further errors
+    }
+  }
 }

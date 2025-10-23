@@ -3,6 +3,7 @@
 import { AdminSidebar } from "@/app/components/admin/admin-sidebar"
 import AdminLayout from "@/app/components/layout/admin-layout"
 import {
+  createMcpAdminCategory,
   getMcpAdminCategories,
   McpAdminCategoryItem,
   McpAdminCategoryParams,
@@ -16,6 +17,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -51,6 +63,10 @@ export default function CategoryAdminPage() {
   const [pageSize] = useState(20)
   const [totalPages, setTotalPages] = useState(1)
   const [isRecommend, setIsRecommend] = useState<number>(-1)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [newCategoryIsRecommend, setNewCategoryIsRecommend] = useState<boolean>(false)
 
   // 获取分类列表
   const fetchCategories = async (params: McpAdminCategoryParams = {}) => {
@@ -117,6 +133,53 @@ export default function CategoryAdminPage() {
     )
   }
 
+  // 创建新分类
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("请输入分类名称")
+      return
+    }
+
+    try {
+      setCreateLoading(true)
+      const response = await createMcpAdminCategory({
+        name: newCategoryName.trim(),
+        is_recommend: newCategoryIsRecommend,
+      })
+
+      if (response.code === 200) {
+        toast.success("分类创建成功")
+        setIsCreateDialogOpen(false)
+        setNewCategoryName("")
+        setNewCategoryIsRecommend(false)
+        // 刷新列表
+        fetchCategories()
+      } else {
+        toast.error(`创建分类失败: ${response.msg}`)
+      }
+    } catch (error) {
+      console.error("Error creating category:", error)
+      toast.error("创建分类失败")
+    } finally {
+      setCreateLoading(false)
+    }
+  }
+
+  // 重置创建表单
+  const resetCreateForm = () => {
+    setNewCategoryName("")
+    setNewCategoryIsRecommend(false)
+    setCreateLoading(false)
+  }
+
+  // 处理对话框关闭
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      resetCreateForm()
+    }
+    setIsCreateDialogOpen(open)
+  }
+
   return (
     <AdminLayout sidebar={<AdminSidebar />}>
       <div className="space-y-6">
@@ -129,10 +192,74 @@ export default function CategoryAdminPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              新增分类
-            </Button>
+            <Dialog open={isCreateDialogOpen} onOpenChange={handleDialogClose}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增分类
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>新增分类</DialogTitle>
+                  <DialogDescription>
+                    创建新的 MCP 服务器分类，设置分类名称和推荐状态。
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">分类名称</Label>
+                    <Input
+                      id="name"
+                      placeholder="请输入分类名称"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      disabled={createLoading}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="recommend">推荐状态</Label>
+                    <Select
+                      value={newCategoryIsRecommend.toString()}
+                      onValueChange={(value: string) =>
+                        setNewCategoryIsRecommend(value === "true")
+                      }
+                      disabled={createLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择推荐状态" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">非推荐</SelectItem>
+                        <SelectItem value="true">推荐</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                    disabled={createLoading}
+                  >
+                    取消
+                  </Button>
+                  <Button
+                    onClick={handleCreateCategory}
+                    disabled={createLoading || !newCategoryName.trim()}
+                  >
+                    {createLoading ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        创建中...
+                      </>
+                    ) : (
+                      "确认创建"
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
             <Button
               variant="outline"
               onClick={handleRefresh}

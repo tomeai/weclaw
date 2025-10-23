@@ -1,7 +1,7 @@
+from app.admin.crud.crud_user import user_dao
+from app.admin.model import McpServer
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
-from app.mcp.model import McpServer
 from app.mcp.schema.mcp import AddMcpServerParam
-from app.user.crud.crud_user import user_dao
 from database.db import async_db_session
 from fastmcp.mcp_config import StdioMCPServer
 from sqlalchemy import Select
@@ -39,12 +39,6 @@ class McpServerService:
     @staticmethod
     async def get_select(*, keyword: str) -> Select:
         return await mcp_server_dao.get_list(keyword)
-
-    @staticmethod
-    async def get_all_select(*, keyword: str, transport: str, server_type: str, is_public: int) -> Select:
-        return await mcp_server_dao.get_filter_list(
-            keyword=keyword, transport=transport, server_type=server_type, is_public=is_public
-        )
 
     @staticmethod
     async def get_mcp_last_7_day():

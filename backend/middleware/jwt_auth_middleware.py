@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import Any
 
-from app.user.schema.user import GetUserInfoWithRelationDetail
+from app.admin.schema.user import GetUserInfoWithRelationDetail
 from common.exception.errors import TokenError
 from common.log import log
 from common.security.jwt import jwt_authentication

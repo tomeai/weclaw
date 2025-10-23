@@ -3,7 +3,7 @@ from app.mcp.api.v1.server.invoke import router as invoker_router
 from app.mcp.api.v1.server.registry import router as registry_router
 from fastapi import APIRouter
 
-router = APIRouter(prefix='/mcp')
+router = APIRouter(prefix='/server')
 
 router.include_router(invoker_router, prefix='/invoke', tags=['mcp invoke'])
 router.include_router(deploy_router, prefix='/deploy', tags=['mcp deploy'])

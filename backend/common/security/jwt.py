@@ -6,8 +6,8 @@ from datetime import timedelta
 from typing import Any
 from uuid import uuid4
 
-from app.user.model import User
-from app.user.schema.user import GetUserInfoWithRelationDetail
+from app.admin.model import User
+from app.admin.schema.user import GetUserInfoWithRelationDetail
 from common.dataclasses import AccessToken, NewToken, RefreshToken, TokenPayload
 from common.exception import errors
 from common.exception.errors import TokenError

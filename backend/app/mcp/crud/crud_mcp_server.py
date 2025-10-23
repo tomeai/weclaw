@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 
-from app.mcp.model import McpCategory, McpServer
+from app.admin.model import McpCategory, McpServer, User
 from app.mcp.schema.mcp import UpdateMcpServerParam
-from app.user.model import User
 from sqlalchemy import Select, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
@@ -26,6 +25,9 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
     async def get_mcp(self, db: AsyncSession, pk: int) -> McpServer:
         return await self.select_model(db, pk)
 
+    async def get_mcp_by_servername(self, db: AsyncSession, pk: int) -> McpServer:
+        return await self.select_model(db, pk)
+
     async def get_mcp_by_title(self, db: AsyncSession, mcp_user: User, title: str) -> McpServer:
         return await self.select_model_by_column(db, user_id=mcp_user.id, title=title)
 
@@ -41,34 +43,6 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
         stmt = stmt.filter(self.model.created_time >= seven_days_ago)
         stmt = stmt.order_by(desc(self.model.updated_time))
         return stmt
-
-    async def get_filter_list(
-        self,
-        keyword: str | None = None,
-        transport: str | None = None,
-        server_type: str | None = None,
-        is_public: int = 0,
-    ) -> Select:
-        filters = {
-            'is_public': is_public,
-        }
-        if transport:
-            filters['transport'] = transport
-        if server_type:
-            filters['server_type'] = server_type
-        if keyword:
-            filters['server_title__like'] = f'%{keyword}%'
-            filters['description__like'] = f'%{keyword}%'
-
-        return await self.select_order(
-            'updated_time',
-            'desc',
-            load_options=[
-                selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
-            ],
-            **filters,
-        )
 
     async def get_list(self, keyword: str | None = None) -> Select:
         filters = {'is_public': 1}

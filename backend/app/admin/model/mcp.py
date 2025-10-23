@@ -10,8 +10,7 @@ from sqlalchemy import JSON, Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from app.admin.model import McpCategory
-    from app.user.model import User
+    from app.admin.model import McpCategory, User
 
 
 class TransportType(Enum):

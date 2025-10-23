@@ -17,7 +17,7 @@ import { usePathname } from "next/navigation"
 const sidebarItems = [
   {
     title: "系统概览",
-    href: "/admin/overview",
+    href: "/admin",
     icon: BarChart3,
   },
   {

@@ -55,6 +55,7 @@ export function McpEditModal({
     category_id: 0,
     description: "",
     server_title: "",
+    is_public: 0 
   })
 
   // 获取分类列表
@@ -81,6 +82,7 @@ export function McpEditModal({
           category_id: response.data.category?.id || 0,
           description: response.data.description || "",
           server_title: response.data.server_title || "",
+          is_public: response.data.is_public || 0
         })
       }
     } catch (error) {
@@ -142,6 +144,7 @@ export function McpEditModal({
         category_id: 0,
         description: "",
         server_title: "",
+        is_public: 0
       })
     }
   }, [open])
@@ -208,11 +211,25 @@ export function McpEditModal({
               />
             </div>
 
+            {/* 公开状态 */}
+            <div className="space-y-2">
+              <Label htmlFor="is_public">公开状态 *</Label>
+              <Select
+                value={formData.is_public.toString()}
+                onValueChange={(value) => handleInputChange("is_public", parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择公开状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">私有</SelectItem>
+                  <SelectItem value="1">公开</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* 只读信息展示 */}
             <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                当前信息（只读）
-              </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">服务器名称:</span>

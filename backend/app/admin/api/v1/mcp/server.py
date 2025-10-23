@@ -5,18 +5,20 @@ from app.admin.service.admin_mcp_service import mcp_admin_server_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
 from common.security.jwt import DependsJwtAuth
-from database.db import CurrentSession
+from database.db import CurrentSession, CurrentSessionTransaction
 from fastapi import APIRouter, Path
 
 router = APIRouter()
 
 
 @router.post(
-    '/servers',
+    '',
     summary='返回所有mcp',
     dependencies=[DependsPagination, DependsJwtAuth],
 )
-async def all_mcp(db: CurrentSession, obj: AdminSearchMcpParam) -> ResponseSchemaModel[PageData[AdminMcpBaseDetail]]:
+async def get_all_mcp(
+    db: CurrentSession, obj: AdminSearchMcpParam
+) -> ResponseSchemaModel[PageData[AdminMcpBaseDetail]]:
     """
 
     Args:
@@ -32,7 +34,7 @@ async def all_mcp(db: CurrentSession, obj: AdminSearchMcpParam) -> ResponseSchem
 
 
 @router.get(
-    '/servers/{mcp_id}',
+    '/{mcp_id}',
     summary='查询mcp详情',
     dependencies=[DependsJwtAuth],
 )
@@ -44,12 +46,14 @@ async def get_mcp_server(
 
 
 @router.put(
-    '/servers/{mcp_id}',
+    '/{mcp_id}',
     summary='查询mcp详情',
     dependencies=[DependsJwtAuth],
 )
 async def put_mcp_server(
-    db: CurrentSession, mcp_id: Annotated[int, Path(description='mcp_id')], obj: UpdateMcpServerParam
+    db: CurrentSessionTransaction, mcp_id: Annotated[int, Path(description='mcp_id')], obj: UpdateMcpServerParam
 ) -> ResponseModel:
-    result = await mcp_admin_server_service.update_mcp(db=db, mcp_id=mcp_id, **obj.model_dump())
-    return response_base.success(data=result)
+    count = await mcp_admin_server_service.update_mcp(db=db, mcp_id=mcp_id, **obj.model_dump())
+    if count > 0:
+        return response_base.success()
+    return response_base.fail()

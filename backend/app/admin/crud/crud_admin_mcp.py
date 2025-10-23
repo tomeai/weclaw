@@ -1,5 +1,4 @@
-from app.admin.model import McpCategory, McpServer
-from app.user.model import User
+from app.admin.model import McpCategory, McpServer, User
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
@@ -7,6 +6,9 @@ from sqlalchemy_crud_plus import CRUDPlus
 
 
 class CRUDMcpAdminServer(CRUDPlus[McpServer]):
+    async def update_is_public(self, db: AsyncSession, mcp_id, is_public: int) -> int:
+        return await self.update_model(db, mcp_id, {'is_public': is_public})
+
     async def update_category(self, db: AsyncSession, mcp_id, category_id: int) -> int:
         return await self.update_model(db, mcp_id, {'category_id': category_id})
 

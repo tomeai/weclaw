@@ -5,8 +5,8 @@ import time
 from asyncio import Queue
 from typing import Any
 
-from app.user.schema.opera_log import CreateOperaLogParam
-from app.user.service.opera_log_service import opera_log_service
+from app.admin.schema.opera_log import CreateOperaLogParam
+from app.admin.service.opera_log_service import opera_log_service
 from asgiref.sync import sync_to_async
 from common.enums import OperaLogCipherType, StatusType
 from common.log import log

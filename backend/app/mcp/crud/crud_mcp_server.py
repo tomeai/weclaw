@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 
-from app.admin.model import McpCategory, McpServer
+from app.admin.model import McpCategory, McpServer, User
 from app.mcp.schema.mcp import UpdateMcpServerParam
-from app.user.model import User
 from sqlalchemy import Select, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
@@ -24,6 +23,9 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
         return obj.id
 
     async def get_mcp(self, db: AsyncSession, pk: int) -> McpServer:
+        return await self.select_model(db, pk)
+
+    async def get_mcp_by_servername(self, db: AsyncSession, pk: int) -> McpServer:
         return await self.select_model(db, pk)
 
     async def get_mcp_by_title(self, db: AsyncSession, mcp_user: User, title: str) -> McpServer:

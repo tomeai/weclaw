@@ -64,7 +64,7 @@ export default function McpAdminPage() {
   const [compileType, setCompileType] = useState<"package" | "stdio" | "all">(
     "all"
   )
-  const [isPublic, setIsPublic] = useState<number | "all">(0)
+  const [isPublic, setIsPublic] = useState<number | "all">(1)
   const [transport, setTransport] = useState<
     "stdio" | "sse" | "streamable" | "all"
   >("all")

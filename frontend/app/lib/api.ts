@@ -699,6 +699,7 @@ export interface McpAdminServerDetailItem {
   id: number
   server_name: string
   server_title: string
+  is_public: number
   description: string
   server_type: "hosted" | "local"
   compile_type: "package" | "stdio"
@@ -749,6 +750,7 @@ export interface McpAdminServerUpdateParams {
   category_id: number
   description: string
   server_title: string
+  is_public: number
 }
 
 /**

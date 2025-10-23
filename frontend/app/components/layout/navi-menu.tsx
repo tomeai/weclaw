@@ -35,9 +35,12 @@ export function NaviMenu() {
                 <Link href="/agent" className={isActive("/agent") ? activeLinkClass : linkClass}>
                     智能体
                 </Link>
-                {/*<Link href="/leaderboards" className={isActive("/leaderboards") ? activeLinkClass : linkClass}>*/}
-                {/*    排行榜*/}
-                {/*</Link>*/}
+               {/*<Link href="/deepresearch" className={isActive("/deepresearch") ? activeLinkClass : linkClass}>*/}
+               {/*     深度研究*/}
+               {/* </Link>*/}
+                <Link href="/leaderboards" className={isActive("/leaderboards") ? activeLinkClass : linkClass}>
+                    排行榜
+                </Link>
               <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
                     动态
                 </Link>
@@ -63,13 +66,13 @@ export function NaviMenu() {
                             >
                                 智能体
                             </Link>
-                            {/*<Link*/}
-                            {/*    href="/leaderboards"*/}
-                            {/*    className={isActive("/leaderboards") ? mobileActiveLinkClass : mobileLinkClass}*/}
-                            {/*    onClick={() => setOpen(false)}*/}
-                            {/*>*/}
-                            {/*    排行榜*/}
-                            {/*</Link>*/}
+                            <Link
+                                href="/leaderboards"
+                                className={isActive("/leaderboards") ? mobileActiveLinkClass : mobileLinkClass}
+                                onClick={() => setOpen(false)}
+                            >
+                                排行榜
+                            </Link>
                             <Link
                                 href="/news"
                                 className={isActive("/news") ? mobileActiveLinkClass : mobileLinkClass}

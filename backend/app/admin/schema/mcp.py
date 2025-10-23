@@ -36,9 +36,11 @@ class GetAdminMcpDetail(SchemaBase):
     git: str | None = Field(None, description='git地址')
     user: GetUserDetail = Field(description='用户信息')
     category: CategoryDetail | None = Field(None, description='分类信息')
+    is_public: int | None = Field(None, description='是否公开')
 
 
 class UpdateMcpServerParam(SchemaBase):
     server_title: str | None = Field(None, description='名称')
     description: str | None = Field(None, description='描述')
     category_id: int | None = Field(None, description='分类ID')
+    is_public: int | None = Field(None, description='是否公开')

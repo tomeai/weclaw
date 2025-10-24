@@ -5,9 +5,7 @@ import {
   getMcpServerDetail,
   McpServerDetailResponse,
 } from "@/app/lib/api"
-import {
-  API_ROUTE_MCP_COMPILE_STDIO,
-} from "@/app/lib/routes"
+import { API_ROUTE_MCP_COMPILE_STDIO } from "@/app/lib/routes"
 import { Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +25,13 @@ import { Home } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
-export default function ServerDetailClient({ serverId }: { serverId: string }) {
+export default function ServerDetailClient({
+  username,
+  serverName,
+}: {
+  username: string
+  serverName: string
+}) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [serverDetail, setServerDetail] =
@@ -53,7 +57,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
       try {
         setIsLoading(true)
         setError(null)
-        const response = await getMcpServerDetail(serverId)
+        const response = await getMcpServerDetail(username, serverName)
         setServerDetail(response)
 
         // Initialize tool inputs with default values
@@ -99,7 +103,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
     }
 
     fetchServerDetail()
-  }, [serverId])
+  }, [username, serverName])
 
   const handleInputChange = (
     toolName: string,
@@ -153,7 +157,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          mcp_id: serverId,
+          mcp_id: serverName,
           envs: envInputs,
         }),
       })
@@ -207,7 +211,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
 
     try {
       const response = await callMcpServerTool(
-        serverId,
+        serverName,
         toolName,
         toolInputs[toolName] || {}
       )

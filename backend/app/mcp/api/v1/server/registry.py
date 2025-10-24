@@ -37,9 +37,11 @@ async def search_mcp(
     return response_base.success(data=page_data)
 
 
-@router.get('{mcp_id}', summary='mcp detail')
-async def get_mcp(mcp_id: Annotated[int, Path(description='mcp_id')]) -> ResponseSchemaModel[GetMcpDetail | None]:
-    result = await mcp_server_service.get_mcp(mcp_id)
+@router.get('/{username}/{server_name}', summary='mcp detail')
+async def get_mcp(
+    username: Annotated[str, Path(description='username')], server_name: Annotated[str, Path(description='server_name')]
+) -> ResponseSchemaModel[GetMcpDetail | None]:
+    result = await mcp_server_service.get_mcp_by_user(username=username, server_name=server_name)
     return response_base.success(data=result)
 
 

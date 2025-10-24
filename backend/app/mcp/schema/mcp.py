@@ -5,6 +5,8 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
+from app.mcp.schema.category import GetCategoryDetail
+from app.mcp.schema.user import GetUserInfo
 from common.schema import SchemaBase
 from fastmcp.mcp_config import StdioMCPServer
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -46,8 +48,8 @@ class McpBaseDetail(SchemaBase):
     server_type: str = Field(description='类型')
     server_metadata: Dict[str, Any] | None = Field(None, description='能力')
     tools: List[Dict[str, Any]] | None = Field(None, description='工具')
-    # user: GetUserInfo = Field(description='用户信息')
-    # category: GetCategoryBase = Field(description='分类')
+    user: GetUserInfo = Field(description='用户信息')
+    category: GetCategoryDetail = Field(description='分类')
 
 
 class McpRecommendDetail(SchemaBase):
@@ -57,6 +59,7 @@ class McpRecommendDetail(SchemaBase):
     server_type: str = Field(description='类型')
     capabilities: Dict[str, Any] | None = Field(None, description='能力')
     tools: int | None = Field(None, description='工具数量')
+    user: GetUserInfo | None = Field(None, description='user')
 
     @model_validator(mode='before')
     @classmethod

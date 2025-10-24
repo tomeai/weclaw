@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from utils.timezone import timezone
 
 if TYPE_CHECKING:
-    from app.admin.model import McpServer, Role
+    from app.admin.model import AgentApp, McpServer, Role
 
 
 class User(Base):
@@ -47,7 +47,9 @@ class User(Base):
     last_login_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次登录时间'
     )
-    # 用户mcp一对多
-    mcps: Mapped[list[McpServer]] = relationship(init=False, back_populates='user')
+    # 一对多
+    servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='user')
+    agents: Mapped[list[AgentApp]] = relationship(init=False, back_populates='user')
 
+    # 多对多
     roles: Mapped[list[Role]] = relationship(init=False, secondary=sys_user_role, back_populates='users')

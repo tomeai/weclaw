@@ -7,8 +7,8 @@ import {
   API_ROUTE_GITHUB_OAUTH2_LOGIN,
   API_ROUTE_MCP_ADMIN_CATEGORY,
   API_ROUTE_MCP_ADMIN_CATEGORY_CREATE,
-  API_ROUTE_MCP_ADMIN_SERVERS,
   API_ROUTE_MCP_ADMIN_SERVER_DETAIL,
+  API_ROUTE_MCP_ADMIN_SERVERS,
   API_ROUTE_MCP_SEARCH,
   API_ROUTE_MCP_SERVER_CALL,
   API_ROUTE_MCP_SERVER_DETAIL,
@@ -198,6 +198,7 @@ export interface McpSearchResponse {
 export interface McpServerItem {
   id: Number
   server_title: string
+  server_name: string
   description: string
   server_type?: "hosted" | "local"
   mcp_endpoint?: string
@@ -317,14 +318,15 @@ export async function getMcpServerFeed(): Promise<McpFeedResponse> {
  * @returns MCP server details
  */
 export async function getMcpServerDetail(
-  serverId: string | number
+  username:string,
+  serverName: string
 ): Promise<McpServerDetailResponse> {
   try {
-    const url = `${API_ROUTE_MCP_SERVER_DETAIL}/${serverId}`
+    const url = `${API_ROUTE_MCP_SERVER_DETAIL}/${username}/${serverName}`
     const response = await ApiClient.get<McpServerDetailResponse>(url)
     return response
   } catch (error) {
-    console.error(`Error getting MCP server details for ID ${serverId}:`, error)
+    console.error(`Error getting MCP server details for ID ${serverName}:`, error)
     throw error
   }
 }
@@ -453,6 +455,11 @@ export interface McpRecommendServer {
   server_type: "hosted" | "local"
   capabilities: McpRecommendServerCapabilities
   tools: number
+  user: {
+    username: string
+    nickname: string
+    avatar: string
+  }
 }
 
 /**
@@ -738,7 +745,10 @@ export async function getMcpAdminServerDetail(
     const response = await ApiClient.get<McpAdminServerDetailResponse>(url)
     return response
   } catch (error) {
-    console.error(`Error getting MCP admin server details for ID ${serverId}:`, error)
+    console.error(
+      `Error getting MCP admin server details for ID ${serverId}:`,
+      error
+    )
     throw error
   }
 }
@@ -775,7 +785,10 @@ export async function updateMcpAdminServer(
 ): Promise<McpAdminServerUpdateResponse> {
   try {
     const url = `${API_ROUTE_MCP_ADMIN_SERVER_DETAIL}/${serverId}`
-    const response = await ApiClient.put<McpAdminServerUpdateResponse>(url, params)
+    const response = await ApiClient.put<McpAdminServerUpdateResponse>(
+      url,
+      params
+    )
     return response
   } catch (error) {
     console.error(`Error updating MCP admin server ${serverId}:`, error)

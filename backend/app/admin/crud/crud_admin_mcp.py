@@ -24,7 +24,7 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             pk=pk,
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
+                selectinload(self.model.user).options(noload(User.servers), noload(User.roles)),
             ],
         )
 
@@ -51,7 +51,7 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             'desc',
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
+                selectinload(self.model.user).options(noload(User.servers), noload(User.roles)),
             ],
             **filters,
         )

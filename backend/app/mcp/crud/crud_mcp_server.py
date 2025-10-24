@@ -25,6 +25,9 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
     async def get_mcp(self, db: AsyncSession, pk: int) -> McpServer:
         return await self.select_model(db, pk)
 
+    async def get_mcp_with_user(self, db: AsyncSession, server_name: str, user_id: int) -> McpServer:
+        return await self.select_model_by_column(db, server_name=server_name, user_id=user_id)
+
     async def get_mcp_by_servername(self, db: AsyncSession, pk: int) -> McpServer:
         return await self.select_model(db, pk)
 
@@ -54,7 +57,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             'desc',
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
+                selectinload(self.model.user).options(noload(User.servers), noload(User.roles), noload(User.agents)),
             ],
             **filters,
         )

@@ -238,7 +238,7 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     :param pk: 用户 ID
     :return:
     """
-    from app.user.crud.crud_user import user_dao
+    from app.admin.crud.crud_user import user_dao
 
     user = await user_dao.get_with_relation(db, user_id=pk)
     if not user:

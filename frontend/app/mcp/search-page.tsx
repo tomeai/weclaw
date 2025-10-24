@@ -188,7 +188,7 @@ export default function SearchPage() {
                   .toLowerCase()
 
                 return (
-                  <Link href={`/mcp/${server.id}`} key={index}>
+                  <Link href={`/mcp/${server.user?.username}/${server.server_name}`} key={index}>
                     <Card className="group h-[220px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg dark:border-gray-700 dark:hover:border-blue-600">
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex h-full flex-col">

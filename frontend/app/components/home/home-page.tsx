@@ -131,7 +131,7 @@ export default function HomePage() {
                         .toLowerCase()
 
                       return (
-                        <Link href={`/mcp/${server.server_name}`} key={`${server.server_name}-${index}`}>
+                        <Link href={`/mcp/${server.user.username}/${server.server_name}`} key={`${server.server_name}-${index}`}>
                           <Card className="group h-[200px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg">
                             <CardContent className="flex h-full flex-col p-5">
                               <div className="flex h-full flex-col">

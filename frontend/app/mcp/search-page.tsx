@@ -2,10 +2,9 @@
 
 import {
   getMcpServerFeed,
-  McpFeedResponse,
   McpSearchParams,
-  McpSearchResponse,
   McpServerItem,
+  PaginatedData,
   searchMcpServers,
 } from "@/app/lib/api"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/common/breadcrumb"
@@ -30,12 +29,12 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchResponse, setSearchResponse] =
-    useState<McpSearchResponse | null>(null)
+    useState<PaginatedData<McpServerItem> | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServerItem[]>([])
 
   const itemsPerPage = 1 // Based on the API response size parameter
-  const totalServers = searchResponse?.data.total || 0
-  const totalPages = searchResponse?.data.total_pages || 1
+  const totalServers = searchResponse?.total || 0
+  const totalPages = searchResponse?.total_pages || 1
 
   // Function to fetch MCP servers
   const fetchMcpServers = async () => {
@@ -45,27 +44,16 @@ export default function SearchPage() {
 
       if (!searchQuery.trim()) {
         // If search query is empty, fetch the feed
-        const feedResponse: McpFeedResponse = await getMcpServerFeed()
-        // Adapt feed response to search response structure for state consistency
+        const feedData = await getMcpServerFeed()
         setSearchResponse({
-          code: feedResponse.code,
-          msg: feedResponse.msg,
-          data: {
-            items: feedResponse.data,
-            total: feedResponse.data.length,
-            page: 1,
-            size: feedResponse.data.length,
-            total_pages: 1,
-            links: {
-              first: "",
-              last: "",
-              self: "",
-              next: null,
-              prev: null,
-            },
-          },
+          items: feedData,
+          total: feedData.length,
+          page: 1,
+          size: feedData.length,
+          total_pages: 1,
+          links: { first: "", last: "", self: "", next: null, prev: null },
         })
-        setMcpServers(feedResponse.data)
+        setMcpServers(feedData)
       } else {
         // Convert string category to number if needed
         const categoryId = selectedCategory ? parseInt(selectedCategory) : 0
@@ -79,9 +67,9 @@ export default function SearchPage() {
         }
 
         // Call the search API
-        const response = await searchMcpServers(params)
-        setSearchResponse(response)
-        setMcpServers(response.data.items)
+        const data = await searchMcpServers(params)
+        setSearchResponse(data)
+        setMcpServers(data.items)
       }
     } catch (err: any) {
       console.error("Error fetching MCP servers:", err)

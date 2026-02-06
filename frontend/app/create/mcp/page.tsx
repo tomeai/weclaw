@@ -1,7 +1,6 @@
 "use client"
 
 import LayoutApp from "@/app/components/layout/layout-app"
-import { McpApiService } from "@/app/lib/mcp-api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/components/ui/toast"
@@ -9,6 +8,7 @@ import { CheckCircle, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { McpSubmitForm } from "./mcp-submit-form"
 import { ApiSubmitForm } from "./api-submit-form"
+import { submitMcpServer } from "@/app/lib/mcp"
 
 export default function SubmitMcpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,30 +23,17 @@ export default function SubmitMcpPage() {
     setSubmitError(null)
 
     try {
-      // 使用统一的API服务提交数据
-      const response = await McpApiService.submitMcpServer(data)
-
-      if (response.code === 200) {
-        setSubmitStatus("success")
-        toast({
-          title: "提交成功",
-          description: "MCP服务器已成功提交，正在审核中",
-          status: "success",
-        })
-      } else {
-        // 更详细的错误处理
-        const errorMessage = response.msg || response.message || response.error || "提交失败，请检查输入信息"
-        throw new Error(errorMessage)
-      }
+      await submitMcpServer(data)
+      setSubmitStatus("success")
+      toast({
+        title: "提交成功",
+        description: "MCP服务器已成功提交，正在审核中",
+        status: "success",
+      })
     } catch (error: any) {
       console.error("提交MCP失败:", error)
       setSubmitStatus("error")
       setSubmitError(error.message || "提交失败，请重试")
-      toast({
-        title: "提交失败",
-        description: error.message || "请检查输入信息并重试",
-        status: "error",
-      })
     } finally {
       setIsSubmitting(false)
     }

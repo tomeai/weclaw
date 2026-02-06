@@ -11,7 +11,7 @@ import { CaretLeft, CaretRight } from "@phosphor-icons/react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { MagnifyingGlass } from "@phosphor-icons/react"
-import { McpSearchParams, McpSearchResponse, McpServerItem, searchMcpServers } from "@/app/lib/api"
+import { McpSearchParams, McpServerItem, PaginatedData, searchMcpServers } from "@/app/lib/api"
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -20,12 +20,12 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchResponse, setSearchResponse] = useState<McpSearchResponse | null>(null)
+  const [searchResponse, setSearchResponse] = useState<PaginatedData<McpServerItem> | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServerItem[]>([])
-  
+
   const itemsPerPage = 1 // Based on the API response size parameter
-  const totalServers = searchResponse?.data.total || 0
-  const totalPages = searchResponse?.data.total_pages || 1
+  const totalServers = searchResponse?.total || 0
+  const totalPages = searchResponse?.total_pages || 1
   
   // Function to fetch MCP servers
   const fetchMcpServers = async () => {
@@ -45,9 +45,9 @@ export default function SearchPage() {
       }
       
       // Call the API
-      const response = await searchMcpServers(params)
-      setSearchResponse(response)
-      setMcpServers(response.data.items)
+      const data = await searchMcpServers(params)
+      setSearchResponse(data)
+      setMcpServers(data.items)
     } catch (err: any) {
       console.error("Error fetching MCP servers:", err)
       
@@ -84,11 +84,7 @@ export default function SearchPage() {
     }
   }
 
-  // Sample categories
-  const categories = [
-    { id: "web", name: "数据", count: 42 },
-    { id: "data", name: "金融", count: 37 }
-  ]
+  const categories = []
 
   return (
     <>
@@ -106,7 +102,7 @@ export default function SearchPage() {
           onKeyPress={handleKeyPress}
         />
       </div>
-      
+
       {/* Error message */}
       {error && (
         <div className="w-full max-w-2xl mx-auto mb-6 p-4 bg-red-50 text-red-600 rounded-md">
@@ -126,7 +122,7 @@ export default function SearchPage() {
               </div>
               <div className="space-y-1">
                 {categories.map((category) => (
-                  <div 
+                  <div
                     key={category.id}
                     className={cn(
                       "flex justify-between items-center p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gray-50",
@@ -140,7 +136,7 @@ export default function SearchPage() {
                       "text-sm font-medium",
                       selectedCategory === category.id ? "text-blue-700" : "text-gray-700"
                     )}>{category.name}</span>
-                    <Badge 
+                    <Badge
                       variant={selectedCategory === category.id ? "default" : "secondary"}
                       className={cn(
                         "text-xs",
@@ -196,10 +192,10 @@ export default function SearchPage() {
                 const toolsCount = server.tools?.length || 0;
                 const promptsCount = server.prompts ? 1 : 0; // Simplified, adjust based on actual structure
                 const resourcesCount = server.resources ? 1 : 0; // Simplified, adjust based on actual structure
-                
+
                 // Generate a seed for the avatar based on the server title
                 const avatarSeed = server.server_title.replace(/\s+/g, '-').toLowerCase();
-                
+
                 return (
                   <Link href={`/mcp/${server.id}`} key={index}>
                     <Card className="h-[220px] w-full hover:shadow-lg transition-all duration-300 border-gray-200 hover:border-blue-300 group">
@@ -219,14 +215,14 @@ export default function SearchPage() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Description with fixed height and truncation */}
                           <div className="mb-auto">
                             <p className="text-sm text-gray-600 leading-relaxed line-clamp-3" title={server.description}>
                               {server.description}
                             </p>
                           </div>
-                          
+
                           {/* Capability badges at the bottom */}
                           <div className="mt-auto flex flex-wrap gap-2">
                             {toolsCount > 0 && (
@@ -251,18 +247,18 @@ export default function SearchPage() {
                   </Link>
                 );
               })}
-              
+
               {/* Show a message if no servers found */}
               {mcpServers.length === 0 && !isLoading && (
                 <div className="col-span-3 py-12 text-center">
                   <p className="text-gray-500">
-                    {error 
-                      ? "无法加载MCP服务器，请稍后重试。" 
+                    {error
+                      ? "无法加载MCP服务器，请稍后重试。"
                       : "No MCP servers found matching your criteria."
                     }
                   </p>
                   {error && (
-                    <button 
+                    <button
                       onClick={fetchMcpServers}
                       className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
                     >
@@ -273,30 +269,30 @@ export default function SearchPage() {
               )}
             </div>
           )}
-          
+
           {/* Pagination */}
           <div className="flex justify-between items-center mt-8">
             <div className="text-sm text-gray-500">
               Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, totalServers)} of {totalServers} servers
             </div>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               >
                 <CaretLeft className="h-4 w-4" />
               </Button>
-              
+
               {Array.from({ length: totalPages }).map((_, index) => {
                 const pageNumber = index + 1;
                 // Show first page, last page, current page, and pages around current
-                const shouldShow = 
-                  pageNumber === 1 || 
-                  pageNumber === totalPages || 
+                const shouldShow =
+                  pageNumber === 1 ||
+                  pageNumber === totalPages ||
                   Math.abs(pageNumber - currentPage) <= 1;
-                
+
                 // Show ellipsis for gaps
                 if (!shouldShow) {
                   // Only show one ellipsis between gaps
@@ -307,7 +303,7 @@ export default function SearchPage() {
                   }
                   return null;
                 }
-                
+
                 return (
                   <Button
                     key={pageNumber}
@@ -320,9 +316,9 @@ export default function SearchPage() {
                   </Button>
                 );
               })}
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 size="icon"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}

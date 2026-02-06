@@ -88,14 +88,10 @@ export default function McpAdminPage() {
         ...params,
       })
 
-      if (response.code === 200) {
-        setServers(response.data.items)
-        setTotal(response.data.total)
-        setTotalPages(response.data.total_pages)
-        setCurrentPage(response.data.page)
-      } else {
-        toast.error(`获取服务器列表失败: ${response.msg}`)
-      }
+      setServers(response.items)
+      setTotal(response.total)
+      setTotalPages(response.total_pages)
+      setCurrentPage(response.page)
     } catch (error) {
       console.error("Error fetching MCP servers:", error)
       toast.error("获取服务器列表失败")

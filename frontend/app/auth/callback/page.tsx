@@ -1,14 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { getAuthMe } from "@/app/lib/api"
+import { getAuthMe } from "@/app/lib/user"
 import { useUser } from "@/app/providers/user-provider"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function AuthCallbackPage() {
   const router = useRouter()
   const { setUser } = useUser()
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  )
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -29,33 +31,29 @@ export default function AuthCallbackPage() {
         const userData = await getAuthMe()
         console.log("User data from auth/me:", userData)
 
-        if (userData.code === 200 && userData.data) {
-          // 更新用户状态
-          setUser({
-            id: userData.data.id || userData.data.nickname || "",
-            nickname: userData.data.nickname || "",
-            avatar: userData.data.avatar || "",
-            email: userData.data.email || "",
-            daily_message_count: 0,
-          })
+        // 更新用户状态
+        setUser({
+          id: userData.id || userData.nickname || "",
+          nickname: userData.nickname || "",
+          avatar: userData.avatar || "",
+          email: userData.email || "",
+          daily_message_count: 0,
+        })
 
-          setStatus("success")
-          
-          // 延迟跳转，让用户看到成功状态
-          setTimeout(() => {
-            router.push("/")
-          }, 1500)
-        } else {
-          throw new Error(userData.msg || "Failed to get user information")
-        }
+        setStatus("success")
+
+        // 延迟跳转，让用户看到成功状态
+        setTimeout(() => {
+          router.push("/")
+        }, 1500)
       } catch (err: any) {
         console.error("Auth callback error:", err)
         setError(err.message || "Authentication failed")
         setStatus("error")
-        
+
         // 清除无效的token
         localStorage.removeItem("auth_token")
-        
+
         // 延迟跳转到登录页
         setTimeout(() => {
           router.push("/")
@@ -76,9 +74,7 @@ export default function AuthCallbackPage() {
               <h2 className="mb-2 text-xl font-semibold text-gray-900">
                 正在完成登录...
               </h2>
-              <p className="text-gray-600">
-                请稍候，我们正在验证您的身份信息
-              </p>
+              <p className="text-gray-600">请稍候，我们正在验证您的身份信息</p>
             </>
           )}
 
@@ -102,9 +98,7 @@ export default function AuthCallbackPage() {
               <h2 className="mb-2 text-xl font-semibold text-gray-900">
                 登录成功！
               </h2>
-              <p className="text-gray-600">
-                正在跳转到首页...
-              </p>
+              <p className="text-gray-600">正在跳转到首页...</p>
             </>
           )}
 
@@ -131,9 +125,7 @@ export default function AuthCallbackPage() {
               <p className="mb-4 text-gray-600">
                 {error || "认证过程中发生错误"}
               </p>
-              <p className="text-sm text-gray-500">
-                将在3秒后跳转到首页...
-              </p>
+              <p className="text-sm text-gray-500">将在3秒后跳转到首页...</p>
             </>
           )}
         </div>

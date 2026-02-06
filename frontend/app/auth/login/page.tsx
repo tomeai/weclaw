@@ -1,7 +1,7 @@
 "use client"
 
-import { signInWithGithub } from "@/app/lib/api"
 import { APP_NAME } from "@/app/lib/config"
+import { signInWithGithub } from "@/app/lib/user"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useState } from "react"
@@ -30,12 +30,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="bg-background flex min-h-screen items-center justify-center">
       <div className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            Welcome to {APP_NAME}
-          </h1>
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-bold">Welcome to {APP_NAME}</h1>
           <p className="text-muted-foreground text-base">
             Sign in below to increase your message limits.
           </p>
@@ -77,8 +75,8 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
               ← Back to Home

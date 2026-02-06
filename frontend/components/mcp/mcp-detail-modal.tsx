@@ -40,10 +40,8 @@ export function McpDetailModal({
   const fetchServerDetail = async (id: number) => {
     try {
       setLoading(true)
-      const response = await getMcpAdminServerDetail(id)
-      if (response.code === 200) {
-        setServerDetail(response.data)
-      }
+      const data = await getMcpAdminServerDetail(id)
+      setServerDetail(data)
     } catch (error) {
       console.error("Error fetching server detail:", error)
     } finally {

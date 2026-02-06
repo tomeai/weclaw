@@ -17,10 +17,10 @@ export default function LeaderboardContent() {
       try {
         setIsLoading(true)
         setError(null)
-        const response = await getMcpServerFeed()
-        
+        const servers = await getMcpServerFeed()
+
         // Filter servers that have non-empty capabilities.capabilities
-        const filteredServers = response.data.filter(server => {
+        const filteredServers = servers.filter(server => {
           const capabilities = server.capabilities?.capabilities
           if (!capabilities) return false
           

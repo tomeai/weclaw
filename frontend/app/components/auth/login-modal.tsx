@@ -1,7 +1,7 @@
 "use client"
 
-import { signInWithGithub } from "@/app/lib/api"
 import { APP_NAME } from "@/app/lib/config"
+import { signInWithGithub } from "@/app/lib/user"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

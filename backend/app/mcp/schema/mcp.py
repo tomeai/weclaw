@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import re
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
@@ -109,19 +108,16 @@ class McpServersWrapper(BaseModel):
 class AddMcpServerParam(BaseModel):
     server_title: str = Field(description='server_title')
     description: str | None = Field(None, description='描述')
-    git: str = Field(None, description='git address')
-    readme: str | None = Field(None, description='说明')
-    server_type: str = Field(description='部署类型')
     mcpServers: McpServersWrapper = Field(description='mcp server config')
 
-    @field_validator('git')
-    def validate_git(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
-        if not git_regex.match(v):
-            raise ValueError(f'Invalid git URL: {v}')
-        return v
+    # @field_validator('git')
+    # def validate_git(cls, v: Optional[str]) -> Optional[str]:
+    #     if v is None:
+    #         return v
+    #     git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
+    #     if not git_regex.match(v):
+    #         raise ValueError(f'Invalid git URL: {v}')
+    #     return v
 
     @field_validator('mcpServers')
     def validate_mcpservers(cls, v):

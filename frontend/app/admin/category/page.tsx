@@ -66,25 +66,20 @@ export default function CategoryAdminPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
-  const [newCategoryIsRecommend, setNewCategoryIsRecommend] = useState<boolean>(false)
+  const [newCategoryIsRecommend, setNewCategoryIsRecommend] = useState<number>(0)
 
   // 获取分类列表
   const fetchCategories = async (params: McpAdminCategoryParams = {}) => {
     try {
       setLoading(true)
-      const response = await getMcpAdminCategories({
+      const data = await getMcpAdminCategories({
         is_recommend: isRecommend,
         ...params,
       })
-
-      if (response.code === 200) {
-        setCategories(response.data.items)
-        setTotal(response.data.total)
-        setTotalPages(response.data.total_pages)
-        setCurrentPage(response.data.page)
-      } else {
-        toast.error(`获取分类列表失败: ${response.msg}`)
-      }
+      setCategories(data.items)
+      setTotal(data.total)
+      setTotalPages(data.total_pages)
+      setCurrentPage(data.page)
     } catch (error) {
       console.error("Error fetching categories:", error)
       toast.error("获取分类列表失败")
@@ -142,21 +137,15 @@ export default function CategoryAdminPage() {
 
     try {
       setCreateLoading(true)
-      const response = await createMcpAdminCategory({
+      await createMcpAdminCategory({
         name: newCategoryName.trim(),
         is_recommend: newCategoryIsRecommend,
       })
-
-      if (response.code === 200) {
-        toast.success("分类创建成功")
-        setIsCreateDialogOpen(false)
-        setNewCategoryName("")
-        setNewCategoryIsRecommend(false)
-        // 刷新列表
-        fetchCategories()
-      } else {
-        toast.error(`创建分类失败: ${response.msg}`)
-      }
+      toast.success("分类创建成功")
+      setIsCreateDialogOpen(false)
+      setNewCategoryName("")
+      setNewCategoryIsRecommend(0)
+      fetchCategories()
     } catch (error) {
       console.error("Error creating category:", error)
       toast.error("创建分类失败")
@@ -168,7 +157,7 @@ export default function CategoryAdminPage() {
   // 重置创建表单
   const resetCreateForm = () => {
     setNewCategoryName("")
-    setNewCategoryIsRecommend(false)
+    setNewCategoryIsRecommend(0)
     setCreateLoading(false)
   }
 
@@ -222,7 +211,7 @@ export default function CategoryAdminPage() {
                     <Select
                       value={newCategoryIsRecommend.toString()}
                       onValueChange={(value: string) =>
-                        setNewCategoryIsRecommend(value === "true")
+                        setNewCategoryIsRecommend(Number(value))
                       }
                       disabled={createLoading}
                     >
@@ -230,8 +219,8 @@ export default function CategoryAdminPage() {
                         <SelectValue placeholder="选择推荐状态" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="false">非推荐</SelectItem>
-                        <SelectItem value="true">推荐</SelectItem>
+                        <SelectItem value="0">非推荐</SelectItem>
+                        <SelectItem value="1">推荐</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

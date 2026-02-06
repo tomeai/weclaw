@@ -61,10 +61,8 @@ export function McpEditModal({
   // 获取分类列表
   const fetchCategories = async () => {
     try {
-      const response = await getMcpAdminCategories()
-      if (response.code === 200) {
-        setCategories(response.data.items)
-      }
+      const data = await getMcpAdminCategories()
+      setCategories(data.items)
     } catch (error) {
       console.error("Error fetching categories:", error)
     }
@@ -74,17 +72,14 @@ export function McpEditModal({
   const fetchServerDetail = async (id: number) => {
     try {
       setLoading(true)
-      const response = await getMcpAdminServerDetail(id)
-      if (response.code === 200) {
-        setServerDetail(response.data)
-        // 设置表单初始值，处理分类可能为空的情况
-        setFormData({
-          category_id: response.data.category?.id || 0,
-          description: response.data.description || "",
-          server_title: response.data.server_title || "",
-          is_public: response.data.is_public || 0
-        })
-      }
+      const data = await getMcpAdminServerDetail(id)
+      setServerDetail(data)
+      setFormData({
+        category_id: data.category?.id || 0,
+        description: data.description || "",
+        server_title: data.server_title || "",
+        is_public: data.is_public || 0
+      })
     } catch (error) {
       console.error("Error fetching server detail:", error)
     } finally {
@@ -100,15 +95,10 @@ export function McpEditModal({
 
     try {
       setSubmitting(true)
-      const response = await updateMcpAdminServer(serverId, formData)
-      
-      if (response.code === 200) {
-        toast.success("MCP服务器更新成功")
-        onOpenChange(false)
-        onSuccess?.()
-      } else {
-        toast.error(`更新失败: ${response.msg}`)
-      }
+      await updateMcpAdminServer(serverId, formData)
+      toast.success("MCP服务器更新成功")
+      onOpenChange(false)
+      onSuccess?.()
     } catch (error) {
       console.error("Error updating server:", error)
       toast.error("更新MCP服务器失败")

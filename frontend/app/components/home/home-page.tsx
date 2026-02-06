@@ -1,6 +1,6 @@
 "use client"
 
-import { getMcpServerRecommend, McpRecommendResponse } from "@/app/lib/api"
+import { getMcpServerRecommend, McpRecommendCategory } from "@/app/lib/mcp"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 export default function HomePage() {
-  const [mcpData, setMcpData] = useState<McpRecommendResponse | null>(null)
+  const [mcpData, setMcpData] = useState<McpRecommendCategory[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -103,9 +103,9 @@ export default function HomePage() {
             </div>
           )}
 
-          {!loading && !error && mcpData && mcpData.data && (
+          {!loading && !error && mcpData && mcpData.length > 0 && (
             <>
-              {mcpData.data.map((category) => (
+              {mcpData.map((category) => (
                 <div key={category.id} className="mb-12">
                   {/* Category Header */}
                   <div className="mb-6 flex items-center justify-between">
@@ -205,7 +205,7 @@ export default function HomePage() {
 
           {!loading &&
             !error &&
-            (!mcpData || !mcpData.data || mcpData.data.length === 0) && (
+            (!mcpData || mcpData.length === 0) && (
               <div className="py-8 text-center">
                 <p className="text-gray-600">暂无推荐数据</p>
               </div>

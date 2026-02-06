@@ -3,7 +3,7 @@
 import {
   callMcpServerTool,
   getMcpServerDetail,
-  McpServerDetailResponse,
+  McpServerItem,
 } from "@/app/lib/api"
 import { API_ROUTE_MCP_COMPILE_STDIO } from "@/app/lib/routes"
 import { Breadcrumbs } from "@/components/common/breadcrumb"
@@ -35,7 +35,7 @@ export default function ServerDetailClient({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [serverDetail, setServerDetail] =
-    useState<McpServerDetailResponse | null>(null)
+    useState<McpServerItem | null>(null)
   const [toolResults, setToolResults] = useState<
     Record<
       string,
@@ -61,10 +61,10 @@ export default function ServerDetailClient({
         setServerDetail(response)
 
         // Initialize tool inputs with default values
-        if (response.data.tools) {
+        if (response.tools) {
           const initialInputs: Record<string, Record<string, any>> = {}
 
-          response.data.tools.forEach((tool) => {
+          response.tools.forEach((tool) => {
             const toolName = tool.name
             const inputs: Record<string, any> = {}
 
@@ -87,9 +87,9 @@ export default function ServerDetailClient({
         }
 
         // Initialize environment variables if present
-        if (response.data.envs && Object.keys(response.data.envs).length > 0) {
+        if (response.envs && Object.keys(response.envs).length > 0) {
           const initialEnvs: Record<string, string> = {}
-          Object.entries(response.data.envs).forEach(([key, value]) => {
+          Object.entries(response.envs).forEach(([key, value]) => {
             initialEnvs[key] = value as string
           })
           setEnvInputs(initialEnvs)
@@ -217,7 +217,7 @@ export default function ServerDetailClient({
       )
 
       // Extract the text content from the response
-      const resultText = response.data.content
+      const resultText = response.content
         .filter((item) => item.type === "text")
         .map((item) => item.text)
         .join("\n")
@@ -274,7 +274,7 @@ export default function ServerDetailClient({
     )
   }
 
-  const { data: server } = serverDetail
+  const server = serverDetail
 
   // Count the number of tools
   const toolsCount = server.tools?.length || 0
@@ -588,8 +588,8 @@ export default function ServerDetailClient({
 
           {/* Environment Variables Section (2/5 width) */}
           {serverDetail &&
-          serverDetail.data.envs &&
-          Object.keys(serverDetail.data.envs).length > 0 ? (
+          serverDetail.envs &&
+          Object.keys(serverDetail.envs).length > 0 ? (
             <div className="mt-18 w-full md:w-2/5">
               <Card>
                 <CardHeader>
@@ -601,7 +601,7 @@ export default function ServerDetailClient({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {Object.entries(serverDetail.data.envs).map(
+                    {Object.entries(serverDetail.envs).map(
                       ([key, value]) => (
                         <div key={key} className="flex flex-col">
                           <label className="text-foreground mb-1 text-sm font-medium">

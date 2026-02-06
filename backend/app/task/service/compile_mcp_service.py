@@ -3,38 +3,26 @@ from app.admin.model import McpServer
 from app.admin.model.mcp import CompileType, RuntimeType, ServerType, TransportType
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.schema.mcp import AddMcpServerParam
-from core.conf import settings
 from database.db import async_db_session
 from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
-from github import Auth, Github
 from loguru import logger
 
 
 class CompileMcpService:
-    def __init__(self):
-        self.github = Github(auth=Auth.Token(settings.GITHUB_ACCESS_TOKEN), timeout=10)
-
-    async def compile_mcp_by_mcp_config(self, mcp_user: str, obj_data: dict):
+    @staticmethod
+    async def compile_mcp_by_mcp_config(mcp_user: str, obj_data: dict):
         mcp_server_param = AddMcpServerParam(**obj_data)
-
-        try:
-            repo = mcp_server_param.git.replace('https://github.com/', '')
-            repo = self.github.get_repo(repo)
-            if not mcp_server_param.description:
-                mcp_server_param.description = repo.description
-
-            if not mcp_server_param.readme:
-                mcp_server_param.readme = repo.get_readme().decoded_content.decode()
-
-            avatar_url = repo.owner.avatar_url
-        except Exception as e:
-            logger.error(e)
-            avatar_url = ''
-
-        mcpServers = mcp_server_param.mcpServers.mcpServers
-        mcp_config = MCPConfig(mcpServers=mcpServers)
+        mcp_servers = mcp_server_param.mcpServers.mcpServers
+        mcp_config = MCPConfig(mcpServers=mcp_servers)
+        # 和serverInfo.name不一定一样
         mcp_name = list(mcp_config.mcpServers.keys())[0]
+        server_cfg = mcp_config.mcpServers[mcp_name]
+        mcp_envs = server_cfg.env
+
+        for key, value in mcp_envs.items():
+            mcp_envs[key] = key.upper()
+
         async with Client(mcp_config) as client:
             await client.ping()
             server_meta = client.initialize_result
@@ -67,17 +55,15 @@ class CompileMcpService:
                 transport=TransportType.stdio.name,
                 server_type=ServerType.hosted.name,
                 compile_type=CompileType.package.name,
-                runtime_type=RuntimeType.mcp_gateway.name,
+                runtime_type=RuntimeType.fastmcp.name,
                 server_config=mcp_config.model_dump(),
-                envs=mcp_config.mcpServers[mcp_name].env,
+                envs=server_cfg.env,
                 server_metadata=server_meta.model_dump(),
                 tools=results['tools'],
                 resources=results['resources'],
                 prompts=results['prompts'],
-                git=mcp_server_param.git,
                 description=mcp_server_param.description,
-                readme=mcp_server_param.readme,
-                avatar=avatar_url,
+                avatar=f'https://api.dicebear.com/9.x/bottts/svg?seed={server_meta.serverInfo.name}',
             )
             logger.info('compile mcp_server success')
             async with async_db_session.begin() as db:

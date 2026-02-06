@@ -19,12 +19,12 @@ class CRUDMcpAdminCategory(CRUDPlus[McpCategory]):
         return await self.select_order(
             'updated_time',
             'desc',
-            load_options=[noload(self.model.servers)],
+            load_options=[noload(self.model.mcp_servers)],
             **filters,
         )
 
     async def add(self, db: AsyncSession, obj: AddCategoryParam) -> None:
-        new_category = self.model(**obj.model_dump(exclude={'is_recommend'}))
+        new_category = self.model(**obj.model_dump())
         db.add(new_category)
 
     async def get_category_by_name(self, db: AsyncSession, name: str) -> McpCategory:

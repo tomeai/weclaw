@@ -1,9 +1,16 @@
 // app/providers/user-provider.tsx
 "use client"
 
-import { getAuthMe } from "@/app/lib/api"
+import { getAuthMe } from "@/lib/user"
 import { createContext, useContext, useEffect, useState } from "react"
-import { UserProfile } from "@/app/types/user"
+
+export type UserProfile = {
+  id: string
+  nickname: string
+  avatar: string
+  email: string
+  daily_message_count: number
+}
 
 type UserContextType = {
   user: UserProfile | null
@@ -33,25 +40,22 @@ export function UserProvider({
       if (typeof window === "undefined") return
 
       const token = localStorage.getItem("auth_token")
-      console.log('[UserProvider] 检查 JWT token:', !!token)
-      
+      console.log("[UserProvider] 检查 JWT token:", !!token)
+
       if (token) {
         setIsJwtAuthenticated(true)
 
         if (!user) {
           try {
-            const currentUserData = await getAuthMe()
-            console.log(`[UserData]: ${currentUserData}`)
-            
-            if (currentUserData.code === 200 && currentUserData.data) {
-              setUser({
-                id: currentUserData.data.id || currentUserData.data.nickname || "",
-                nickname: currentUserData.data.nickname || "",
-                avatar: currentUserData.data.avatar || "",
-                email: currentUserData.data.email || "",
-                daily_message_count: 0,
-              })
-            }
+            const userData = await getAuthMe()
+            console.log(`[UserData]: ${JSON.stringify(userData)}`)
+            setUser({
+              id: userData.id || userData.nickname || "",
+              nickname: userData.nickname || "",
+              avatar: userData.avatar || "",
+              email: userData.email || "",
+              daily_message_count: 0,
+            })
           } catch (error) {
             console.error("Failed to fetch user data with JWT token:", error)
             // If token is invalid, clear it
@@ -62,7 +66,7 @@ export function UserProvider({
       } else {
         setIsJwtAuthenticated(false)
       }
-      
+
       // 标记初始化完成
       setIsInitialized(true)
     }

@@ -1,5 +1,5 @@
-import HomePage from "@/app/components/home/home-page"
-import LayoutApp from "./components/layout/layout-app"
+import HomePage from "@/components/layout/home-page"
+import LayoutApp from "@/components/layout/layout-app"
 
 export default async function Home() {
   return (

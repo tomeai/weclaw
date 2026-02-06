@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from app.user.model import User
+    from app.admin.model import User
 
 
 class Role(Base):

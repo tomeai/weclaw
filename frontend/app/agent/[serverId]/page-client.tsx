@@ -1,14 +1,6 @@
 "use client"
 
 import Footer from "@/app/components/layout/footer"
-import {
-  callMcpServerTool,
-  getMcpServerDetail,
-  McpServerDetailResponse,
-} from "@/app/lib/api"
-import {
-  API_ROUTE_MCP_COMPILE_STDIO,
-} from "@/app/lib/routes"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
+import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
 import Link from "next/link"
@@ -29,8 +23,7 @@ import { useEffect, useState } from "react"
 export default function ServerDetailClient({ serverId }: { serverId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [serverDetail, setServerDetail] =
-    useState<McpServerDetailResponse | null>(null)
+  const [serverDetail, setServerDetail] = useState<McpServerItem | null>(null)
   const [toolResults, setToolResults] = useState<
     Record<
       string,
@@ -56,10 +49,10 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
         setServerDetail(response)
 
         // Initialize tool inputs with default values
-        if (response.data.tools?.tools) {
+        if (response.tools?.tools) {
           const initialInputs: Record<string, Record<string, any>> = {}
 
-          response.data.tools.tools.forEach((tool) => {
+          response.tools.tools.forEach((tool) => {
             const toolName = tool.name
             const inputs: Record<string, any> = {}
 
@@ -82,9 +75,9 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
         }
 
         // Initialize environment variables if present
-        if (response.data.envs && Object.keys(response.data.envs).length > 0) {
+        if (response.envs && Object.keys(response.envs).length > 0) {
           const initialEnvs: Record<string, string> = {}
-          Object.entries(response.data.envs).forEach(([key, value]) => {
+          Object.entries(response.envs).forEach(([key, value]) => {
             initialEnvs[key] = value as string
           })
           setEnvInputs(initialEnvs)
@@ -212,7 +205,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
       )
 
       // Extract the text content from the response
-      const resultText = response.data.content
+      const resultText = response.content
         .filter((item) => item.type === "text")
         .map((item) => item.text)
         .join("\n")
@@ -269,7 +262,7 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
     )
   }
 
-  const { data: server } = serverDetail
+  const server = serverDetail
 
   // Count the number of tools
   const toolsCount = server.tools?.tools?.length || 0
@@ -589,8 +582,8 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
 
           {/* Environment Variables Section (2/5 width) */}
           {serverDetail &&
-          serverDetail.data.envs &&
-          Object.keys(serverDetail.data.envs).length > 0 ? (
+          serverDetail.envs &&
+          Object.keys(serverDetail.envs).length > 0 ? (
             <div className="mt-18 w-full md:w-2/5">
               <Card>
                 <CardHeader>
@@ -602,22 +595,20 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {Object.entries(serverDetail.data.envs).map(
-                      ([key, value]) => (
-                        <div key={key} className="flex flex-col">
-                          <label className="mb-1 text-sm font-medium text-gray-700">
-                            {key}
-                          </label>
-                          <Input
-                            value={envInputs[key] || ""}
-                            onChange={(e) =>
-                              handleEnvInputChange(key, e.target.value)
-                            }
-                            placeholder={`Enter ${key}`}
-                          />
-                        </div>
-                      )
-                    )}
+                    {Object.entries(serverDetail.envs).map(([key, value]) => (
+                      <div key={key} className="flex flex-col">
+                        <label className="mb-1 text-sm font-medium text-gray-700">
+                          {key}
+                        </label>
+                        <Input
+                          value={envInputs[key] || ""}
+                          onChange={(e) =>
+                            handleEnvInputChange(key, e.target.value)
+                          }
+                          placeholder={`Enter ${key}`}
+                        />
+                      </div>
+                    ))}
 
                     <div className="mt-4">
                       <Button

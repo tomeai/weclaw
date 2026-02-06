@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     DATABASE_CHARSET: str = 'utf8mb4'
 
     # github
-    GITHUB_ACCESS_TOKEN: str
+    GITHUB_APP_ACCESS_TOKEN: str
 
     # Redis
     REDIS_TIMEOUT: int = 5
@@ -121,11 +121,15 @@ class Settings(BaseSettings):
     # github oauth
     OAUTH2_GITHUB_CLIENT_ID: str = ''
     OAUTH2_GITHUB_CLIENT_SECRET: str = ''
-    # gitee oauth
+    # google oauth
+    OAUTH2_GOOGLE_CLIENT_ID: str = ''
+    OAUTH2_GOOGLE_CLIENT_SECRET: str = ''
+    # gitee
     OAUTH2_GITEE_CLIENT_ID: str = ''
     OAUTH2_GITEE_CLIENT_SECRET: str = ''
+
     # oauth callback
-    OAUTH2_FRONTEND_REDIRECT_URI: str = 'http://localhost:3000/auth/callback'
+    OAUTH2_FRONTEND_REDIRECT_URI: str
 
     # Socket.IO
     WS_NO_AUTH_MARKER: str = 'internal'

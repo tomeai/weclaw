@@ -8,8 +8,7 @@ class McpCategoryService:
         async with async_db_session() as db:
             stmt = await mcp_category_dao.get_recommend_category()
             result = await db.execute(stmt)
-            categories = result.scalars().all()
-            return categories
+            return result.scalars().all()
 
 
 mcp_category_service = McpCategoryService()

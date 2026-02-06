@@ -23,8 +23,8 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             session=db,
             pk=pk,
             load_options=[
-                selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
+                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                selectinload(self.model.user).options(noload(User.mcp_servers), noload(User.roles)),
             ],
         )
 
@@ -50,8 +50,10 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             'updated_time',
             'desc',
             load_options=[
-                selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.mcps), noload(User.roles)),
+                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                selectinload(self.model.user).options(
+                    noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
+                ),
             ],
             **filters,
         )

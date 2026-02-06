@@ -26,13 +26,12 @@ class ServerType(Enum):
 
 class CompileType(Enum):
     package = 'package'
-    remote = 'remote'
-    artifact = 'artifact'
     openapi = 'openapi'
 
 
 class RuntimeType(str, Enum):
     mcp_gateway = 'mcp_gateway'
+    fastmcp = 'fastmcp'
     aliyun_serverless = 'aliyun_serverless'
     tencent_serverless = 'tencent_serverless'
 
@@ -51,9 +50,9 @@ class McpServer(Base):
     # 原始协议: streamable-http、sse、stdio
     transport: Mapped[str | None] = mapped_column(String(20), default=None, comment='streamable-http、sse、stdio')
     # mcp server 类型 hosted、local  对于 playwright、文件操作 等必须在本地执行
-    # local 类型的不进行编译，不会生成代理路由
+    # local 类型的不进行编译，不会生成代理（wemcp）
     server_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='hosted、local')
-    # 编译类型: package、remote、artifact、openapi
+    # 编译类型: package、openapi
     compile_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='编译类型')
     # 运行环境
     runtime_type: Mapped[str] = mapped_column(String(20), default=None, comment='运行环境')
@@ -83,7 +82,7 @@ class McpServer(Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey('mcp_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='MCP 分类ID'
     )
-    category: Mapped[McpCategory | None] = relationship(init=False, back_populates='servers')
+    category: Mapped[McpCategory | None] = relationship(init=False, back_populates='mcp_servers')
 
     # 用户一对多
     user_id: Mapped[int | None] = mapped_column(
@@ -93,6 +92,6 @@ class McpServer(Base):
         comment='用户关联ID',
     )
 
-    user: Mapped[User | None] = relationship(init=False, back_populates='mcps')
+    user: Mapped[User | None] = relationship(init=False, back_populates='mcp_servers')
 
     __table_args__ = (UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),)

@@ -6,12 +6,10 @@ from typing import Annotated
 from sqlalchemy import BigInteger, DateTime, TypeDecorator
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, declared_attr, mapped_column
-from utils.snowflake import snowflake
 from utils.timezone import timezone
 
-# 通用 Mapped 类型主键, 需手动添加，参考以下使用方式
-# MappedBase -> id: Mapped[id_key]
-# DataClassBase && Base -> id: Mapped[id_key] = mapped_column(init=False)
+# 雪花算法 Mapped 类型主键，使用方法与 id_key 相同
+# 详情：https://fastapi-practices.github.io/fastapi_best_architecture_docs/backend/reference/pk.html
 id_key = Annotated[
     int,
     mapped_column(
@@ -22,21 +20,6 @@ id_key = Annotated[
         autoincrement=True,
         sort_order=-999,
         comment='主键 ID',
-    ),
-]
-
-# 雪花算法 Mapped 类型主键，使用方法与 id_key 相同
-# 详情：https://fastapi-practices.github.io/fastapi_best_architecture_docs/backend/reference/pk.html
-snowflake_id_key = Annotated[
-    int,
-    mapped_column(
-        BigInteger,
-        primary_key=True,
-        unique=True,
-        index=True,
-        default=snowflake.generate,
-        sort_order=-999,
-        comment='雪花算法主键 ID',
     ),
 ]
 

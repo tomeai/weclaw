@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import re
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
+from app.mcp.schema.category import GetCategoryDetail
+from app.mcp.schema.user import GetUserInfo
 from common.schema import SchemaBase
 from fastmcp.mcp_config import StdioMCPServer
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -46,8 +47,8 @@ class McpBaseDetail(SchemaBase):
     server_type: str = Field(description='类型')
     server_metadata: Dict[str, Any] | None = Field(None, description='能力')
     tools: List[Dict[str, Any]] | None = Field(None, description='工具')
-    # user: GetUserInfo = Field(description='用户信息')
-    # category: GetCategoryBase = Field(description='分类')
+    user: GetUserInfo = Field(description='用户信息')
+    category: GetCategoryDetail = Field(description='分类')
 
 
 class McpRecommendDetail(SchemaBase):
@@ -57,6 +58,7 @@ class McpRecommendDetail(SchemaBase):
     server_type: str = Field(description='类型')
     capabilities: Dict[str, Any] | None = Field(None, description='能力')
     tools: int | None = Field(None, description='工具数量')
+    user: GetUserInfo | None = Field(None, description='user')
 
     @model_validator(mode='before')
     @classmethod
@@ -71,7 +73,7 @@ class GetMcpRecommendDetail(SchemaBase):
 
     id: int = Field(description='id')
     name: str | None = Field(None, description='分类名称')
-    servers: List[McpRecommendDetail] | None = Field(None, description='servers')
+    mcp_servers: List[McpRecommendDetail] | None = Field(None, description='servers', serialization_alias='servers')
 
 
 class GetMcpFeedDetail(SchemaBase):
@@ -106,19 +108,16 @@ class McpServersWrapper(BaseModel):
 class AddMcpServerParam(BaseModel):
     server_title: str = Field(description='server_title')
     description: str | None = Field(None, description='描述')
-    git: str = Field(None, description='git address')
-    readme: str | None = Field(None, description='说明')
-    server_type: str = Field(description='部署类型')
     mcpServers: McpServersWrapper = Field(description='mcp server config')
 
-    @field_validator('git')
-    def validate_git(cls, v: Optional[str]) -> Optional[str]:
-        if v is None:
-            return v
-        git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
-        if not git_regex.match(v):
-            raise ValueError(f'Invalid git URL: {v}')
-        return v
+    # @field_validator('git')
+    # def validate_git(cls, v: Optional[str]) -> Optional[str]:
+    #     if v is None:
+    #         return v
+    #     git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
+    #     if not git_regex.match(v):
+    #         raise ValueError(f'Invalid git URL: {v}')
+    #     return v
 
     @field_validator('mcpServers')
     def validate_mcpservers(cls, v):

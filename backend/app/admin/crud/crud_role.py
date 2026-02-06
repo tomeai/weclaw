@@ -1,0 +1,114 @@
+from collections.abc import Sequence
+
+from sqlalchemy import Select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy_crud_plus import CRUDPlus
+
+from backend.app.admin.model import Role
+from backend.app.admin.schema.role import (
+    CreateRoleParam,
+    UpdateRoleParam,
+)
+
+
+class CRUDRole(CRUDPlus[Role]):
+    """角色数据库操作类"""
+
+    async def get(self, db: AsyncSession, role_id: int) -> Role | None:
+        """
+        获取角色详情
+
+        :param db: 数据库会话
+        :param role_id: 角色 ID
+        :return:
+        """
+        return await self.select_model(db, role_id)
+
+    async def get_with_relation(self, db: AsyncSession, role_id: int) -> Role | None:
+        """
+        获取角色及关联数据
+
+        :param db: 数据库会话
+        :param role_id: 角色 ID
+        :return:
+        """
+        return await self.select_model(db, role_id, load_strategies=['menus', 'scopes'])
+
+    async def get_all(self, db: AsyncSession) -> Sequence[Role]:
+        """
+        获取所有角色
+
+        :param db: 数据库会话
+        :return:
+        """
+        return await self.select_models(db)
+
+    async def get_select(self, name: str | None, status: int | None) -> Select:
+        """
+        获取角色列表查询表达式
+
+        :param name: 角色名称
+        :param status: 角色状态
+        :return:
+        """
+
+        filters = {}
+
+        if name is not None:
+            filters['name__like'] = f'%{name}%'
+        if status is not None:
+            filters['status'] = status
+
+        return await self.select_order(
+            'id',
+            load_strategies={
+                'users': 'noload',
+                'menus': 'noload',
+                'scopes': 'noload',
+            },
+            **filters,
+        )
+
+    async def get_by_name(self, db: AsyncSession, name: str) -> Role | None:
+        """
+        通过名称获取角色
+
+        :param db: 数据库会话
+        :param name: 角色名称
+        :return:
+        """
+        return await self.select_model_by_column(db, name=name)
+
+    async def create(self, db: AsyncSession, obj: CreateRoleParam) -> None:
+        """
+        创建角色
+
+        :param db: 数据库会话
+        :param obj: 创建角色参数
+        :return:
+        """
+        await self.create_model(db, obj)
+
+    async def update(self, db: AsyncSession, role_id: int, obj: UpdateRoleParam) -> int:
+        """
+        更新角色
+
+        :param db: 数据库会话
+        :param role_id: 角色 ID
+        :param obj: 更新角色参数
+        :return:
+        """
+        return await self.update_model(db, role_id, obj)
+
+    async def delete(self, db: AsyncSession, role_ids: list[int]) -> int:
+        """
+        批量删除角色
+
+        :param db: 数据库会话
+        :param role_ids: 角色 ID 列表
+        :return:
+        """
+        return await self.delete_model_by_column(db, allow_multiple=True, id__in=role_ids)
+
+
+role_dao: CRUDRole = CRUDRole(Role)

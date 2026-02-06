@@ -1,19 +1,18 @@
 "use client"
 
-import {
-  getMcpServerFeed,
-  McpFeedResponse,
-  McpSearchParams,
-  McpSearchResponse,
-  McpServerItem,
-  searchMcpServers,
-} from "@/app/lib/api"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  getMcpServerFeed,
+  McpSearchParams,
+  McpServerItem,
+  PaginatedData,
+  searchMcpServers,
+} from "@/lib/mcp"
 import { CaretLeft, CaretRight, MagnifyingGlass } from "@phosphor-icons/react"
 import { Home } from "lucide-react"
 import Link from "next/link"
@@ -25,17 +24,16 @@ export default function SearchPage() {
   const initialQuery = searchParams.get("q") || ""
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sortOption, setSortOption] = useState("popularity")
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchResponse, setSearchResponse] =
-    useState<McpSearchResponse | null>(null)
+    useState<PaginatedData<McpServerItem> | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServerItem[]>([])
 
   const itemsPerPage = 1 // Based on the API response size parameter
-  const totalServers = searchResponse?.data.total || 0
-  const totalPages = searchResponse?.data.total_pages || 1
+  const totalServers = searchResponse?.total || 0
+  const totalPages = searchResponse?.total_pages || 1
 
   // Function to fetch MCP servers
   const fetchMcpServers = async () => {
@@ -45,27 +43,16 @@ export default function SearchPage() {
 
       if (!searchQuery.trim()) {
         // If search query is empty, fetch the feed
-        const feedResponse: McpFeedResponse = await getMcpServerFeed()
-        // Adapt feed response to search response structure for state consistency
+        const feedData = await getMcpServerFeed()
         setSearchResponse({
-          code: feedResponse.code,
-          msg: feedResponse.msg,
-          data: {
-            items: feedResponse.data,
-            total: feedResponse.data.length,
-            page: 1,
-            size: feedResponse.data.length,
-            total_pages: 1,
-            links: {
-              first: "",
-              last: "",
-              self: "",
-              next: null,
-              prev: null,
-            },
-          },
+          items: feedData,
+          total: feedData.length,
+          page: 1,
+          size: feedData.length,
+          total_pages: 1,
+          links: { first: "", last: "", self: "", next: null, prev: null },
         })
-        setMcpServers(feedResponse.data)
+        setMcpServers(feedData)
       } else {
         // Convert string category to number if needed
         const categoryId = selectedCategory ? parseInt(selectedCategory) : 0
@@ -79,9 +66,9 @@ export default function SearchPage() {
         }
 
         // Call the search API
-        const response = await searchMcpServers(params)
-        setSearchResponse(response)
-        setMcpServers(response.data.items)
+        const data = await searchMcpServers(params)
+        setSearchResponse(data)
+        setMcpServers(data.items)
       }
     } catch (err: any) {
       console.error("Error fetching MCP servers:", err)
@@ -188,7 +175,10 @@ export default function SearchPage() {
                   .toLowerCase()
 
                 return (
-                  <Link href={`/mcp/${server.id}`} key={index}>
+                  <Link
+                    href={`/mcp/${server.user?.username}/${server.server_name}`}
+                    key={index}
+                  >
                     <Card className="group h-[220px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg dark:border-gray-700 dark:hover:border-blue-600">
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex h-full flex-col">
@@ -201,7 +191,9 @@ export default function SearchPage() {
                                   alt={server.server_title}
                                 />
                                 <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                  {server.server_title.substring(0, 2).toUpperCase()}
+                                  {server.server_title
+                                    .substring(0, 2)
+                                    .toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex w-full min-w-0 flex-col overflow-hidden">

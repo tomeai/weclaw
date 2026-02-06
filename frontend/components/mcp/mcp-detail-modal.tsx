@@ -3,7 +3,7 @@
 import {
   getMcpAdminServerDetail,
   McpAdminServerDetailItem,
-} from "@/app/lib/api"
+} from "@/app/lib/mcp"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -13,13 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  ExternalLink,
-  GitBranch,
-  Package,
-  Terminal,
-  User,
-} from "lucide-react"
+import { ExternalLink, GitBranch, Package, Terminal, User } from "lucide-react"
 import { useEffect, useState } from "react"
 
 interface McpDetailModalProps {
@@ -33,17 +27,16 @@ export function McpDetailModal({
   onOpenChange,
   serverId,
 }: McpDetailModalProps) {
-  const [serverDetail, setServerDetail] = useState<McpAdminServerDetailItem | null>(null)
+  const [serverDetail, setServerDetail] =
+    useState<McpAdminServerDetailItem | null>(null)
   const [loading, setLoading] = useState(false)
 
   // 获取服务器详情
   const fetchServerDetail = async (id: number) => {
     try {
       setLoading(true)
-      const response = await getMcpAdminServerDetail(id)
-      if (response.code === 200) {
-        setServerDetail(response.data)
-      }
+      const data = await getMcpAdminServerDetail(id)
+      setServerDetail(data)
     } catch (error) {
       console.error("Error fetching server detail:", error)
     } finally {
@@ -53,7 +46,7 @@ export function McpDetailModal({
 
   // 当模态框打开且有serverId时获取详情
   useEffect(() => {
-    console.log('模态框状态变化:', { open, serverId })
+    console.log("模态框状态变化:", { open, serverId })
     if (open && serverId) {
       fetchServerDetail(serverId)
     } else {
@@ -95,17 +88,15 @@ export function McpDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>MCP服务器详情</DialogTitle>
-          <DialogDescription>
-            查看MCP服务器的详细信息和配置
-          </DialogDescription>
+          <DialogDescription>查看MCP服务器的详细信息和配置</DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
             <span className="ml-2">加载中...</span>
           </div>
         ) : serverDetail ? (
@@ -113,22 +104,22 @@ export function McpDetailModal({
             {/* 基本信息 */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">基本信息</h3>
+                <h3 className="mb-2 text-lg font-semibold">基本信息</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-sm font-medium">
                       服务器ID
                     </label>
                     <p className="text-sm">{serverDetail.id}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-sm font-medium">
                       服务器名称
                     </label>
                     <p className="text-sm">{serverDetail.server_name}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-sm font-medium">
                       分类
                     </label>
                     <div className="flex items-center gap-1">
@@ -141,7 +132,7 @@ export function McpDetailModal({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-sm font-medium">
                       服务器类型
                     </label>
                     <div className="flex items-center gap-1">
@@ -149,7 +140,7 @@ export function McpDetailModal({
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">
+                    <label className="text-muted-foreground text-sm font-medium">
                       编译类型
                     </label>
                     <div className="flex items-center gap-1">
@@ -166,8 +157,8 @@ export function McpDetailModal({
 
               {/* 描述 */}
               <div>
-                <h3 className="text-lg font-semibold mb-2">描述</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h3 className="mb-2 text-lg font-semibold">描述</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   {serverDetail.description}
                 </p>
               </div>
@@ -175,12 +166,12 @@ export function McpDetailModal({
               {/* Git仓库 */}
               {serverDetail.git && (
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Git仓库</h3>
+                  <h3 className="mb-2 text-lg font-semibold">Git仓库</h3>
                   <a
                     href={serverDetail.git}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
                   >
                     <GitBranch className="h-4 w-4" />
                     <span className="truncate">{serverDetail.git}</span>
@@ -191,7 +182,7 @@ export function McpDetailModal({
 
               {/* 作者信息 */}
               <div>
-                <h3 className="text-lg font-semibold mb-2">作者信息</h3>
+                <h3 className="mb-2 text-lg font-semibold">作者信息</h3>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
@@ -206,16 +197,14 @@ export function McpDetailModal({
                     <p className="text-sm font-medium">
                       {serverDetail.user.username}
                     </p>
-                    <p className="text-xs text-muted-foreground">作者</p>
+                    <p className="text-muted-foreground text-xs">作者</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            暂无数据
-          </div>
+          <div className="text-muted-foreground py-8 text-center">暂无数据</div>
         )}
       </DialogContent>
     </Dialog>

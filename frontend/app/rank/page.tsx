@@ -1,6 +1,6 @@
 import LayoutApp from "@/components/layout/layout-app"
 import { cn } from "@/lib/utils"
-import LeaderboardContent from "./leaderboard-content"
+import RankContent from "./rank-content"
 
 export default function FeedPage() {
   return (
@@ -20,7 +20,7 @@ export default function FeedPage() {
           </div>
 
           {/* Feed Content */}
-          <LeaderboardContent />
+          <RankContent />
         </div>
       </div>
     </LayoutApp>

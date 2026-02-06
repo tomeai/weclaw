@@ -1,6 +1,5 @@
 "use client"
 
-import { useUser } from "@/app/providers/user-provider"
 import { NaviMenu } from "@/components/layout/navi-menu"
 import { McpDropdown } from "@/components/mcp/mcp-dropdown"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,6 +15,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { APP_NAME } from "@/lib/config"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useUser } from "@/components/providers/user-provider"
 
 export function Header() {
   const { user, isJwtAuthenticated, signOut } = useUser()

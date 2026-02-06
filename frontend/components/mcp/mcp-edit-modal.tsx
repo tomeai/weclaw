@@ -1,13 +1,5 @@
 "use client"
 
-import {
-  getMcpAdminCategories,
-  getMcpAdminServerDetail,
-  McpAdminCategoryItem,
-  McpAdminServerDetailItem,
-  McpAdminServerUpdateParams,
-  updateMcpAdminServer,
-} from "@/app/lib/mcp"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -26,6 +18,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  getMcpAdminCategories,
+  getMcpAdminServerDetail,
+  McpAdminCategoryItem,
+  McpAdminServerDetailItem,
+  McpAdminServerUpdateParams,
+  updateMcpAdminServer,
+} from "@/lib/mcp"
 import { ExternalLink } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"

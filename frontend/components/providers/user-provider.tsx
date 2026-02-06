@@ -1,4 +1,3 @@
-// app/providers/user-provider.tsx
 "use client"
 
 import { getAuthMe } from "@/lib/user"

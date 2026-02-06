@@ -5,9 +5,9 @@ import ServerDetailClient from "./page-client"
 export default async function ServerDetailPage({
   params,
 }: {
-  params: { username: string; serverName: string }
+  params: Promise<{ username: string; serverName: string }>
 }) {
-  const { username, serverName } = params
+  const { username, serverName } = await params
 
   if (!serverName || !username) return notFound()
 

@@ -5,8 +5,8 @@ import {List} from "@phosphor-icons/react"
 import Link from "next/link"
 import {usePathname} from "next/navigation"
 import {useState} from "react"
-import {useUser} from "@/app/providers/user-provider"
 import { AddMcpButton } from "@/components/mcp/add-mcp-button"
+import { useUser } from "@/components/providers/user-provider"
 
 export function NaviMenu() {
     const pathname = usePathname()

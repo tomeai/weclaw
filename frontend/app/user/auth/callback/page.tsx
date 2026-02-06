@@ -1,9 +1,9 @@
 "use client"
 
-import { useUser } from "@/app/providers/user-provider"
 import { getAuthMe } from "@/lib/user"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { useUser } from "@/components/providers/user-provider"
 
 export default function AuthCallbackPage() {
   const router = useRouter()

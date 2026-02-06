@@ -7,7 +7,7 @@ import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
-export default function LeaderboardContent() {
+export default function RankContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mcpServers, setMcpServers] = useState<McpServerItem[]>([])

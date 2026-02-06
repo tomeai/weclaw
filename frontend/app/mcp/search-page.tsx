@@ -1,18 +1,18 @@
 "use client"
 
-import {
-  getMcpServerFeed,
-  McpSearchParams,
-  McpServerItem,
-  PaginatedData,
-  searchMcpServers,
-} from "@/app/lib/mcp"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  getMcpServerFeed,
+  McpSearchParams,
+  McpServerItem,
+  PaginatedData,
+  searchMcpServers,
+} from "@/lib/mcp"
 import { CaretLeft, CaretRight, MagnifyingGlass } from "@phosphor-icons/react"
 import { Home } from "lucide-react"
 import Link from "next/link"

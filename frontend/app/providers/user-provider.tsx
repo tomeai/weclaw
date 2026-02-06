@@ -1,9 +1,16 @@
 // app/providers/user-provider.tsx
 "use client"
 
-import { getAuthMe } from "@/app/lib/user"
+import { getAuthMe } from "@/lib/user"
 import { createContext, useContext, useEffect, useState } from "react"
-import { UserProfile } from "@/app/types/user"
+
+export type UserProfile = {
+  id: string
+  nickname: string
+  avatar: string
+  email: string
+  daily_message_count: number
+}
 
 type UserContextType = {
   user: UserProfile | null
@@ -33,8 +40,8 @@ export function UserProvider({
       if (typeof window === "undefined") return
 
       const token = localStorage.getItem("auth_token")
-      console.log('[UserProvider] 检查 JWT token:', !!token)
-      
+      console.log("[UserProvider] 检查 JWT token:", !!token)
+
       if (token) {
         setIsJwtAuthenticated(true)
 
@@ -59,7 +66,7 @@ export function UserProvider({
       } else {
         setIsJwtAuthenticated(false)
       }
-      
+
       // 标记初始化完成
       setIsInitialized(true)
     }

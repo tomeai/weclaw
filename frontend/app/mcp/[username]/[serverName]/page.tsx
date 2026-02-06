@@ -1,4 +1,4 @@
-import LayoutApp from "@/app/components/layout/layout-app"
+import LayoutApp from "@/components/layout/layout-app"
 import { notFound } from "next/navigation"
 import ServerDetailClient from "./page-client"
 

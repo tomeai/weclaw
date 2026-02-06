@@ -1,11 +1,5 @@
 "use client"
 
-import {
-  callMcpServerTool,
-  getMcpServerDetail,
-  McpServerItem,
-} from "@/app/lib/mcp"
-import { API_ROUTE_MCP_COMPILE_STDIO } from "@/app/lib/routes"
 import { Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
+import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
 import { Home } from "lucide-react"

@@ -1,6 +1,6 @@
-import LayoutApp from "@/app/components/layout/layout-app"
 import { cn } from "@/lib/utils"
 import SearchPage from "./search-page"
+import LayoutApp from "@/components/layout/layout-app"
 
 export default function McpPage() {
   return (

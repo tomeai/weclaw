@@ -1,14 +1,6 @@
 "use client"
 
 import Footer from "@/app/components/layout/footer"
-import {
-  callMcpServerTool,
-  getMcpServerDetail,
-  McpServerItem,
-} from "@/app/lib/api"
-import {
-  API_ROUTE_MCP_COMPILE_STDIO,
-} from "@/app/lib/routes"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +13,8 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
+import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
 import Link from "next/link"
@@ -29,8 +23,7 @@ import { useEffect, useState } from "react"
 export default function ServerDetailClient({ serverId }: { serverId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [serverDetail, setServerDetail] =
-    useState<McpServerItem | null>(null)
+  const [serverDetail, setServerDetail] = useState<McpServerItem | null>(null)
   const [toolResults, setToolResults] = useState<
     Record<
       string,
@@ -602,22 +595,20 @@ export default function ServerDetailClient({ serverId }: { serverId: string }) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {Object.entries(serverDetail.envs).map(
-                      ([key, value]) => (
-                        <div key={key} className="flex flex-col">
-                          <label className="mb-1 text-sm font-medium text-gray-700">
-                            {key}
-                          </label>
-                          <Input
-                            value={envInputs[key] || ""}
-                            onChange={(e) =>
-                              handleEnvInputChange(key, e.target.value)
-                            }
-                            placeholder={`Enter ${key}`}
-                          />
-                        </div>
-                      )
-                    )}
+                    {Object.entries(serverDetail.envs).map(([key, value]) => (
+                      <div key={key} className="flex flex-col">
+                        <label className="mb-1 text-sm font-medium text-gray-700">
+                          {key}
+                        </label>
+                        <Input
+                          value={envInputs[key] || ""}
+                          onChange={(e) =>
+                            handleEnvInputChange(key, e.target.value)
+                          }
+                          placeholder={`Enter ${key}`}
+                        />
+                      </div>
+                    ))}
 
                     <div className="mt-4">
                       <Button

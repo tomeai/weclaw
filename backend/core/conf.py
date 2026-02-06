@@ -129,7 +129,7 @@ class Settings(BaseSettings):
     OAUTH2_GITEE_CLIENT_SECRET: str = ''
 
     # oauth callback
-    OAUTH2_FRONTEND_REDIRECT_URI: str = 'http://localhost:3000/auth/callback'
+    OAUTH2_FRONTEND_REDIRECT_URI: str
 
     # Socket.IO
     WS_NO_AUTH_MARKER: str = 'internal'

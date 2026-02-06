@@ -1,6 +1,6 @@
-import LayoutApp from "@/app/components/layout/layout-app"
 import { cn } from "@/lib/utils"
 import NewsContent from "./news-content"
+import LayoutApp from "@/components/layout/layout-app"
 
 export default function NewsPage() {
   return (

@@ -56,8 +56,10 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             'updated_time',
             'desc',
             load_options=[
-                selectinload(self.model.category).options(noload(McpCategory.servers)),
-                selectinload(self.model.user).options(noload(User.servers), noload(User.roles), noload(User.agents)),
+                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                selectinload(self.model.user).options(
+                    noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
+                ),
             ],
             **filters,
         )

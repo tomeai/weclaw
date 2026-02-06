@@ -89,6 +89,7 @@ class CRUDUser(CRUDPlus[User]):
 
         stmt = select(Role)
         role = await db.execute(stmt)
+
         new_user.roles = [role.scalars().first()]  # 默认绑定第一个角色
 
         db.add(new_user)

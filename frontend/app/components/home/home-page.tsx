@@ -124,7 +124,7 @@ export default function HomePage() {
 
                   {/* Servers Grid - 2 rows, 4 cards per row */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {category.servers.slice(0, 8).map((server, index) => {
+                    {category.servers?.slice(0, 8).map((server, index) => {
                       // Generate a seed for the avatar based on the server title
                       const avatarSeed = server.server_title
                         .replace(/\s+/g, "-")

@@ -40,7 +40,7 @@ class CompileMcpService:
                     results[name] = None
                     continue
                 try:
-                    fn_result = (await fetch_fn()).model_dump().get(name)
+                    fn_result = (await fetch_fn()).model_dump(mode='json').get(name)
                     if fn_result:
                         results[name] = fn_result
                     else:

@@ -1,13 +1,13 @@
-from typing import Annotated, List
+from typing import Annotated
 
-from app.mcp.schema.mcp import GetMcpDetail, GetMcpFeedDetail, GetMcpRecommendDetail, McpBaseDetail, SearchMcpParam
-from app.mcp.service.mcp_category_service import mcp_category_service
+from app.mcp.schema.mcp import CallToolParam, GetMcpDetail, McpBaseDetail, SearchMcpParam
 from app.mcp.service.mcp_server_service import mcp_server_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
-from common.security.jwt import DependsJwtAuth
 from database.db import CurrentSession
 from fastapi import APIRouter, Path
+from mcp import ClientSession
+from mcp.client.sse import sse_client
 
 router = APIRouter()
 
@@ -45,23 +45,16 @@ async def get_mcp(
     return response_base.success(data=result)
 
 
-@router.get('/feed', summary='feed', dependencies=[DependsJwtAuth])
-async def get_feed() -> ResponseSchemaModel[List[GetMcpFeedDetail] | None]:
+@router.post('/call/{mcp_id}')
+async def call_tool(mcp_id: Annotated[int, Path(description='mcp_id')], call_param: CallToolParam):
     """
-    仅显示最近一周的
+    mcp_gateway / serverless
+    根据mcp_id查询 sse_url
     """
-    result = await mcp_server_service.get_mcp_last_7_day()
-    return response_base.success(data=result)
-
-
-@router.get('/recommend', summary='recommend mcp')
-async def get_recommend_category_mcp() -> ResponseSchemaModel[List[GetMcpRecommendDetail] | None]:
-    """
-    根据分类推荐mcp
-    Args:
-
-    Returns:
-
-    """
-    result = await mcp_category_service.get_recommend_category()
-    return response_base.success(data=result)
+    mcp_server = await mcp_server_service.get_mcp(mcp_id)
+    async with sse_client(f'{mcp_server.mcp_endpoint}/sse') as streams:
+        async with ClientSession(streams[0], streams[1]) as session:
+            await session.initialize()
+            # maps_geo {'address': '大望路', 'city': '北京'}
+            result = await session.call_tool(call_param.tool_name, call_param.arguments)
+            return response_base.success(data=result)

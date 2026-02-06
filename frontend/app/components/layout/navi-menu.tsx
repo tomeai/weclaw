@@ -44,9 +44,6 @@ export function NaviMenu() {
               <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
                     动态
                 </Link>
-                <Link href="/docs" className={isActive("/docs") ? activeLinkClass : linkClass}>
-                    文档
-                </Link>
             </div>
 
             {/* Mobile Navigation */}
@@ -79,13 +76,6 @@ export function NaviMenu() {
                                 onClick={() => setOpen(false)}
                             >
                                 动态
-                            </Link>
-                            <Link
-                                href="/docs"
-                                className={isActive("/docs") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                文档
                             </Link>
                             <div className="py-2">
                                 <AddMcpButton 

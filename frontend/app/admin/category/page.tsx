@@ -7,7 +7,7 @@ import {
   getMcpAdminCategories,
   McpAdminCategoryItem,
   McpAdminCategoryParams,
-} from "@/app/lib/api"
+} from "@/app/lib/mcp"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -66,7 +66,8 @@ export default function CategoryAdminPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [createLoading, setCreateLoading] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState("")
-  const [newCategoryIsRecommend, setNewCategoryIsRecommend] = useState<number>(0)
+  const [newCategoryIsRecommend, setNewCategoryIsRecommend] =
+    useState<number>(0)
 
   // 获取分类列表
   const fetchCategories = async (params: McpAdminCategoryParams = {}) => {
@@ -266,9 +267,7 @@ export default function CategoryAdminPage() {
         <Card>
           <CardHeader>
             <CardTitle>筛选条件</CardTitle>
-            <CardDescription>
-              根据推荐状态筛选分类
-            </CardDescription>
+            <CardDescription>根据推荐状态筛选分类</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -334,15 +333,17 @@ export default function CategoryAdminPage() {
                           {category.id}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">
-                            {category.name}
-                          </div>
+                          <div className="font-medium">{category.name}</div>
                         </TableCell>
                         <TableCell>
                           {getRecommendBadge(category.is_recommend)}
                         </TableCell>
-                        <TableCell>{formatDate(category.created_time)}</TableCell>
-                        <TableCell>{formatDate(category.updated_time)}</TableCell>
+                        <TableCell>
+                          {formatDate(category.created_time)}
+                        </TableCell>
+                        <TableCell>
+                          {formatDate(category.updated_time)}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button variant="outline" size="sm">

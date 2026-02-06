@@ -6,7 +6,6 @@ from typing import Annotated
 from sqlalchemy import BigInteger, DateTime, TypeDecorator
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, declared_attr, mapped_column
-from utils.snowflake import snowflake
 from utils.timezone import timezone
 
 # 雪花算法 Mapped 类型主键，使用方法与 id_key 相同
@@ -18,9 +17,9 @@ id_key = Annotated[
         primary_key=True,
         unique=True,
         index=True,
-        default=snowflake.generate,
+        autoincrement=True,
         sort_order=-999,
-        comment='雪花算法主键 ID',
+        comment='主键 ID',
     ),
 ]
 

@@ -12,16 +12,17 @@ from fastmcp.mcp_config import MCPConfig
 
 mcp_config = MCPConfig(
     mcpServers={
-        'amap-maps-streamableHTTP': {'url': 'https://mcp.amap.com/mcp?key=您在高德官网上申请的key'},
+        '12306-mcp': {'args': ['-y', '12306-mcp'], 'command': 'npx'}
+        # 'amap-maps-streamableHTTP': {'url': 'https://mcp.amap.com/mcp?key=您在高德官网上申请的key'},
         # "amap-maps": {
         #     "type": "streamable_http",
         #     "url": "https://mcp.api-inference.modelscope.net/d1f3517751d743/mcp"
         # }
-        'amap-maps': {
-            'type': 'streamable_http',
-            'url': 'https://mcp.api-inference.modelscope.net/b977104b502e4b/mcp',
-            'headers': {'Authorization': 'Bearer ms-d5361e07-3b6c-47d6-ba4a-701700fe0244'},
-        },
+        # 'amap-maps': {
+        #     'type': 'streamable_http',
+        #     'url': 'https://mcp.api-inference.modelscope.net/b977104b502e4b/mcp',
+        #     'headers': {'Authorization': 'Bearer ms-d5361e07-3b6c-47d6-ba4a-701700fe0244'},
+        # },
         # "amap-maps": {
         #     "type": "sse",
         #     "url": "https://mcp.api-inference.modelscope.net/da78b66c6ceb44/sse"

@@ -2,12 +2,12 @@
 
 import {
   getMcpAdminCategories,
-  McpAdminCategoryItem,
-  updateMcpAdminServer,
-  McpAdminServerUpdateParams,
-  McpAdminServerDetailItem,
   getMcpAdminServerDetail,
-} from "@/app/lib/api"
+  McpAdminCategoryItem,
+  McpAdminServerDetailItem,
+  McpAdminServerUpdateParams,
+  updateMcpAdminServer,
+} from "@/app/lib/mcp"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -26,9 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  ExternalLink,
-} from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
@@ -45,7 +43,8 @@ export function McpEditModal({
   serverId,
   onSuccess,
 }: McpEditModalProps) {
-  const [serverDetail, setServerDetail] = useState<McpAdminServerDetailItem | null>(null)
+  const [serverDetail, setServerDetail] =
+    useState<McpAdminServerDetailItem | null>(null)
   const [categories, setCategories] = useState<McpAdminCategoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -55,7 +54,7 @@ export function McpEditModal({
     category_id: 0,
     description: "",
     server_title: "",
-    is_public: 0 
+    is_public: 0,
   })
 
   // 获取分类列表
@@ -78,7 +77,7 @@ export function McpEditModal({
         category_id: data.category?.id || 0,
         description: data.description || "",
         server_title: data.server_title || "",
-        is_public: data.is_public || 0
+        is_public: data.is_public || 0,
       })
     } catch (error) {
       console.error("Error fetching server detail:", error)
@@ -90,7 +89,7 @@ export function McpEditModal({
   // 处理表单提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!serverId) return
 
     try {
@@ -112,7 +111,7 @@ export function McpEditModal({
     field: keyof McpAdminServerUpdateParams,
     value: string | number
   ) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
@@ -134,24 +133,22 @@ export function McpEditModal({
         category_id: 0,
         description: "",
         server_title: "",
-        is_public: 0
+        is_public: 0,
       })
     }
   }, [open])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>编辑MCP服务器</DialogTitle>
-          <DialogDescription>
-            修改MCP服务器的基本信息
-          </DialogDescription>
+          <DialogDescription>修改MCP服务器的基本信息</DialogDescription>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
             <span className="ml-2">加载中...</span>
           </div>
         ) : serverDetail ? (
@@ -162,7 +159,9 @@ export function McpEditModal({
               <Input
                 id="server_title"
                 value={formData.server_title}
-                onChange={(e) => handleInputChange("server_title", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("server_title", e.target.value)
+                }
                 placeholder="请输入服务器标题"
                 required
               />
@@ -173,14 +172,19 @@ export function McpEditModal({
               <Label htmlFor="category_id">分类 *</Label>
               <Select
                 value={formData.category_id.toString()}
-                onValueChange={(value) => handleInputChange("category_id", parseInt(value))}
+                onValueChange={(value) =>
+                  handleInputChange("category_id", parseInt(value))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="选择分类" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
                       {category.name}
                     </SelectItem>
                   ))}
@@ -194,7 +198,9 @@ export function McpEditModal({
               <Textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 placeholder="请输入服务器描述"
                 rows={4}
                 required
@@ -206,7 +212,9 @@ export function McpEditModal({
               <Label htmlFor="is_public">公开状态 *</Label>
               <Select
                 value={formData.is_public.toString()}
-                onValueChange={(value) => handleInputChange("is_public", parseInt(value))}
+                onValueChange={(value) =>
+                  handleInputChange("is_public", parseInt(value))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="选择公开状态" />
@@ -219,7 +227,7 @@ export function McpEditModal({
             </div>
 
             {/* 只读信息展示 */}
-            <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <div className="bg-muted/50 space-y-4 rounded-lg p-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">服务器名称:</span>
@@ -251,7 +259,7 @@ export function McpEditModal({
                         href={serverDetail.git}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
                       >
                         <span className="truncate">{serverDetail.git}</span>
                         <ExternalLink className="h-3 w-3 flex-shrink-0" />
@@ -274,18 +282,13 @@ export function McpEditModal({
               >
                 取消
               </Button>
-              <Button
-                type="submit"
-                disabled={submitting}
-              >
+              <Button type="submit" disabled={submitting}>
                 {submitting ? "保存中..." : "保存"}
               </Button>
             </div>
           </form>
         ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            暂无数据
-          </div>
+          <div className="text-muted-foreground py-8 text-center">暂无数据</div>
         )}
       </DialogContent>
     </Dialog>

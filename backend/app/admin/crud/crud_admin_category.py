@@ -19,7 +19,7 @@ class CRUDMcpAdminCategory(CRUDPlus[McpCategory]):
         return await self.select_order(
             'updated_time',
             'desc',
-            load_options=[noload(self.model.servers)],
+            load_options=[noload(self.model.mcp_servers)],
             **filters,
         )
 

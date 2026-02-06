@@ -6,7 +6,7 @@ import {
   getMcpAdminServers,
   McpAdminServerItem,
   McpAdminServersParams,
-} from "@/app/lib/api"
+} from "@/app/lib/mcp"
 import { McpDetailModal } from "@/components/mcp/mcp-detail-modal"
 import { McpEditModal } from "@/components/mcp/mcp-edit-modal"
 import { Badge } from "@/components/ui/badge"
@@ -64,14 +64,16 @@ export default function McpAdminPage() {
   const [compileType, setCompileType] = useState<"package" | "stdio" | "all">(
     "all"
   )
-  const [isPublic, setIsPublic] = useState<number | "all">(1)
+  const [isPublic, setIsPublic] = useState<number | "all">(0)
   const [transport, setTransport] = useState<
     "stdio" | "sse" | "streamable" | "all"
   >("all")
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
-  const [selectedEditServerId, setSelectedEditServerId] = useState<number | null>(null)
+  const [selectedEditServerId, setSelectedEditServerId] = useState<
+    number | null
+  >(null)
 
   // 获取 MCP 服务器列表
   const fetchServers = async (params: McpAdminServersParams = {}) => {
@@ -181,7 +183,7 @@ export default function McpAdminPage() {
 
   // 处理查看详情
   const handleViewDetail = (serverId: number) => {
-    console.log('查看详情被点击，服务器ID:', serverId)
+    console.log("查看详情被点击，服务器ID:", serverId)
     setSelectedServerId(serverId)
     setDetailModalOpen(true)
   }
@@ -409,15 +411,15 @@ export default function McpAdminPage() {
                         <TableCell>{formatDate(server.updated_time)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handleViewDetail(server.id)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={() => handleEditServer(server.id)}
                             >

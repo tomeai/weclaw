@@ -10,10 +10,10 @@ if TYPE_CHECKING:
     from app.admin.model import AgentCategory, User
 
 
-class AgentApp(Base):
-    """agent app"""
+class AgentServer(Base):
+    """agent server"""
 
-    __tablename__ = 'agent_app'
+    __tablename__ = 'agent_server'
     id: Mapped[id_key] = mapped_column(init=False)
     title: Mapped[str] = mapped_column(String(255), comment='agent name')
     description: Mapped[str | None] = mapped_column(Text, default=None, comment='agent描述')
@@ -32,7 +32,7 @@ class AgentApp(Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey('agent_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='agent 分类ID'
     )
-    category: Mapped[AgentCategory | None] = relationship(init=False, back_populates='agents')
+    category: Mapped[AgentCategory | None] = relationship(init=False, back_populates='agent_servers')
 
     # 用户一对多
     user_id: Mapped[int | None] = mapped_column(
@@ -42,4 +42,4 @@ class AgentApp(Base):
         comment='用户关联ID',
     )
 
-    user: Mapped[User | None] = relationship(init=False, back_populates='agents')
+    user: Mapped[User | None] = relationship(init=False, back_populates='agent_servers')

@@ -9,7 +9,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from app.admin.model.agent import AgentApp
+    from app.admin.model.agent import AgentServer
     from app.admin.model.mcp import McpServer
 
 
@@ -22,7 +22,7 @@ class McpCategory(Base):
     is_recommend: Mapped[int] = mapped_column(default=0, comment='是否推荐类目')
 
     # mcp server一对多
-    servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='category')
+    mcp_servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='category')
 
 
 class AgentCategory(Base):
@@ -33,5 +33,5 @@ class AgentCategory(Base):
     name: Mapped[str] = mapped_column(String(20), unique=True, comment='类目名称')
     is_recommend: Mapped[bool] = mapped_column(default=False, comment='是否推荐类目')
 
-    # mcp server一对多
-    agents: Mapped[list[AgentApp]] = relationship(init=False, back_populates='category')
+    # agent server一对多
+    agent_servers: Mapped[list[AgentServer]] = relationship(init=False, back_populates='category')

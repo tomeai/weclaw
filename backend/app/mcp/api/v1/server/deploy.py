@@ -17,6 +17,7 @@ async def compile_package(request: Request, obj: AddMcpServerParam) -> ResponseM
     :return:
     """
     username = request.user.username
+    print('username', username)
     result = compile_mcp_server.apply_async((username, obj.model_dump()))
     return response_base.success(data={'task_id': result.id, 'status': result.status})
 

@@ -6,7 +6,7 @@ import {
   McpServerItem,
   PaginatedData,
   searchMcpServers,
-} from "@/app/lib/api"
+} from "@/app/lib/mcp"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -24,7 +24,6 @@ export default function SearchPage() {
   const initialQuery = searchParams.get("q") || ""
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [sortOption, setSortOption] = useState("popularity")
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -176,7 +175,10 @@ export default function SearchPage() {
                   .toLowerCase()
 
                 return (
-                  <Link href={`/mcp/${server.user?.username}/${server.server_name}`} key={index}>
+                  <Link
+                    href={`/mcp/${server.user?.username}/${server.server_name}`}
+                    key={index}
+                  >
                     <Card className="group h-[220px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg dark:border-gray-700 dark:hover:border-blue-600">
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex h-full flex-col">
@@ -189,7 +191,9 @@ export default function SearchPage() {
                                   alt={server.server_title}
                                 />
                                 <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300">
-                                  {server.server_title.substring(0, 2).toUpperCase()}
+                                  {server.server_title
+                                    .substring(0, 2)
+                                    .toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex w-full min-w-0 flex-col overflow-hidden">

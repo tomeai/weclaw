@@ -73,7 +73,7 @@ class GetMcpRecommendDetail(SchemaBase):
 
     id: int = Field(description='id')
     name: str | None = Field(None, description='分类名称')
-    servers: List[McpRecommendDetail] | None = Field(None, description='servers')
+    mcp_servers: List[McpRecommendDetail] | None = Field(None, description='servers', serialization_alias='servers')
 
 
 class GetMcpFeedDetail(SchemaBase):

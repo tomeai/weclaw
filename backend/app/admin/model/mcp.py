@@ -82,7 +82,7 @@ class McpServer(Base):
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey('mcp_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='MCP 分类ID'
     )
-    category: Mapped[McpCategory | None] = relationship(init=False, back_populates='servers')
+    category: Mapped[McpCategory | None] = relationship(init=False, back_populates='mcp_servers')
 
     # 用户一对多
     user_id: Mapped[int | None] = mapped_column(
@@ -92,17 +92,6 @@ class McpServer(Base):
         comment='用户关联ID',
     )
 
-    user: Mapped[User | None] = relationship(init=False, back_populates='servers')
+    user: Mapped[User | None] = relationship(init=False, back_populates='mcp_servers')
 
     __table_args__ = (UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),)
-
-
-class McpClient(Base):
-    """mcp server"""
-
-    __tablename__ = 'mcp_client'
-    id: Mapped[id_key] = mapped_column(init=False)
-
-    title: Mapped[str] = mapped_column(String(255), comment='title')
-    description: Mapped[str | None] = mapped_column(Text, default=None, comment='描述')
-    avatar: Mapped[str | None] = mapped_column(String(255), default=None, comment='项目头像')

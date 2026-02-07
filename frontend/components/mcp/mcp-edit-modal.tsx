@@ -207,9 +207,9 @@ export function McpEditModal({
               />
             </div>
 
-            {/* 公开状态 */}
+            {/* 审核状态 */}
             <div className="space-y-2">
-              <Label htmlFor="is_public">公开状态 *</Label>
+              <Label htmlFor="is_public">审核状态 *</Label>
               <Select
                 value={formData.is_public.toString()}
                 onValueChange={(value) =>
@@ -217,11 +217,11 @@ export function McpEditModal({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择公开状态" />
+                  <SelectValue placeholder="选择审核状态" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">私有</SelectItem>
-                  <SelectItem value="1">公开</SelectItem>
+                  <SelectItem value="0">未审核</SelectItem>
+                  <SelectItem value="1">已审核</SelectItem>
                 </SelectContent>
               </Select>
             </div>

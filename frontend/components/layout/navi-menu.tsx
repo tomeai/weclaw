@@ -33,17 +33,14 @@ export function NaviMenu() {
             {/* Desktop Navigation */}
             <div className="hidden items-center gap-6 text-xl font-medium md:flex">
                 <Link href="/agent" className={isActive("/agent") ? activeLinkClass : linkClass}>
-                    智能体
+                    Agent
                 </Link>
-               {/*<Link href="/deepresearch" className={isActive("/deepresearch") ? activeLinkClass : linkClass}>*/}
-               {/*     深度研究*/}
-               {/* </Link>*/}
-                <Link href="/rank" className={isActive("/rank") ? activeLinkClass : linkClass}>
-                    排行榜
+               <Link href="/chat" className={isActive("/chat") ? activeLinkClass : linkClass}>
+                    Chat
                 </Link>
-              <Link href="/news" className={isActive("/news") ? activeLinkClass : linkClass}>
-                    动态
-                </Link>
+                {/*<Link href="/rank" className={isActive("/rank") ? activeLinkClass : linkClass}>*/}
+                {/*    排行榜*/}
+                {/*</Link>*/}
             </div>
 
             {/* Mobile Navigation */}
@@ -61,22 +58,15 @@ export function NaviMenu() {
                                 className={isActive("/agent") ? mobileActiveLinkClass : mobileLinkClass}
                                 onClick={() => setOpen(false)}
                             >
-                                智能体
+                                Agent
                             </Link>
-                            <Link
-                                href="/rank"
-                                className={isActive("/rank") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                排行榜
-                            </Link>
-                            <Link
-                                href="/news"
-                                className={isActive("/news") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                动态
-                            </Link>
+                            {/*<Link*/}
+                            {/*    href="/rank"*/}
+                            {/*    className={isActive("/rank") ? mobileActiveLinkClass : mobileLinkClass}*/}
+                            {/*    onClick={() => setOpen(false)}*/}
+                            {/*>*/}
+                            {/*    排行榜*/}
+                            {/*</Link>*/}
                             <div className="py-2">
                                 <AddMcpButton 
                                     onClick={!isLoggedIn ? () => {

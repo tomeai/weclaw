@@ -1,13 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from typing import Any
+
 from app.admin.crud.crud_opera_log import opera_log_dao
 from app.admin.schema.opera_log import CreateOperaLogParam, DeleteOperaLogParam
 from database.db import async_db_session
 from sqlalchemy import Select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.common.pagination import paging_data
 
 
 class OperaLogService:
     """操作日志服务类"""
+
+    @staticmethod
+    async def get_list(*, db: AsyncSession, username: str | None, status: int | None, ip: str | None) -> dict[str, Any]:
+        """
+        获取操作日志列表
+
+        :param db: 数据库会话
+        :param username: 用户名
+        :param status: 状态
+        :param ip: IP 地址
+        :return:
+        """
+        log_select = await opera_log_dao.get_select(username=username, status=status, ip=ip)
+        return await paging_data(db, log_select)
 
     @staticmethod
     async def get_select(*, username: str | None, status: int | None, ip: str | None) -> Select:

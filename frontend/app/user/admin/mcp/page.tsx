@@ -65,7 +65,7 @@ export default function McpAdminPage() {
   const [compileType, setCompileType] = useState<"package" | "stdio" | "all">(
     "all"
   )
-  const [isPublic, setIsPublic] = useState<number | "all">(0)
+  const [isPublic, setIsPublic] = useState<number | "all">(1)
   const [transport, setTransport] = useState<
     "stdio" | "sse" | "streamable" | "all"
   >("all")
@@ -119,7 +119,7 @@ export default function McpAdminPage() {
     setSearchKeyword("")
     setServerType("all")
     setCompileType("all")
-    setIsPublic(0)
+    setIsPublic(1)
     setTransport("all")
     setCurrentPage(1)
     fetchServers({
@@ -127,7 +127,7 @@ export default function McpAdminPage() {
       keyword: "",
       server_type: undefined,
       compile_type: undefined,
-      is_public: 0,
+      is_public: 1,
       transport: undefined,
     })
   }
@@ -242,7 +242,7 @@ export default function McpAdminPage() {
           <CardHeader>
             <CardTitle>搜索和筛选</CardTitle>
             <CardDescription>
-              根据关键词、部署类型、协议类型或公开状态筛选 MCP 服务器
+              根据关键词、部署类型、协议类型或审核状态筛选 MCP 服务器
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -298,12 +298,12 @@ export default function McpAdminPage() {
                   }
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="公开状态" />
+                    <SelectValue placeholder="审核状态" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">公开状态</SelectItem>
-                    <SelectItem value="1">公开</SelectItem>
-                    <SelectItem value="0">私有</SelectItem>
+                    <SelectItem value="all">审核状态</SelectItem>
+                    <SelectItem value="1">已审核</SelectItem>
+                    <SelectItem value="0">未审核</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex gap-2">
@@ -350,7 +350,6 @@ export default function McpAdminPage() {
                       <TableHead>描述</TableHead>
                       <TableHead>服务器类型</TableHead>
                       <TableHead>编译类型</TableHead>
-                      <TableHead>Git 仓库</TableHead>
                       <TableHead>创建时间</TableHead>
                       <TableHead>更新时间</TableHead>
                       <TableHead className="text-right">操作</TableHead>
@@ -392,21 +391,6 @@ export default function McpAdminPage() {
                             )}
                             {getCompileTypeBadge(server.compile_type)}
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          {server.git ? (
-                            <a
-                              href={server.git}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                            >
-                              <GitBranch className="h-3 w-3" />
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          ) : (
-                            "-"
-                          )}
                         </TableCell>
                         <TableCell>{formatDate(server.created_time)}</TableCell>
                         <TableCell>{formatDate(server.updated_time)}</TableCell>

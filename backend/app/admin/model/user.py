@@ -14,7 +14,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from utils.timezone import timezone
 
 if TYPE_CHECKING:
-    from app.admin.model import AgentServer, McpServer, Role
+    from app.admin.model import AgentServer, AgentSkill, McpServer, Role
 
 
 class User(Base):
@@ -50,6 +50,7 @@ class User(Base):
     # 一对多
     mcp_servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='user')
     agent_servers: Mapped[list[AgentServer]] = relationship(init=False, back_populates='user')
+    agent_skills: Mapped[list[AgentSkill]] = relationship(init=False, back_populates='user')
 
     # 多对多
     roles: Mapped[list[Role]] = relationship(init=False, secondary=sys_user_role, back_populates='users')

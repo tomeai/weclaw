@@ -75,7 +75,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
                 noload(self.model.category),
                 # selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
                 selectinload(self.model.user).options(
-                    noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
+                    noload(User.mcp_servers), noload(User.agent_skills), noload(User.roles), noload(User.agent_servers)
                 ),
             ],
             **filters,

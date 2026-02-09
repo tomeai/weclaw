@@ -1,17 +1,6 @@
-import http from "@/lib/http"
-import {
-  API_ROUTE_MCP_ADMIN_CATEGORY,
-  API_ROUTE_MCP_ADMIN_CATEGORY_CREATE,
-  API_ROUTE_MCP_ADMIN_SERVER_DETAIL,
-  API_ROUTE_MCP_ADMIN_SERVERS,
-  API_ROUTE_MCP_CATEGORIES,
-  API_ROUTE_MCP_DEPLOY_PACKAGE,
-  API_ROUTE_MCP_SEARCH,
-  API_ROUTE_MCP_SERVER_CALL,
-  API_ROUTE_MCP_SERVER_DETAIL,
-  API_ROUTE_MCP_SERVER_FEED,
-  API_ROUTE_MCP_SERVER_RECOMMEND,
-} from "./routes"
+import http from "@/lib/http";
+import { API_ROUTE_MCP_ADMIN_CATEGORY, API_ROUTE_MCP_ADMIN_CATEGORY_CREATE, API_ROUTE_MCP_ADMIN_SERVER_DETAIL, API_ROUTE_MCP_ADMIN_SERVERS, API_ROUTE_MCP_CATEGORIES, API_ROUTE_MCP_DEPLOY_PACKAGE, API_ROUTE_MCP_SEARCH, API_ROUTE_MCP_SERVER_CALL, API_ROUTE_MCP_SERVER_DETAIL, API_ROUTE_MCP_SERVER_FEED, API_ROUTE_MCP_SERVER_RECOMMEND } from "./routes";
+
 
 // ============ 通用类型 ============
 
@@ -244,12 +233,13 @@ export function getMcpServerDetail(
 
 /** 调用 MCP 服务器工具 */
 export function callMcpServerTool(
-  mcpId: string | number,
+  username: string,
+  serverName: string,
   toolName: string,
   args: Record<string, any>
 ): Promise<McpServerCallResult> {
   return http.post<McpServerCallResult>(
-    `${API_ROUTE_MCP_SERVER_CALL}/${mcpId}`,
+    `${API_ROUTE_MCP_SERVER_CALL}/${username}/${serverName}`,
     {
       tool_name: toolName,
       arguments: args,
@@ -257,9 +247,24 @@ export function callMcpServerTool(
   )
 }
 
-/** 获取推荐 MCP 服务器 */
+/** 获取推荐 MCP 服务器（分类） */
 export function getMcpServerRecommend(): Promise<McpRecommendCategory[]> {
   return http.get<McpRecommendCategory[]>(API_ROUTE_MCP_SERVER_RECOMMEND)
+}
+
+// ============ 推荐列表（扁平） ============
+
+export interface McpRecommendItem {
+  server_name: string
+  description: string
+  server_type: "hosted" | "local"
+  owner: string
+  call_count: number
+}
+
+/** 获取推荐 MCP 服务器（扁平列表） */
+export function getMcpRecommendList(): Promise<McpRecommendItem[]> {
+  return http.get<McpRecommendItem[]>(API_ROUTE_MCP_SERVER_RECOMMEND)
 }
 
 /** 管理端 - 获取 MCP 服务器列表 */

@@ -16,7 +16,6 @@ import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
 import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
-import { Home } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -205,6 +204,7 @@ export default function ServerDetailClient({
 
     try {
       const response = await callMcpServerTool(
+        username,
         serverName,
         toolName,
         toolInputs[toolName] || {}
@@ -282,7 +282,7 @@ export default function ServerDetailClient({
         "@container/main relative flex h-full flex-col items-center justify-start pt-12 md:pt-16"
       )}
     >
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
         {/* Server Metadata */}
         <div className="bg-muted/50 mb-8 rounded-lg border p-6">
           <div className="mb-4 flex items-start gap-4">
@@ -371,69 +371,72 @@ export default function ServerDetailClient({
                             {tool.description}
                           </p>
 
-                          {tool.inputSchema && (
-                            <div className="mt-3">
-                              <h4 className="text-foreground mb-2 text-sm font-medium">
-                                Input Parameters:
-                              </h4>
-                              <div className="bg-muted/50 rounded border p-3 text-sm">
-                                {tool.inputSchema.properties && (
-                                  <div className="space-y-3">
-                                    {Object.entries(
-                                      tool.inputSchema.properties
-                                    ).map(
-                                      ([paramName, paramDetails]: [
-                                        string,
-                                        any,
-                                      ]) => (
-                                        <div
-                                          key={paramName}
-                                          className="flex flex-col"
-                                        >
-                                          <div className="mb-1 flex items-start">
-                                            <span className="font-mono text-blue-600">
-                                              {paramName}
-                                            </span>
-                                            {tool.inputSchema.required?.includes(
-                                              paramName
-                                            ) && (
-                                              <span className="ml-1 text-red-500">
-                                                *
+                          {tool.inputSchema &&
+                            tool.inputSchema.properties &&
+                            Object.keys(tool.inputSchema.properties).length >
+                              0 && (
+                              <div className="mt-3">
+                                <h4 className="text-foreground mb-2 text-sm font-medium">
+                                  Input Parameters:
+                                </h4>
+                                <div className="bg-muted/50 rounded border p-3 text-sm">
+                                  {tool.inputSchema.properties && (
+                                    <div className="space-y-3">
+                                      {Object.entries(
+                                        tool.inputSchema.properties
+                                      ).map(
+                                        ([paramName, paramDetails]: [
+                                          string,
+                                          any,
+                                        ]) => (
+                                          <div
+                                            key={paramName}
+                                            className="flex flex-col"
+                                          >
+                                            <div className="mb-1 flex items-start">
+                                              <span className="font-mono text-blue-600">
+                                                {paramName}
+                                              </span>
+                                              {tool.inputSchema.required?.includes(
+                                                paramName
+                                              ) && (
+                                                <span className="ml-1 text-red-500">
+                                                  *
+                                                </span>
+                                              )}
+                                              <span className="ml-2 text-gray-500">
+                                                ({paramDetails.type})
+                                              </span>
+                                            </div>
+                                            {paramDetails.description && (
+                                              <span className="text-muted-foreground mb-1 text-xs">
+                                                {paramDetails.description}
                                               </span>
                                             )}
-                                            <span className="ml-2 text-gray-500">
-                                              ({paramDetails.type})
-                                            </span>
+                                            <Input
+                                              value={
+                                                toolInputs[tool.name]?.[
+                                                  paramName
+                                                ] || ""
+                                              }
+                                              onChange={(e) =>
+                                                handleInputChange(
+                                                  tool.name,
+                                                  paramName,
+                                                  e.target.value
+                                                )
+                                              }
+                                              placeholder={`Enter ${paramName}`}
+                                              className="mt-1"
+                                            />
                                           </div>
-                                          {paramDetails.description && (
-                                            <span className="text-muted-foreground mb-1 text-xs">
-                                              {paramDetails.description}
-                                            </span>
-                                          )}
-                                          <Input
-                                            value={
-                                              toolInputs[tool.name]?.[
-                                                paramName
-                                              ] || ""
-                                            }
-                                            onChange={(e) =>
-                                              handleInputChange(
-                                                tool.name,
-                                                paramName,
-                                                e.target.value
-                                              )
-                                            }
-                                            placeholder={`Enter ${paramName}`}
-                                            className="mt-1"
-                                          />
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                )}
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
                         </div>
 
                         {/* Tool Results - Bottom */}
@@ -458,7 +461,15 @@ export default function ServerDetailClient({
                           {toolResults[tool.name]?.result && (
                             <div className="bg-muted/50 rounded border p-3">
                               <pre className="bg-muted max-h-[400px] overflow-auto rounded p-2 text-xs">
-                                {toolResults[tool.name].result}
+                                {(() => {
+                                  const raw = toolResults[tool.name].result!
+                                  try {
+                                    const parsed = JSON.parse(raw)
+                                    return JSON.stringify(parsed, null, 2)
+                                  } catch {
+                                    return raw
+                                  }
+                                })()}
                               </pre>
                             </div>
                           )}

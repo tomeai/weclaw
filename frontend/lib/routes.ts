@@ -2,7 +2,7 @@ export const API_ROUTE_MCP_SEARCH = "/api/v1/mcp/search"
 export const API_ROUTE_MCP_CATEGORIES = "/api/v1/mcp/categories"
 export const API_ROUTE_MCP_REGISTRY_SEARCH = "/api/v1/mcp/server/registry/search"
 export const API_ROUTE_MCP_SERVER_DETAIL = "/api/v1/mcp"
-export const API_ROUTE_MCP_SERVER_CALL = "/api/v1/mcp/server/registry/call"
+export const API_ROUTE_MCP_SERVER_CALL = "/api/v1/mcp/invoke"
 export const API_ROUTE_MCP_SERVER_FEED = "/api/v1/mcp/server/registry/feed"
 export const API_ROUTE_MCP_SERVER_RECOMMEND = "/api/v1/mcp/recommend"
 export const API_ROUTE_MCP_ADMIN_SERVERS = "/api/v1/admin/mcp/servers"
@@ -14,3 +14,11 @@ export const API_ROUTE_MCP_DEPLOY_PACKAGE = "/api/v1/mcp/deploy/package"
 export const API_ROUTE_OAUTH_USER = "/api/v1/admin/oauth2/user/me"
 export const API_ROUTE_AUTH_ME = "/api/v1/admin/auth/me"
 export const API_ROUTE_GITHUB_OAUTH2_LOGIN = "/api/v1/admin/oauth/github"
+
+// Agent
+export const API_ROUTE_AGENT_SEARCH = "/api/v1/agent/search"
+export const API_ROUTE_AGENT_CATEGORIES = "/api/v1/agent/categories"
+
+// Skill
+export const API_ROUTE_SKILL_SEARCH = "/api/v1/skill/search"
+export const API_ROUTE_SKILL_CATEGORIES = "/api/v1/skill/categories"

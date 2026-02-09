@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import {
   McpSearchParams,
-  McpServerItem,
+  McpSearchServerItem,
   PaginatedData,
   searchMcpServers,
 } from "@/lib/mcp"
@@ -31,8 +31,8 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchResponse, setSearchResponse] =
-    useState<PaginatedData<McpServerItem> | null>(null)
-  const [mcpServers, setMcpServers] = useState<McpServerItem[]>([])
+    useState<PaginatedData<McpSearchServerItem> | null>(null)
+  const [mcpServers, setMcpServers] = useState<McpSearchServerItem[]>([])
 
   const itemsPerPage = 1 // Based on the API response size parameter
   const totalServers = searchResponse?.total || 0
@@ -95,7 +95,7 @@ export default function SearchPage() {
     }
   }
 
-  const categories = []
+  const categories: { id: string; name: string; count: number }[] = []
 
   return (
     <>
@@ -215,18 +215,8 @@ export default function SearchPage() {
           {!isLoading && (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {mcpServers.map((server, index) => {
-                // Count the number of tools, prompts, and resources
-                const toolsCount = server.tools?.length || 0
-                const promptsCount = server.prompts ? 1 : 0 // Simplified, adjust based on actual structure
-                const resourcesCount = server.resources ? 1 : 0 // Simplified, adjust based on actual structure
-
-                // Generate a seed for the avatar based on the server title
-                const avatarSeed = server.server_title
-                  .replace(/\s+/g, "-")
-                  .toLowerCase()
-
                 return (
-                  <Link href={`/mcp/${server.id}`} key={index}>
+                  <Link href={`/mcp/${server.owner}/${server.server_name}`} key={index}>
                     <Card className="group h-[220px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg">
                       <CardContent className="flex h-full flex-col p-5">
                         <div className="flex h-full flex-col">
@@ -235,11 +225,11 @@ export default function SearchPage() {
                             <div className="flex w-full items-center gap-3 overflow-hidden">
                               <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-100 transition-all group-hover:ring-blue-200">
                                 <AvatarImage
-                                  src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                                  alt={server.server_title}
+                                  src={server.avatar}
+                                  alt={server.server_name}
                                 />
                                 <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700">
-                                  {server.server_title
+                                  {server.server_name
                                     .substring(0, 2)
                                     .toUpperCase()}
                                 </AvatarFallback>
@@ -248,11 +238,12 @@ export default function SearchPage() {
                                 <div className="flex w-full items-center gap-2 overflow-hidden">
                                   <h3
                                     className="min-w-0 flex-1 truncate text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700"
-                                    title={server.server_title}
+                                    title={server.server_name}
                                   >
-                                    {server.server_title}
+                                    {server.server_name}
                                   </h3>
                                 </div>
+                                <p className="truncate text-xs text-gray-500">{server.owner}</p>
                               </div>
                             </div>
                           </div>
@@ -269,28 +260,28 @@ export default function SearchPage() {
 
                           {/* Capability badges at the bottom */}
                           <div className="mt-auto flex flex-wrap gap-2">
-                            {toolsCount > 0 && (
+                            {server.tools > 0 && (
                               <Badge
                                 variant="secondary"
                                 className="bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200"
                               >
-                                {toolsCount} tools
+                                {server.tools} tools
                               </Badge>
                             )}
-                            {promptsCount > 0 && (
+                            {server.prompts > 0 && (
                               <Badge
                                 variant="secondary"
                                 className="bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200"
                               >
-                                {promptsCount} prompts
+                                {server.prompts} prompts
                               </Badge>
                             )}
-                            {resourcesCount > 0 && (
+                            {server.resources > 0 && (
                               <Badge
                                 variant="secondary"
                                 className="bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200"
                               >
-                                {resourcesCount} resources
+                                {server.resources} resources
                               </Badge>
                             )}
                           </div>

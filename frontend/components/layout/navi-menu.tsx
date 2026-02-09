@@ -1,12 +1,13 @@
 "use client";
 
-import {Sheet, SheetContent, SheetTrigger} from "@/components/ui/sheet"
-import {List} from "@phosphor-icons/react"
-import Link from "next/link"
-import {usePathname} from "next/navigation"
-import {useState} from "react"
-import { AddMcpButton } from "@/components/mcp/add-mcp-button"
-import { useUser } from "@/components/providers/user-provider"
+import { AddMcpButton } from "@/components/mcp/add-mcp-button";
+import { useUser } from "@/components/providers/user-provider";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { List } from "@phosphor-icons/react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+
 
 export function NaviMenu() {
     const pathname = usePathname()
@@ -29,68 +30,96 @@ export function NaviMenu() {
     }
 
     return (
-        <>
-            {/* Desktop Navigation */}
-            <div className="hidden items-center gap-6 text-xl font-medium md:flex">
-                <Link href="/agent" className={isActive("/agent") ? activeLinkClass : linkClass}>
-                    Agent
-                </Link>
-               <Link href="/chat" className={isActive("/chat") ? activeLinkClass : linkClass}>
-                    Chat
-                </Link>
-                {/*<Link href="/rank" className={isActive("/rank") ? activeLinkClass : linkClass}>*/}
-                {/*    排行榜*/}
-                {/*</Link>*/}
-            </div>
+      <>
+        {/* Desktop Navigation */}
+        <div className="hidden items-center gap-6 text-xl font-medium md:flex">
+          <Link
+            href="/mcp"
+            className={isActive("/mcp") ? activeLinkClass : linkClass}
+          >
+            MCP
+          </Link>
+          <Link
+            href="/skills"
+            className={isActive("/skills") ? activeLinkClass : linkClass}
+          >
+            Skills
+          </Link>
+          <Link
+            href="/agent"
+            className={isActive("/agent") ? activeLinkClass : linkClass}
+          >
+            Agent
+          </Link>
+        </div>
 
-            {/* Mobile Navigation */}
-            <div className="md:hidden">
-                <Sheet open={open} onOpenChange={setOpen}>
-                    <SheetTrigger asChild>
-                        <button className="text-muted-foreground hover:text-foreground p-2">
-                            <List size={24}/>
-                        </button>
-                    </SheetTrigger>
-                    <SheetContent side="right" className="w-[250px] pt-12">
-                        <nav className="flex flex-col">
-                            <Link
-                                href="/agent"
-                                className={isActive("/agent") ? mobileActiveLinkClass : mobileLinkClass}
-                                onClick={() => setOpen(false)}
-                            >
-                                Agent
-                            </Link>
-                            {/*<Link*/}
-                            {/*    href="/rank"*/}
-                            {/*    className={isActive("/rank") ? mobileActiveLinkClass : mobileLinkClass}*/}
-                            {/*    onClick={() => setOpen(false)}*/}
-                            {/*>*/}
-                            {/*    排行榜*/}
-                            {/*</Link>*/}
-                            <div className="py-2">
-                                <AddMcpButton 
-                                    onClick={!isLoggedIn ? () => {
-                                        setOpen(false)
-                                        window.location.href = '/user/auth/login'
-                                    } : () => {
-                                        setOpen(false)
-                                        window.location.href = '/mcp/submit'
-                                    }}
-                                />
-                            </div>
-                            {!isLoggedIn && (
-                                <Link
-                                    href="/auth/login"
-                                    onClick={() => setOpen(false)}
-                                    className="font-base text-foreground text-lg py-3 block text-left hover:text-primary transition-colors"
-                                >
-                                    登录
-                                </Link>
-                            )}
-                        </nav>
-                    </SheetContent>
-                </Sheet>
-            </div>
-        </>
+        {/* Mobile Navigation */}
+        <div className="md:hidden">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <button className="text-muted-foreground hover:text-foreground p-2">
+                <List size={24} />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[250px] pt-12">
+              <nav className="flex flex-col">
+                <Link
+                  href="/mcp"
+                  className={
+                    isActive("/mcp") ? mobileActiveLinkClass : mobileLinkClass
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  MCP
+                </Link>
+                <Link
+                  href="/skills"
+                  className={
+                    isActive("/skills")
+                      ? mobileActiveLinkClass
+                      : mobileLinkClass
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  Skills
+                </Link>
+                <Link
+                  href="/agent"
+                  className={
+                    isActive("/agent") ? mobileActiveLinkClass : mobileLinkClass
+                  }
+                  onClick={() => setOpen(false)}
+                >
+                  Agent
+                </Link>
+                <div className="py-2">
+                  <AddMcpButton
+                    onClick={
+                      !isLoggedIn
+                        ? () => {
+                            setOpen(false)
+                            window.location.href = "/user/auth/login"
+                          }
+                        : () => {
+                            setOpen(false)
+                            window.location.href = "/build/mcp"
+                          }
+                    }
+                  />
+                </div>
+                {!isLoggedIn && (
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setOpen(false)}
+                    className="font-base text-foreground hover:text-primary block py-3 text-left text-lg transition-colors"
+                  >
+                    登录
+                  </Link>
+                )}
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </>
     )
 }

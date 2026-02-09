@@ -1,5 +1,6 @@
 from app.admin.crud.crud_user import user_dao
 from app.admin.model import McpServer
+from app.mcp.crud.crud_mcp_category import mcp_category_dao
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from common.exception import errors
 from database.db import async_db_session
@@ -37,8 +38,8 @@ class McpServerService:
         return base_command
 
     @staticmethod
-    async def get_select(*, keyword: str) -> Select:
-        return await mcp_server_dao.get_list(keyword)
+    async def get_select(*, keyword: str, category_id: int) -> Select:
+        return await mcp_server_dao.get_list(keyword, category_id)
 
     @staticmethod
     async def get_mcp_last_7_day():
@@ -59,6 +60,20 @@ class McpServerService:
             if not user:
                 raise errors.NotFoundError(msg='用户不存在')
             return await mcp_server_dao.get_mcp_with_user(db, server_name, user.id)
+
+    @staticmethod
+    async def get_recommend_mcp() -> list:
+        async with async_db_session() as db:
+            stmt = await mcp_server_dao.get_recommend_mcp()
+            result = await db.execute(stmt)
+            return result.scalars().all()
+
+    @staticmethod
+    async def get_categories() -> list:
+        async with async_db_session() as db:
+            stmt = await mcp_category_dao.get_all_categories()
+            result = await db.execute(stmt)
+            return result.scalars().all()
 
 
 mcp_server_service: McpServerService = McpServerService()

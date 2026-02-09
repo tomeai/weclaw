@@ -78,7 +78,10 @@ class McpServer(Base):
     resources: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='资源列表')
 
     # 是否公开
-    is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False, comment='是否公开')
+
+    # 是否首页推荐
+    is_recommend: Mapped[bool] = mapped_column(Boolean, default=False, comment='是否推荐')
 
     # 分类一对多
     category_id: Mapped[int | None] = mapped_column(

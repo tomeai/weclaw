@@ -21,5 +21,10 @@ class CRUDMcpCategory(CRUDPlus[McpCategory]):
         )
         return stmt
 
+    async def get_all_categories(self):
+        """获取所有分类"""
+        stmt = select(self.model).order_by(self.model.id)
+        return stmt
+
 
 mcp_category_dao = CRUDMcpCategory(McpCategory)

@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, List
 
-from app.mcp.schema.mcp import GetMcpDetail, McpBaseDetail, SearchMcpParam
+from app.mcp.schema.category import GetCategoryBase
+from app.mcp.schema.mcp import GetMcpDetail, McpRecommendDetail, McpSearchDetail, SearchMcpParam
 from app.mcp.service.mcp_server_service import mcp_server_service
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
@@ -18,7 +19,7 @@ router = APIRouter()
 async def search_mcp(
     db: CurrentSession,
     obj: SearchMcpParam,
-) -> ResponseSchemaModel[PageData[McpBaseDetail]]:
+) -> ResponseSchemaModel[PageData[McpSearchDetail]]:
     """
     后台基础搜索：关键字搜索，支持排序、分类过滤、分页
     1. 一期支持分类过滤、搜索、分页
@@ -30,9 +31,21 @@ async def search_mcp(
     Returns:
 
     """
-    mcp_select = await mcp_server_service.get_select(keyword=obj.keyword)
+    mcp_select = await mcp_server_service.get_select(keyword=obj.keyword, category_id=obj.category_id)
     page_data = await paging_data(db, mcp_select)
     return response_base.success(data=page_data)
+
+
+@router.get('/recommend', summary='推荐mcp列表')
+async def get_recommend_mcp() -> ResponseSchemaModel[List[McpRecommendDetail]]:
+    result = await mcp_server_service.get_recommend_mcp()
+    return response_base.success(data=result)
+
+
+@router.get('/categories', summary='mcp categories')
+async def get_mcp_categories() -> ResponseSchemaModel[List[GetCategoryBase]]:
+    result = await mcp_server_service.get_categories()
+    return response_base.success(data=result)
 
 
 @router.get('/{username}/{server_name}', summary='mcp detail')

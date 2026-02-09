@@ -10,7 +10,7 @@ from mcp.client.sse import sse_client
 router = APIRouter()
 
 
-@router.post('/call/{mcp_id}')
+@router.post('/invoke/{mcp_id}')
 async def call_tool(mcp_id: Annotated[int, Path(description='mcp_id')], call_param: CallToolParam):
     """
     mcp_gateway / serverless

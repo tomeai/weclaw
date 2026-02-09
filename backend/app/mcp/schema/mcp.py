@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
 from common.schema import SchemaBase
-from fastmcp.mcp_config import StdioMCPServer
+from fastmcp.mcp_config import RemoteMCPServer, StdioMCPServer
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
@@ -119,7 +119,7 @@ class UpdateMcpServerParam(SchemaBase):
 
 
 class McpServersWrapper(BaseModel):
-    mcpServers: Dict[str, StdioMCPServer]
+    mcpServers: Dict[str, StdioMCPServer | RemoteMCPServer]
 
 
 class AddMcpServerParam(BaseModel):

@@ -2,217 +2,256 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { getMcpServerRecommend, McpRecommendCategory } from "@/lib/mcp"
+import { getMcpRecommendList, McpRecommendItem } from "@/lib/mcp"
 import { cn } from "@/lib/utils"
-import { MagnifyingGlass } from "@phosphor-icons/react"
+import {
+  ArrowUpRight,
+  Cpu,
+  Globe,
+  Lightning,
+  MagnifyingGlass,
+} from "@phosphor-icons/react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+function formatCallCount(count: number): string {
+  if (count >= 10000) {
+    return (count / 1000).toFixed(1) + "k"
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(2) + "k"
+  }
+  return count.toString()
+}
+
+function McpCard({ server }: { server: McpRecommendItem }) {
+  const avatarSeed = server.server_name.replace(/\s+/g, "-").toLowerCase()
+
+  return (
+    <Link href={`/mcp/${server.owner}/${server.server_name}`}>
+      <div className="group/card relative flex h-[180px] w-[300px] flex-shrink-0 flex-col rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+        {/* Header */}
+        <div className="mb-3 flex items-center gap-3">
+          <Avatar className="h-9 w-9 flex-shrink-0 ring-1 ring-border/50">
+            <AvatarImage
+              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
+              alt={server.server_name}
+            />
+            <AvatarFallback className="text-xs font-medium">
+              {server.server_name.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400">
+              {server.server_name}
+            </h3>
+            <p className="truncate text-xs text-muted-foreground">
+              {server.owner}
+            </p>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="mb-auto line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+          {server.description}
+        </p>
+
+        {/* Footer */}
+        <div className="mt-3 flex items-center justify-between">
+          <Badge variant="outline" className="text-xs">
+            {server.server_type === "hosted" ? (
+              <span className="flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                Remote
+              </span>
+            ) : (
+              "Local"
+            )}
+          </Badge>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <ArrowUpRight className="h-3.5 w-3.5" />
+            <span>{formatCallCount(server.call_count)}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function ScrollingRow({
+  servers,
+  direction = "left",
+  speed = 30,
+}: {
+  servers: McpRecommendItem[]
+  direction?: "left" | "right"
+  speed?: number
+}) {
+  if (servers.length === 0) return null
+
+  // Ensure enough cards to fill wide viewports
+  const minCards = 10
+  const repeatCount = Math.max(1, Math.ceil(minCards / servers.length))
+  const expandedServers = Array(repeatCount).fill(servers).flat()
+
+  return (
+    <div className="group/row relative overflow-hidden py-2">
+      {/* Gradient edge masks */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
+
+      <div
+        className={cn(
+          "flex gap-4",
+          direction === "left"
+            ? "animate-scroll-left"
+            : "animate-scroll-right",
+          "group-hover/row:[animation-play-state:paused]"
+        )}
+        style={{
+          width: "max-content",
+          animationDuration: `${speed}s`,
+        }}
+      >
+        {/* Render twice for seamless loop */}
+        {expandedServers.map((server, i) => (
+          <McpCard key={`a-${i}`} server={server} />
+        ))}
+        {expandedServers.map((server, i) => (
+          <McpCard key={`b-${i}`} server={server} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function HomePage() {
-  const [mcpData, setMcpData] = useState<McpRecommendCategory[] | null>(null)
+  const [servers, setServers] = useState<McpRecommendItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
   const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      return
-    }
-
-    // Navigate to MCP search page with search query
+    if (!searchQuery.trim()) return
     window.location.href = `/mcp?q=${encodeURIComponent(searchQuery)}`
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch()
-    }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch()
   }
 
   useEffect(() => {
-    const fetchMcpRecommend = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await getMcpServerRecommend()
-        setMcpData(response)
+        const data = await getMcpRecommendList()
+        setServers(data)
       } catch (err) {
-        console.error("Failed to fetch MCP recommend data:", err)
-        setError("获取推荐数据失败，请稍后重试")
+        console.error("Failed to fetch recommend data:", err)
       } finally {
         setLoading(false)
       }
     }
-
-    fetchMcpRecommend()
+    fetchData()
   }, [])
 
+  // Distribute servers across 3 rows with different orderings
+  const row1 = servers
+  const row2 = [...servers].reverse()
+  const row3 = [
+    ...servers.slice(Math.floor(servers.length / 2)),
+    ...servers.slice(0, Math.floor(servers.length / 2)),
+  ]
+
   return (
-    <div
-      className={cn(
-        "@container/main relative flex h-full min-h-screen flex-col items-center justify-start"
-      )}
-    >
-      <div className="mx-auto w-full max-w-7xl px-4 py-24 sm:px-6 md:py-28 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-12 text-center md:mb-10">
-          <h1 className="mb-4 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl dark:from-gray-100 dark:to-gray-400">
-            MCP Servers 市场
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg leading-relaxed text-gray-600 dark:text-gray-300">
-            基于多维评分，帮你打造更强大的 AI 系统。
-          </p>
+    <div className="@container/main relative flex min-h-screen flex-col">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden px-4 pt-24 pb-16 sm:px-6 md:pt-32 md:pb-20 lg:px-8">
+        {/* Animated background blobs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="animate-float-slow absolute -top-40 -right-40 h-80 w-80 rounded-full bg-blue-500/5 blur-3xl dark:bg-blue-500/10" />
+          <div className="animate-float-slower absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-purple-500/5 blur-3xl dark:bg-purple-500/10" />
+          <div className="animate-float absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/5 blur-3xl dark:bg-pink-500/8" />
         </div>
 
-        {/* Search Box */}
-        <div className="relative mx-auto mb-16 w-full max-w-4xl">
-          <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-            <MagnifyingGlass className="h-6 w-6 text-gray-400" />
+        <div className="relative mx-auto max-w-4xl text-center">
+          {/* Top badge */}
+          <div className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur-sm">
+            <Lightning className="h-4 w-4 text-yellow-500" weight="fill" />
+            <span>开放的 MCP 工具生态</span>
           </div>
-          <Input
-            type="text"
-            placeholder="搜索 MCP 服务器..."
-            className="h-14 rounded-lg border-gray-200 py-3 pr-4 pl-14 text-base shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={handleKeyPress}
-          />
+
+          {/* Title */}
+          <h1 className="animate-fade-in-up mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl [animation-delay:100ms]">
+            <span className="bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
+              构建更强大的
+            </span>
+            <br />
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-pink-400">
+              AI 系统
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl [animation-delay:200ms]">
+            一行代码接入开放的 MCP 工具生态，支持所有主流大语言模型。
+          </p>
+
+          {/* Search */}
+          <div className="animate-fade-in-up relative mx-auto max-w-xl [animation-delay:300ms]">
+            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+              <MagnifyingGlass className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <Input
+              type="text"
+              placeholder="搜索 MCP 服务..."
+              className="h-12 rounded-xl border-border/50 bg-muted/30 pr-4 pl-12 text-base backdrop-blur-sm transition-all focus:border-primary/50 focus:bg-background focus:shadow-lg focus:shadow-primary/5"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+
+          {/* Feature highlights */}
+          <div className="animate-fade-in-up mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground sm:gap-8 [animation-delay:400ms]">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              <span>100+ MCP 服务</span>
+            </div>
+            <div className="hidden h-4 w-px bg-border sm:block" />
+            <div className="flex items-center gap-2">
+              <Cpu className="h-4 w-4" />
+              <span>多模型支持</span>
+            </div>
+            <div className="hidden h-4 w-px bg-border sm:block" />
+            <div className="flex items-center gap-2">
+              <Lightning className="h-4 w-4" />
+              <span>即时部署</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Scrolling Cards Section */}
+      <section className="relative pb-24">
+        <div className="mx-auto mb-8 max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl font-semibold text-foreground">
+            热门推荐
+          </h2>
         </div>
 
-        {/* mcp recommend section */}
-        <div className="mb-16">
-          {loading && (
-            <div className="py-8 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-gray-900"></div>
-              <p className="mt-2 text-gray-600">加载中...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="py-8 text-center">
-              <p className="text-red-600">{error}</p>
-              <Button
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="mt-4"
-              >
-                重新加载
-              </Button>
-            </div>
-          )}
-
-          {!loading && !error && mcpData && mcpData.length > 0 && (
-            <>
-              {mcpData.map((category) => (
-                <div key={category.id} className="mb-12">
-                  {/* Category Header */}
-                  <div className="mb-6 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-6 w-1.5 rounded-sm bg-blue-500"></div>
-                      <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                        {category.name}
-                      </h2>
-                    </div>
-                    <Link href={`/mcp?category=${category.id}`}>
-                      <Button variant="outline" size="sm">
-                        查看所有
-                      </Button>
-                    </Link>
-                  </div>
-
-                  {/* Servers Grid - 2 rows, 4 cards per row */}
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {category.servers?.slice(0, 8).map((server, index) => {
-                      // Generate a seed for the avatar based on the server title
-                      const avatarSeed = server.server_title
-                        .replace(/\s+/g, "-")
-                        .toLowerCase()
-
-                      return (
-                        <Link
-                          href={`/mcp/${server.user.username}/${server.server_name}`}
-                          key={`${server.server_name}-${index}`}
-                        >
-                          <Card className="group h-[200px] w-full border-gray-200 transition-all duration-300 hover:border-blue-300 hover:shadow-lg">
-                            <CardContent className="flex h-full flex-col p-5">
-                              <div className="flex h-full flex-col">
-                                {/* Header with title and avatar */}
-                                <div className="mb-4 flex items-start justify-between">
-                                  <div className="flex w-full items-center gap-3 overflow-hidden">
-                                    <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-gray-100 transition-all group-hover:ring-blue-200">
-                                      <AvatarImage
-                                        src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                                        alt={server.server_title}
-                                      />
-                                      <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-700">
-                                        {server.server_title
-                                          .substring(0, 2)
-                                          .toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex w-full min-w-0 flex-col overflow-hidden">
-                                      <div className="flex w-full items-center gap-2 overflow-hidden">
-                                        <h3
-                                          className="min-w-0 flex-1 truncate text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-700"
-                                          title={server.server_title}
-                                        >
-                                          {server.server_title}
-                                        </h3>
-                                        <Badge
-                                          variant={
-                                            server.server_type === "hosted"
-                                              ? "default"
-                                              : "secondary"
-                                          }
-                                          className="flex-shrink-0 text-xs"
-                                        >
-                                          {server.server_type}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Description with fixed height and truncation */}
-                                <div className="mb-auto">
-                                  <p
-                                    className="line-clamp-3 text-sm leading-relaxed text-gray-600"
-                                    title={server.description}
-                                  >
-                                    {server.description}
-                                  </p>
-                                </div>
-
-                                {/* Tools count badge */}
-                                <div className="mt-2">
-                                  <Badge
-                                    variant="outline"
-                                    className="border-blue-200 bg-blue-50 text-blue-700"
-                                  >
-                                    {server.tools} tools
-                                  </Badge>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
-
-          {!loading && !error && (!mcpData || mcpData.length === 0) && (
-            <div className="py-8 text-center">
-              <p className="text-gray-600">暂无推荐数据</p>
-            </div>
-          )}
-        </div>
-      </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-primary" />
+          </div>
+        ) : servers.length > 0 ? (
+          <div className="space-y-2">
+            <ScrollingRow servers={row1} direction="left" speed={35} />
+            <ScrollingRow servers={row2} direction="right" speed={40} />
+            <ScrollingRow servers={row3} direction="left" speed={30} />
+          </div>
+        ) : null}
+      </section>
     </div>
   )
 }

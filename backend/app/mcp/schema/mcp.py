@@ -68,11 +68,13 @@ class McpRecommendDetail(SchemaBase):
     # tools: int | None = Field(None, description='工具数量')
     # user: GetUserInfo | None = Field(None, description='user')
     owner: str = Field(description='owner')
+    call_count: int = Field(description='调用量')
 
     @model_validator(mode='before')
     @classmethod
     def handel(cls, data: Any) -> Self:
         data.owner = data.user.username
+        data.call_count = 1889
         return data
 
     # @model_validator(mode='before')

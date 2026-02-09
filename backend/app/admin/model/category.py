@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from app.admin.model.agent import AgentServer
     from app.admin.model.mcp import McpServer
+    from app.admin.model.skill import AgentSkill
 
 
 class McpCategory(Base):
@@ -35,3 +36,16 @@ class AgentCategory(Base):
 
     # agent server一对多
     agent_servers: Mapped[list[AgentServer]] = relationship(init=False, back_populates='category')
+
+
+class SkillCategory(Base):
+    """skill category"""
+
+    __tablename__ = 'skill_category'
+
+    id: Mapped[id_key] = mapped_column(init=False)
+    name: Mapped[str] = mapped_column(String(20), unique=True, comment='类目名称')
+    is_recommend: Mapped[bool] = mapped_column(default=False, comment='是否推荐类目')
+
+    # skills 一对多
+    agent_skills: Mapped[list[AgentSkill]] = relationship(init=False, back_populates='category')

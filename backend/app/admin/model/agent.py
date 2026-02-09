@@ -16,15 +16,22 @@ class AgentServer(Base):
     __tablename__ = 'agent_server'
     id: Mapped[id_key] = mapped_column(init=False)
     title: Mapped[str] = mapped_column(String(255), comment='agent name')
+    avatar: Mapped[str] = mapped_column(String(255), comment='agent avatar')
     description: Mapped[str | None] = mapped_column(Text, default=None, comment='agent描述')
     system_prompt: Mapped[str | None] = mapped_column(Text, default=None, comment='系统提示词')
     prologue: Mapped[str] = mapped_column(Text, default=None, comment='开场白')
-    tool: Mapped[str | None] = mapped_column(JSON, default=None, comment='工具列表')
+
+    # 技能
+    tools: Mapped[str | None] = mapped_column(JSON, default=None, comment='工具列表')
     knowledge: Mapped[str | None] = mapped_column(JSON, default=None, comment='知识库列表')
-    database: Mapped[str | None] = mapped_column(JSON, default=None, comment='数据库列表')
+    databases: Mapped[str | None] = mapped_column(JSON, default=None, comment='数据库列表')
+    skills: Mapped[str | None] = mapped_column(JSON, default=None, comment='skills列表')
+
+    # 开关
     enable_search: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否开启联网搜索')
     enable_multimodal: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否多模态')
     enable_suggest: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='问题建议')
+
     # 是否公开
     is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')
 

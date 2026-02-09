@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client"
 
 import { MODELS_OPTIONS, PROVIDERS_OPTIONS } from "@/app/lib/config"

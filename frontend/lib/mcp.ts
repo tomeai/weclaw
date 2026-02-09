@@ -257,9 +257,24 @@ export function callMcpServerTool(
   )
 }
 
-/** 获取推荐 MCP 服务器 */
+/** 获取推荐 MCP 服务器（分类） */
 export function getMcpServerRecommend(): Promise<McpRecommendCategory[]> {
   return http.get<McpRecommendCategory[]>(API_ROUTE_MCP_SERVER_RECOMMEND)
+}
+
+// ============ 推荐列表（扁平） ============
+
+export interface McpRecommendItem {
+  server_name: string
+  description: string
+  server_type: "hosted" | "local"
+  owner: string
+  call_count: number
+}
+
+/** 获取推荐 MCP 服务器（扁平列表） */
+export function getMcpRecommendList(): Promise<McpRecommendItem[]> {
+  return http.get<McpRecommendItem[]>(API_ROUTE_MCP_SERVER_RECOMMEND)
 }
 
 /** 管理端 - 获取 MCP 服务器列表 */

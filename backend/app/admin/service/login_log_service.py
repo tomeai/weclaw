@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
+from typing import Any
 
 from app.admin.crud.crud_login_log import login_log_dao
 from app.admin.schema.login_log import CreateLoginLogParam, DeleteLoginLogParam
@@ -10,9 +11,25 @@ from fastapi import Request
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.common.pagination import paging_data
+
 
 class LoginLogService:
     """登录日志服务类"""
+
+    @staticmethod
+    async def get_list(*, db: AsyncSession, username: str | None, status: int | None, ip: str | None) -> dict[str, Any]:
+        """
+        获取登录日志列表
+
+        :param db: 数据库会话
+        :param username: 用户名
+        :param status: 状态
+        :param ip: IP 地址
+        :return:
+        """
+        log_select = await login_log_dao.get_select(username=username, status=status, ip=ip)
+        return await paging_data(db, log_select)
 
     @staticmethod
     async def get_select(*, username: str | None, status: int | None, ip: str | None) -> Select:

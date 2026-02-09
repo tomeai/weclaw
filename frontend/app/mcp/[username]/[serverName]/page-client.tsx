@@ -1,6 +1,5 @@
 "use client"
 
-import { Breadcrumbs } from "@/components/common/breadcrumb"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -284,16 +283,6 @@ export default function ServerDetailClient({
       )}
     >
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <Breadcrumbs
-          items={[
-            { label: "Home", href: "/", icon: <Home className="h-4 w-4" /> },
-            { label: "MCP Servers", href: "/mcp" },
-            { label: server.server_title },
-          ]}
-          className="mt-5 mb-6"
-        />
-
         {/* Server Metadata */}
         <div className="bg-muted/50 mb-8 rounded-lg border p-6">
           <div className="mb-4 flex items-start gap-4">

@@ -4,6 +4,7 @@ import {
   API_ROUTE_MCP_ADMIN_CATEGORY_CREATE,
   API_ROUTE_MCP_ADMIN_SERVER_DETAIL,
   API_ROUTE_MCP_ADMIN_SERVERS,
+  API_ROUTE_MCP_CATEGORIES,
   API_ROUTE_MCP_DEPLOY_PACKAGE,
   API_ROUTE_MCP_SEARCH,
   API_ROUTE_MCP_SERVER_CALL,
@@ -27,6 +28,27 @@ export interface PaginatedData<T> {
     next: string | null
     prev: string | null
   }
+}
+
+// ============ MCP Category ============
+
+export interface McpCategory {
+  id: number
+  name: string
+}
+
+// ============ MCP Search Server Item ============
+
+export interface McpSearchServerItem {
+  server_name: string
+  description: string
+  server_type: "hosted" | "local"
+  avatar: string
+  tools: number
+  prompts: number
+  resources: number
+  call_count: number
+  owner: string
 }
 
 // ============ MCP Server ============
@@ -188,11 +210,16 @@ export interface McpAdminCategoryCreateParams {
   is_recommend: number
 }
 
+/** 获取 MCP 分类列表 */
+export function getMcpCategories(): Promise<McpCategory[]> {
+  return http.get<McpCategory[]>(API_ROUTE_MCP_CATEGORIES)
+}
+
 /** 搜索 MCP 服务器 */
 export function searchMcpServers(
   params: McpSearchParams = {}
-): Promise<PaginatedData<McpServerItem>> {
-  return http.post<PaginatedData<McpServerItem>>(API_ROUTE_MCP_SEARCH, {
+): Promise<PaginatedData<McpSearchServerItem>> {
+  return http.post<PaginatedData<McpSearchServerItem>>(API_ROUTE_MCP_SEARCH, {
     page: params.page || 1,
     size: params.size || 10,
     category_id: params.category_id ?? 0,

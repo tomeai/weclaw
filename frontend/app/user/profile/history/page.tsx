@@ -169,7 +169,7 @@ export default function ProfileHistoryPage() {
       <div className="space-y-6">
         {/* 页面标题 */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">使用记录</h1>
+          <h1 className="text-3xl font-bold tracking-tight">使用统计</h1>
           <p className="text-muted-foreground">查看您的API调用历史和使用统计</p>
         </div>
 

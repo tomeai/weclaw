@@ -1,9 +1,9 @@
 "use client"
 
-import { useUser } from "@/app/providers/user-provider"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Header } from "./header"
+import { useUser } from "@/components/providers/user-provider"
 
 interface ProfileLayoutProps {
   children: React.ReactNode

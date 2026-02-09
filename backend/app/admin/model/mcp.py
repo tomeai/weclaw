@@ -58,6 +58,8 @@ class McpServer(Base):
     runtime_type: Mapped[str] = mapped_column(String(20), default=None, comment='运行环境')
     # server信息
     server_config: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='server config')
+    # raw config
+    raw_config: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='raw config')
     # 环境变量
     envs: Mapped[str | None] = mapped_column(JSON, default=None, comment='环境变量')
 
@@ -76,7 +78,10 @@ class McpServer(Base):
     resources: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='资源列表')
 
     # 是否公开
-    is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False, comment='是否公开')
+
+    # 是否首页推荐
+    is_recommend: Mapped[bool] = mapped_column(Boolean, default=False, comment='是否推荐')
 
     # 分类一对多
     category_id: Mapped[int | None] = mapped_column(

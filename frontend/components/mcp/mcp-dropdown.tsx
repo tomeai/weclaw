@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@/app/providers/user-provider";
+import { useUser } from "@/components/providers/user-provider"
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Bot, ChevronDown, Server } from "lucide-react";

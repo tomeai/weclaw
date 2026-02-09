@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from app.admin.model import McpCategory, McpServer, User
+from app.admin.model import McpServer, User
 from app.mcp.schema.mcp import UpdateMcpServerParam
 from sqlalchemy import Select, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,8 +47,24 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
         stmt = stmt.order_by(desc(self.model.updated_time))
         return stmt
 
-    async def get_list(self, keyword: str | None = None) -> Select:
+    async def get_recommend_mcp(self) -> Select:
+        stmt = (
+            select(self.model)
+            .where(self.model.is_recommend.is_(True), self.model.is_public.is_(True))
+            .options(
+                selectinload(self.model.user).options(
+                    noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
+                ),
+                noload(self.model.category),
+            )
+            .order_by(desc(self.model.updated_time))
+        )
+        return stmt
+
+    async def get_list(self, keyword: str | None = None, category_id: int = None) -> Select:
         filters = {'is_public': 1}
+        if category_id:
+            filters['category_id'] = category_id
 
         if keyword:
             filters['server_title__like'] = f'%{keyword}%'
@@ -56,7 +72,8 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             'updated_time',
             'desc',
             load_options=[
-                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                noload(self.model.category),
+                # selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
                 selectinload(self.model.user).options(
                     noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
                 ),

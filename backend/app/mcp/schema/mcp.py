@@ -4,27 +4,9 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Self
 
-from app.mcp.schema.category import GetCategoryDetail
-from app.mcp.schema.user import GetUserInfo
 from common.schema import SchemaBase
 from fastmcp.mcp_config import StdioMCPServer
 from pydantic import BaseModel, Field, field_validator, model_validator
-
-
-class GetMcpSearchDetail(SchemaBase):
-    """
-    搜索结果
-    """
-
-    id: int = Field(description='id')
-    title: str | None = Field(None, description='名称')
-    description: str | None = Field(None, description='描述')
-    server_type: str | None = Field(None, description='类型')
-    capabilities: Dict[str, Any] | None = Field(None, description='能力')
-    tools: Dict[str, Any] | None = Field(None, description='工具')
-    prompts: Dict[str, Any] | None = Field(None, description='提示词')
-    resources: Dict[str, Any] | None = Field(None, description='资源')
-    envs: Dict[str, Any] | None = Field(None, description='环境变量')
 
 
 class GetMcpDetail(SchemaBase):
@@ -40,32 +22,65 @@ class GetMcpDetail(SchemaBase):
 
 
 class McpBaseDetail(SchemaBase):
-    id: int = Field(description='id')
-    server_title: str = Field(description='名称')
+    # id: int = Field(description='id')
+    # server_title: str = Field(description='名称')
     server_name: str = Field(description='mcp name')
     description: str | None = Field(None, description='描述')
     server_type: str = Field(description='类型')
-    server_metadata: Dict[str, Any] | None = Field(None, description='能力')
-    tools: List[Dict[str, Any]] | None = Field(None, description='工具')
-    user: GetUserInfo = Field(description='用户信息')
-    category: GetCategoryDetail = Field(description='分类')
+    avatar: str | None = Field(description='avatar')
+    # user: GetUserInfo = Field(description='用户信息')
 
 
-class McpRecommendDetail(SchemaBase):
-    server_title: str = Field(description='名称')
-    server_name: str = Field(description='mcp name')
-    description: str | None = Field(None, description='描述')
-    server_type: str = Field(description='类型')
-    capabilities: Dict[str, Any] | None = Field(None, description='能力')
-    tools: int | None = Field(None, description='工具数量')
-    user: GetUserInfo | None = Field(None, description='user')
+class McpSearchDetail(McpBaseDetail):
+    # tools: List[Dict[str, Any]] | None = Field(None, description='工具')
+    # prompts: List[Dict[str, Any]] | None = Field(None, description='提示词')
+    # resources: List[Dict[str, Any]] | None = Field(None, description='资源')
+
+    # @model_validator(mode="after")
+    # def handle(self):
+    #     self.tools = len(self.tools) if self.tools else 0
+    #     self.prompts = len(self.prompts) if self.prompts else 0
+    #     self.resources = len(self.resources) if self.resources else 0
+    #     return self
+    tools: int = Field(description='工具数量')
+    prompts: int = Field(description='提示词数量')
+    resources: int = Field(description='资源数量')
+    call_count: int = Field(description='调用量')
+    owner: str = Field(description='owner')
 
     @model_validator(mode='before')
     @classmethod
     def handel(cls, data: Any) -> Self:
-        data.capabilities = data.server_metadata['capabilities']
-        data.tools = len(data.tools)
+        data['tools'] = len(data['tools']) if data['tools'] else 0
+        data['prompts'] = len(data['prompts']) if data['prompts'] else 0
+        data['resources'] = len(data['resources']) if data['resources'] else 0
+        data['call_count'] = 1889
+        data['owner'] = data['user']['username']
         return data
+
+
+class McpRecommendDetail(SchemaBase):
+    # server_title: str = Field(description='名称')
+    server_name: str = Field(description='mcp name')
+    description: str | None = Field(None, description='描述')
+    server_type: str = Field(description='类型')
+    # capabilities: Dict[str, Any] | None = Field(None, description='能力')
+    # tools: int | None = Field(None, description='工具数量')
+    # user: GetUserInfo | None = Field(None, description='user')
+    owner: str = Field(description='owner')
+
+    @model_validator(mode='before')
+    @classmethod
+    def handel(cls, data: Any) -> Self:
+        data.owner = data.user.username
+        return data
+
+    # @model_validator(mode='before')
+    # @classmethod
+    # def handel(cls, data: Any) -> Self:
+    #     # data.capabilities = data.server_metadata['capabilities']
+    #     data.tools = len(data.tools)
+    #     return data
 
 
 class GetMcpRecommendDetail(SchemaBase):

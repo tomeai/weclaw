@@ -9,7 +9,6 @@ from fastapi import Depends, Query
 from fastapi_pagination import pagination_ctx
 from fastapi_pagination.bases import AbstractPage, AbstractParams, RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate
-from fastapi_pagination.links.bases import create_links
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
@@ -51,7 +50,6 @@ class _PageDetails(BaseModel):
     page: int = Field(description='当前页码')
     size: int = Field(description='每页数量')
     total_pages: int = Field(description='总页数')
-    links: _Links = Field(description='分页链接')
 
 
 class _CustomPage(_PageDetails, AbstractPage[T], Generic[T]):
@@ -69,12 +67,6 @@ class _CustomPage(_PageDetails, AbstractPage[T], Generic[T]):
         page = params.page
         size = params.size
         total_pages = ceil(total / size)
-        links = create_links(
-            first={'page': 1, 'size': size},
-            last={'page': total_pages, 'size': size} if total > 0 else {'page': 1, 'size': size},
-            next={'page': page + 1, 'size': size} if (page + 1) <= total_pages else None,
-            prev={'page': page - 1, 'size': size} if (page - 1) >= 1 else None,
-        ).model_dump()
 
         return cls(
             items=items,
@@ -82,7 +74,6 @@ class _CustomPage(_PageDetails, AbstractPage[T], Generic[T]):
             page=page,
             size=size,
             total_pages=total_pages,
-            links=links,  # type: ignore
         )
 
 

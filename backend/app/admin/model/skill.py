@@ -16,7 +16,11 @@ class AgentSkill(Base):
     __tablename__ = 'agent_skill'
     id: Mapped[id_key] = mapped_column(init=False)
     name: Mapped[str] = mapped_column(String(255), comment='skill name')
+    avatar: Mapped[str] = mapped_column(String(255), comment='agent avatar')
     description: Mapped[str] = mapped_column(Text, comment='skill description')
+    repository: Mapped[str] = mapped_column(String(255), comment='agent repository')
+
+    # 异步下载
     path: Mapped[str] = mapped_column(String(255), comment='skill path')
 
     # 是否公开

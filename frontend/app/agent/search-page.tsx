@@ -3,7 +3,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -216,22 +215,20 @@ export default function SearchPage() {
           {isLoading && (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="h-[200px] animate-pulse border-gray-200 dark:border-gray-700">
-                  <CardContent className="p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
-                      <div className="space-y-2">
-                        <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700" />
-                        <div className="h-3 w-20 rounded bg-gray-100 dark:bg-gray-800" />
-                      </div>
-                    </div>
+                <div key={i} className="h-[200px] animate-pulse rounded-xl border border-border/50 bg-card p-5">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-muted" />
                     <div className="space-y-2">
-                      <div className="h-3 w-full rounded bg-gray-100 dark:bg-gray-800" />
-                      <div className="h-3 w-4/5 rounded bg-gray-100 dark:bg-gray-800" />
-                      <div className="h-3 w-3/5 rounded bg-gray-100 dark:bg-gray-800" />
+                      <div className="h-4 w-32 rounded bg-muted" />
+                      <div className="h-3 w-20 rounded bg-muted/60" />
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 w-full rounded bg-muted/60" />
+                    <div className="h-3 w-4/5 rounded bg-muted/60" />
+                    <div className="h-3 w-3/5 rounded bg-muted/60" />
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -244,78 +241,73 @@ export default function SearchPage() {
                   href={`/agent/${index}`}
                   key={`${agent.owner}-${agent.title}-${index}`}
                 >
-                  <Card className="group h-[200px] border-gray-200 transition-all duration-200 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:hover:border-gray-600">
-                    <CardContent className="flex h-full flex-col px-4 py-3">
-                      {/* Header: Avatar + Name + Owner */}
-                      <div className="mb-2 flex items-start gap-2.5">
-                        <Avatar className="h-10 w-10 flex-shrink-0 rounded-lg">
-                          <AvatarImage
-                            src={agent.avatar}
-                            alt={agent.title}
-                          />
-                          <AvatarFallback className="rounded-lg bg-gray-100 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                            {agent.title.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <h3
-                            className="truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400"
-                            title={agent.title}
-                          >
-                            {agent.title}
-                          </h3>
-                          <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                            {agent.owner}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      <p
-                        className="mb-auto line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300"
-                        title={agent.description || ""}
-                      >
-                        {agent.description}
-                      </p>
-
-                      {/* Footer: Capabilities */}
-                      <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800">
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 bg-gray-100 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                  <div className="group relative flex h-[200px] flex-col rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+                    {/* Header: Avatar + Name + Owner */}
+                    <div className="mb-3 flex items-center gap-3">
+                      <Avatar className="h-9 w-9 flex-shrink-0 ring-1 ring-border/50">
+                        <AvatarImage
+                          src={agent.avatar}
+                          alt={agent.title}
+                        />
+                        <AvatarFallback className="text-xs font-medium">
+                          {agent.title.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                          title={agent.title}
                         >
-                          <BrainCircuit className="h-3.5 w-3.5" />
-                          Agent
-                        </Badge>
-                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                          {agent.tools > 0 && (
-                            <span className="flex items-center gap-1" title="工具数量">
-                              <Wrench className="h-3.5 w-3.5" />
-                              {agent.tools}
-                            </span>
-                          )}
-                          {agent.skills > 0 && (
-                            <span className="flex items-center gap-1" title="技能数量">
-                              <BrainCircuit className="h-3.5 w-3.5" />
-                              {agent.skills}
-                            </span>
-                          )}
-                          {agent.knowledge > 0 && (
-                            <span className="flex items-center gap-1" title="知识库数量">
-                              <BookOpen className="h-3.5 w-3.5" />
-                              {agent.knowledge}
-                            </span>
-                          )}
-                          {agent.databases > 0 && (
-                            <span className="flex items-center gap-1" title="数据库数量">
-                              <Database className="h-3.5 w-3.5" />
-                              {agent.databases}
-                            </span>
-                          )}
-                        </div>
+                          {agent.title}
+                        </h3>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {agent.owner}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    {/* Description */}
+                    <p
+                      className="mb-auto line-clamp-3 text-sm leading-relaxed text-muted-foreground"
+                      title={agent.description || ""}
+                    >
+                      {agent.description}
+                    </p>
+
+                    {/* Footer: Capabilities */}
+                    <div className="mt-3 flex items-center justify-between">
+                      <Badge variant="outline" className="gap-1 text-xs">
+                        <BrainCircuit className="h-3.5 w-3.5" />
+                        Agent
+                      </Badge>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        {agent.tools > 0 && (
+                          <span className="flex items-center gap-1" title="工具数量">
+                            <Wrench className="h-3.5 w-3.5" />
+                            {agent.tools}
+                          </span>
+                        )}
+                        {agent.skills > 0 && (
+                          <span className="flex items-center gap-1" title="技能数量">
+                            <BrainCircuit className="h-3.5 w-3.5" />
+                            {agent.skills}
+                          </span>
+                        )}
+                        {agent.knowledge > 0 && (
+                          <span className="flex items-center gap-1" title="知识库数量">
+                            <BookOpen className="h-3.5 w-3.5" />
+                            {agent.knowledge}
+                          </span>
+                        )}
+                        {agent.databases > 0 && (
+                          <span className="flex items-center gap-1" title="数据库数量">
+                            <Database className="h-3.5 w-3.5" />
+                            {agent.databases}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </Link>
               ))}
 

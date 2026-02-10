@@ -13,9 +13,15 @@ import {
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
-import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
+import {
+  Cloud,
+  Globe,
+  Info,
+  Monitor,
+  Zap,
+} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -39,11 +45,6 @@ export default function ServerDetailClient({
     Record<string, Record<string, any>>
   >({})
   const [envInputs, setEnvInputs] = useState<Record<string, string>>({})
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [connectResult, setConnectResult] = useState<{
-    success: boolean
-    message: string
-  } | null>(null)
 
   useEffect(() => {
     const fetchServerDetail = async () => {
@@ -112,13 +113,6 @@ export default function ServerDetailClient({
     }))
   }
 
-  const handleEnvInputChange = (envName: string, value: string) => {
-    setEnvInputs((prev) => ({
-      ...prev,
-      [envName]: value,
-    }))
-  }
-
   const validateToolInputs = (
     toolName: string,
     tool: any
@@ -134,48 +128,6 @@ export default function ServerDetailClient({
     return {
       isValid: missingParams.length === 0,
       missingParams,
-    }
-  }
-
-  const handleConnect = async () => {
-    if (!serverDetail) return
-
-    setIsConnecting(true)
-    setConnectResult(null)
-
-    try {
-      const response = await fetch(API_ROUTE_MCP_COMPILE_STDIO, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mcp_id: serverName,
-          envs: envInputs,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setConnectResult({
-          success: true,
-          message: "Successfully connected to MCP server",
-        })
-      } else {
-        setConnectResult({
-          success: false,
-          message: data.error || "Failed to connect to MCP server",
-        })
-      }
-    } catch (err: any) {
-      setConnectResult({
-        success: false,
-        message:
-          err.message || "An error occurred while connecting to MCP server",
-      })
-    } finally {
-      setIsConnecting(false)
     }
   }
 
@@ -221,12 +173,15 @@ export default function ServerDetailClient({
         [toolName]: { isLoading: false, result: resultText, error: null },
       }))
     } catch (err: any) {
+      const errorMsg = err.code && err.code !== 200
+        ? err.message
+        : err.response?.data?.msg || err.message || "Failed to run tool"
       setToolResults((prev) => ({
         ...prev,
         [toolName]: {
           isLoading: false,
           result: null,
-          error: err.message || "Failed to run tool",
+          error: errorMsg,
         },
       }))
     }
@@ -279,56 +234,77 @@ export default function ServerDetailClient({
   return (
     <div
       className={cn(
-        "@container/main relative flex h-full flex-col items-center justify-start pt-12 md:pt-16"
+        "pt-app-header relative flex min-h-screen flex-col"
       )}
     >
-      <div className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Server Metadata */}
-        <div className="bg-muted/50 mb-8 rounded-lg border p-6">
-          <div className="mb-4 flex items-start gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                alt={server.server_title}
-              />
-              <AvatarFallback>
-                {server.server_title.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="mb-2 text-left text-3xl font-bold">
-                {server.server_title}
-              </h1>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <Badge variant="secondary" className="px-3 py-1">
-                  {toolsCount} tools
-                </Badge>
-                <Badge variant="outline" className="px-3 py-1">
-                  v{server.server_metadata.serverInfo.version}
-                </Badge>
-                {server.server_type && (
-                  <Badge
-                    variant={
-                      server.server_type === "hosted" ? "default" : "secondary"
-                    }
-                    className={`px-3 py-1 ${server.server_type === "hosted" ? "bg-blue-500" : "bg-green-500"} text-white`}
-                  >
-                    {server.server_type === "hosted" ? "Hosted" : "Local"}
+        <div className="mb-8 border-b border-border/50 pb-8">
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Info */}
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <Avatar className="h-14 w-14 flex-shrink-0 rounded-xl ring-1 ring-border/50">
+                <AvatarImage
+                  src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
+                  alt={server.server_title}
+                />
+                <AvatarFallback className="rounded-xl text-sm font-medium">
+                  {server.server_title.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-3">
+                  <h1 className="truncate text-2xl font-bold text-foreground">
+                    {server.server_title}
+                  </h1>
+                  {server.user?.username && (
+                    <span className="text-sm text-muted-foreground">
+                      by {server.user.username}
+                    </span>
+                  )}
+                </div>
+                <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  {server.description}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Zap className="h-3 w-3" />
+                    {toolsCount} tools
                   </Badge>
-                )}
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Info className="h-3 w-3" />
+                    v{server.server_metadata.serverInfo.version}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Globe className="h-3 w-3" />
+                    {server.server_metadata.protocolVersion}
+                  </Badge>
+                  {server.server_type && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 text-xs"
+                    >
+                      {server.server_type === "hosted" ? (
+                        <Cloud className="h-3 w-3" />
+                      ) : (
+                        <Monitor className="h-3 w-3" />
+                      )}
+                      {server.server_type === "hosted" ? "Hosted" : "Local"}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <p className="text-foreground mb-4">{server.description}</p>
-          <div className="text-muted-foreground text-sm">
-            <div>
-              <span className="font-medium">Server Name:</span>{" "}
-              {server.server_metadata.serverInfo.name}
-            </div>
-            <div>
-              <span className="font-medium">Protocol Version:</span>{" "}
-              {server.server_metadata.protocolVersion}
-            </div>
+
+            {/* Right: Playground Button */}
+            <Link
+              href={`/chat?type=mcp&username=${encodeURIComponent(username)}&server_name=${encodeURIComponent(serverName)}`}
+            >
+              <Button className="gap-2 whitespace-nowrap">
+                <Play className="h-4 w-4" weight="fill" />
+                Playground
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -590,8 +566,7 @@ export default function ServerDetailClient({
                 <CardHeader>
                   <CardTitle>Environment Variables</CardTitle>
                   <CardDescription>
-                    Configure the environment variables required by this MCP
-                    server
+                    此 MCP 服务器所需的环境变量
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -602,32 +577,12 @@ export default function ServerDetailClient({
                           {key}
                         </label>
                         <Input
-                          value={envInputs[key] || ""}
-                          onChange={(e) =>
-                            handleEnvInputChange(key, e.target.value)
-                          }
-                          placeholder={`Enter ${key}`}
+                          value={value as string}
+                          readOnly
+                          className="bg-muted/50 cursor-default"
                         />
                       </div>
                     ))}
-
-                    <div className="mt-4">
-                      <Button
-                        onClick={handleConnect}
-                        disabled={isConnecting}
-                        className="w-full"
-                      >
-                        {isConnecting ? "Connecting..." : "Connect"}
-                      </Button>
-
-                      {connectResult && (
-                        <div
-                          className={`mt-2 rounded p-2 text-sm ${connectResult.success ? "border border-green-500/20 bg-green-500/10 text-green-700" : "border border-red-500/20 bg-red-500/10 text-red-700"}`}
-                        >
-                          {connectResult.message}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </CardContent>
               </Card>

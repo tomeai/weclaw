@@ -247,7 +247,7 @@ export default function SearchPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 flex-shrink-0">
                         <AvatarImage
-                          src={`https://github.com/${skill.owner}.png`}
+                          src={skill.avatar}
                           alt={skill.owner}
                         />
                         <AvatarFallback className="bg-gray-100 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
@@ -258,7 +258,7 @@ export default function SearchPage() {
                         href={`/skills/${skill.owner}/${skill.name}`}
                         className="flex items-center gap-1.5"
                       >
-                        <span className="text-base font-semibold text-orange-500 transition-colors hover:text-orange-400 dark:text-orange-400 dark:hover:text-orange-300">
+                        <span className="text-base font-semibold  transition-colors">
                           {skill.owner}/{skill.name}
                         </span>
                         <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-500" />

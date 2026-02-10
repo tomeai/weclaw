@@ -180,10 +180,6 @@ export default function ProfilePage() {
                     <Bot className="h-3.5 w-3.5" />
                     {mockStats.totalAgents} 个Agent
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Heart className="h-3.5 w-3.5" />
-                    {mockStats.totalFavorites} 个收藏
-                  </span>
                 </div>
               </div>
               <Link href={ROUTE_PROFILE_SETTINGS}>
@@ -195,67 +191,6 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* 统计概览 + 今日用量 */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Server className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-2xl font-bold">{mockStats.totalMcps}</p>
-                  <p className="text-muted-foreground text-xs">我的MCP</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Bot className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="text-2xl font-bold">{mockStats.totalAgents}</p>
-                  <p className="text-muted-foreground text-xs">我的Agent</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Heart className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-2xl font-bold">{mockStats.totalFavorites}</p>
-                  <p className="text-muted-foreground text-xs">我的收藏</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Zap className="h-5 w-5 text-purple-500" />
-                <div>
-                  <p className="text-2xl font-bold">{mockStats.totalApiCalls}</p>
-                  <p className="text-muted-foreground text-xs">API调用</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="col-span-2 lg:col-span-1">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Bell className="h-5 w-5 text-orange-500" />
-                <div>
-                  <p className="text-2xl font-bold">
-                    {mockStats.unreadNotifications}
-                  </p>
-                  <p className="text-muted-foreground text-xs">未读通知</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* 我的MCP和Agent - Tabs切换 */}
         <Tabs defaultValue="mcp">

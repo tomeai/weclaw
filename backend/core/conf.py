@@ -169,6 +169,9 @@ class Settings(BaseSettings):
     IP_LOCATION_REDIS_PREFIX: str = 'wemcp:ip:location'
     IP_LOCATION_EXPIRE_SECONDS: int = 60 * 60 * 24  # 1 天
 
+    # AI key
+    DASHSCOPE_API_KEY: str
+
     # 追踪 ID
     TRACE_ID_REQUEST_HEADER_KEY: str = 'X-Request-ID'
 

@@ -18,7 +18,10 @@ export const API_ROUTE_GITHUB_OAUTH2_LOGIN = "/api/v1/admin/oauth/github"
 // Agent
 export const API_ROUTE_AGENT_SEARCH = "/api/v1/agent/search"
 export const API_ROUTE_AGENT_CATEGORIES = "/api/v1/agent/categories"
+export const API_ROUTE_AGENT_ADMIN_SERVERS = "/api/v1/admin/agent/servers"
+export const API_ROUTE_AGENT_ADMIN_SERVER_DETAIL = "/api/v1/admin/agent/servers"
 
 // Skill
 export const API_ROUTE_SKILL_SEARCH = "/api/v1/skill/search"
 export const API_ROUTE_SKILL_CATEGORIES = "/api/v1/skill/categories"
+export const API_ROUTE_SKILL_PUBLISH = "/api/v1/skill/publish"

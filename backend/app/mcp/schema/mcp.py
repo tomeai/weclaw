@@ -20,6 +20,14 @@ class GetMcpDetail(SchemaBase):
     resources: List[Dict[str, Any]] | None = Field(None, description='资源')
     envs: Dict[str, Any] | None = Field(None, description='环境变量')
 
+    @model_validator(mode='before')
+    @classmethod
+    def handle_envs(cls, data: Any) -> Any:
+        envs = data.envs
+        if envs:
+            data.envs = {k: '******' for k in envs}
+        return data
+
 
 class McpBaseDetail(SchemaBase):
     # id: int = Field(description='id')

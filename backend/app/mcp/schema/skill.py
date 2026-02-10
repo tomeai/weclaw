@@ -16,6 +16,7 @@ class SkillDetail(SchemaBase):
     description: str | None = Field(None, description='skill描述')
     path: str | None = Field(None, description='skill path')
     owner: str = Field(description='owner')
+    avatar: str = Field(description='avatar')
     favorite_count: int = Field(description='favorite count')
 
     @model_validator(mode='before')

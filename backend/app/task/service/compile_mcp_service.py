@@ -57,7 +57,6 @@ class CompileMcpService:
                 compile_type=CompileType.package.name,
                 runtime_type=RuntimeType.fastmcp.name,
                 server_config=mcp_config.model_dump(mode='json'),
-                raw_config=mcp_server_param.mcpServers.model_dump(mode='json'),
                 envs=server_cfg.env,
                 server_metadata=server_meta.model_dump(mode='json'),
                 tools=results['tools'],

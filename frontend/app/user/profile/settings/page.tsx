@@ -119,72 +119,72 @@ export default function ProfileSettingsPage() {
         </Card>
 
         {/* 通知设置 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Mail className="mr-2 h-5 w-5" />
-              通知设置
-            </CardTitle>
-            <CardDescription>管理您的通知偏好</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>邮件通知</Label>
-                <p className="text-muted-foreground text-sm">
-                  接收重要更新和消息的邮件通知
-                </p>
-              </div>
-              <Switch
-                checked={formData.emailNotifications}
-                onCheckedChange={(checked: boolean) =>
-                  handleInputChange("emailNotifications", checked)
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>推送通知</Label>
-                <p className="text-muted-foreground text-sm">
-                  在浏览器中接收实时推送通知
-                </p>
-              </div>
-              <Switch
-                checked={formData.pushNotifications}
-                onCheckedChange={(checked: boolean) =>
-                  handleInputChange("pushNotifications", checked)
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/*<Card>*/}
+        {/*  <CardHeader>*/}
+        {/*    <CardTitle className="flex items-center">*/}
+        {/*      <Mail className="mr-2 h-5 w-5" />*/}
+        {/*      通知设置*/}
+        {/*    </CardTitle>*/}
+        {/*    <CardDescription>管理您的通知偏好</CardDescription>*/}
+        {/*  </CardHeader>*/}
+        {/*  <CardContent className="space-y-4">*/}
+        {/*    <div className="flex items-center justify-between">*/}
+        {/*      <div className="space-y-0.5">*/}
+        {/*        <Label>邮件通知</Label>*/}
+        {/*        <p className="text-muted-foreground text-sm">*/}
+        {/*          接收重要更新和消息的邮件通知*/}
+        {/*        </p>*/}
+        {/*      </div>*/}
+        {/*      <Switch*/}
+        {/*        checked={formData.emailNotifications}*/}
+        {/*        onCheckedChange={(checked: boolean) =>*/}
+        {/*          handleInputChange("emailNotifications", checked)*/}
+        {/*        }*/}
+        {/*      />*/}
+        {/*    </div>*/}
+        {/*    <div className="flex items-center justify-between">*/}
+        {/*      <div className="space-y-0.5">*/}
+        {/*        <Label>推送通知</Label>*/}
+        {/*        <p className="text-muted-foreground text-sm">*/}
+        {/*          在浏览器中接收实时推送通知*/}
+        {/*        </p>*/}
+        {/*      </div>*/}
+        {/*      <Switch*/}
+        {/*        checked={formData.pushNotifications}*/}
+        {/*        onCheckedChange={(checked: boolean) =>*/}
+        {/*          handleInputChange("pushNotifications", checked)*/}
+        {/*        }*/}
+        {/*      />*/}
+        {/*    </div>*/}
+        {/*  </CardContent>*/}
+        {/*</Card>*/}
 
         {/* 隐私设置 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Globe className="mr-2 h-5 w-5" />
-              隐私设置
-            </CardTitle>
-            <CardDescription>控制您的信息可见性</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>公开资料</Label>
-                <p className="text-muted-foreground text-sm">
-                  允许其他用户查看您的基本资料信息
-                </p>
-              </div>
-              <Switch
-                checked={formData.publicProfile}
-                onCheckedChange={(checked: boolean) =>
-                  handleInputChange("publicProfile", checked)
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
+        {/*<Card>*/}
+        {/*  <CardHeader>*/}
+        {/*    <CardTitle className="flex items-center">*/}
+        {/*      <Globe className="mr-2 h-5 w-5" />*/}
+        {/*      隐私设置*/}
+        {/*    </CardTitle>*/}
+        {/*    <CardDescription>控制您的信息可见性</CardDescription>*/}
+        {/*  </CardHeader>*/}
+        {/*  <CardContent className="space-y-4">*/}
+        {/*    <div className="flex items-center justify-between">*/}
+        {/*      <div className="space-y-0.5">*/}
+        {/*        <Label>公开资料</Label>*/}
+        {/*        <p className="text-muted-foreground text-sm">*/}
+        {/*          允许其他用户查看您的基本资料信息*/}
+        {/*        </p>*/}
+        {/*      </div>*/}
+        {/*      <Switch*/}
+        {/*        checked={formData.publicProfile}*/}
+        {/*        onCheckedChange={(checked: boolean) =>*/}
+        {/*          handleInputChange("publicProfile", checked)*/}
+        {/*        }*/}
+        {/*      />*/}
+        {/*    </div>*/}
+        {/*  </CardContent>*/}
+        {/*</Card>*/}
 
         {/* 保存按钮 */}
         <div className="flex justify-end">

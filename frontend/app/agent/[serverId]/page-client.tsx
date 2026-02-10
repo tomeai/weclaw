@@ -1,643 +1,416 @@
-// @ts-nocheck
 "use client"
 
-import Footer from "@/components/layout/footer"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
-import { API_ROUTE_MCP_COMPILE_STDIO } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 import { Play } from "@phosphor-icons/react"
+import {
+  BookOpen,
+  Bot,
+  BrainCircuit,
+  ChevronDown,
+  ChevronUp,
+  Database,
+  MessageSquare,
+  Settings,
+  Sparkles,
+  Wrench,
+  Zap,
+} from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
-export default function ServerDetailClient({ serverId }: { serverId: string }) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [serverDetail, setServerDetail] = useState<McpServerItem | null>(null)
-  const [toolResults, setToolResults] = useState<
-    Record<
-      string,
-      { isLoading: boolean; result: string | null; error: string | null }
-    >
-  >({})
-  const [toolInputs, setToolInputs] = useState<
-    Record<string, Record<string, any>>
-  >({})
-  const [envInputs, setEnvInputs] = useState<Record<string, string>>({})
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [connectResult, setConnectResult] = useState<{
-    success: boolean
-    message: string
-  } | null>(null)
+// Mock data
+const mockAgentDetail = {
+  title: "AI 研究助理",
+  owner: "anthropics",
+  avatar: "",
+  description:
+    "一个专业的 AI 研究助理，能够帮助你搜索学术论文、总结研究成果、分析数据趋势，并生成结构化的研究报告。支持多种学科领域，包括计算机科学、生物学、物理学等。",
+  category: "研究",
+  tools: 8,
+  skills: 5,
+  knowledge: 3,
+  databases: 2,
+  system_prompt:
+    "你是一个专业的 AI 研究助理。你的目标是帮助用户完成学术研究相关的任务，包括文献搜索、论文总结、数据分析和报告撰写。你应该始终提供准确、有据可查的信息，并在不确定时明确说明。",
+  tool_list: [
+    { name: "arxiv_search", description: "搜索 arXiv 上的学术论文" },
+    { name: "paper_summarizer", description: "总结学术论文的核心观点" },
+    { name: "data_analyzer", description: "分析和可视化研究数据" },
+    { name: "citation_generator", description: "生成标准格式的引用" },
+  ],
+  skill_list: [
+    { name: "literature-review", description: "系统性文献综述" },
+    { name: "research-methodology", description: "研究方法论指导" },
+    { name: "academic-writing", description: "学术写作辅助" },
+  ],
+  chat_demo: [
+    {
+      role: "user" as const,
+      content: "帮我搜索最近关于大语言模型推理能力的论文",
+    },
+    {
+      role: "assistant" as const,
+      content:
+        "好的，我来为你搜索最近关于大语言模型推理能力的研究论文。我将使用 arXiv 搜索工具来查找相关文献...\n\n找到以下 5 篇高度相关的论文：\n\n1. **Chain-of-Thought Prompting Elicits Reasoning in Large Language Models** - 提出了链式思维提示方法\n2. **Tree of Thoughts: Deliberate Problem Solving with LLMs** - 探索了树状思维结构\n3. **Self-Consistency Improves Chain of Thought Reasoning** - 改进了推理一致性",
+    },
+    {
+      role: "user" as const,
+      content: "帮我总结第一篇论文的核心观点",
+    },
+    {
+      role: "assistant" as const,
+      content:
+        "**Chain-of-Thought Prompting Elicits Reasoning in Large Language Models**\n\n核心观点：\n- 通过在提示中加入中间推理步骤，可以显著提升大模型在复杂推理任务上的表现\n- 该方法在算术推理、常识推理和符号推理三类任务上都取得了显著提升\n- 模型规模越大，链式思维的效果越明显",
+    },
+  ],
+}
 
-  useEffect(() => {
-    const fetchServerDetail = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        const response = await getMcpServerDetail(serverId)
-        setServerDetail(response)
+export default function AgentDetailClient({
+  serverId,
+}: {
+  serverId: string
+}) {
+  const [descExpanded, setDescExpanded] = useState(false)
+  const agent = { ...mockAgentDetail }
 
-        // Initialize tool inputs with default values
-        if (response.tools?.tools) {
-          const initialInputs: Record<string, Record<string, any>> = {}
-
-          response.tools.tools.forEach((tool) => {
-            const toolName = tool.name
-            const inputs: Record<string, any> = {}
-
-            if (tool.inputSchema?.properties) {
-              Object.entries(tool.inputSchema.properties).forEach(
-                ([paramName, paramDetails]: [string, any]) => {
-                  // Set default value if available, otherwise empty string
-                  inputs[paramName] =
-                    paramDetails.default !== undefined
-                      ? paramDetails.default
-                      : ""
-                }
-              )
-            }
-
-            initialInputs[toolName] = inputs
-          })
-
-          setToolInputs(initialInputs)
-        }
-
-        // Initialize environment variables if present
-        if (response.envs && Object.keys(response.envs).length > 0) {
-          const initialEnvs: Record<string, string> = {}
-          Object.entries(response.envs).forEach(([key, value]) => {
-            initialEnvs[key] = value as string
-          })
-          setEnvInputs(initialEnvs)
-        }
-      } catch (err) {
-        console.error("Error fetching server details:", err)
-        setError("Failed to load server details. Please try again.")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchServerDetail()
-  }, [serverId])
-
-  const handleInputChange = (
-    toolName: string,
-    paramName: string,
-    value: string
-  ) => {
-    setToolInputs((prev) => ({
-      ...prev,
-      [toolName]: {
-        ...prev[toolName],
-        [paramName]: value,
-      },
-    }))
-  }
-
-  const handleEnvInputChange = (envName: string, value: string) => {
-    setEnvInputs((prev) => ({
-      ...prev,
-      [envName]: value,
-    }))
-  }
-
-  const validateToolInputs = (
-    toolName: string,
-    tool: any
-  ): { isValid: boolean; missingParams: string[] } => {
-    const requiredParams = tool.inputSchema?.required || []
-    const inputs = toolInputs[toolName] || {}
-
-    const missingParams = requiredParams.filter(
-      (param: string) =>
-        !inputs[param] || inputs[param].toString().trim() === ""
-    )
-
-    return {
-      isValid: missingParams.length === 0,
-      missingParams,
-    }
-  }
-
-  const handleConnect = async () => {
-    if (!serverDetail) return
-
-    setIsConnecting(true)
-    setConnectResult(null)
-
-    try {
-      const response = await fetch(API_ROUTE_MCP_COMPILE_STDIO, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mcp_id: serverId,
-          envs: envInputs,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setConnectResult({
-          success: true,
-          message: "Successfully connected to MCP server",
-        })
-      } else {
-        setConnectResult({
-          success: false,
-          message: data.error || "Failed to connect to MCP server",
-        })
-      }
-    } catch (err: any) {
-      setConnectResult({
-        success: false,
-        message:
-          err.message || "An error occurred while connecting to MCP server",
-      })
-    } finally {
-      setIsConnecting(false)
-    }
-  }
-
-  const handleRunTool = async (toolName: string, tool: any) => {
-    if (!serverDetail) return
-
-    // Validate required parameters
-    const { isValid, missingParams } = validateToolInputs(toolName, tool)
-
-    if (!isValid) {
-      setToolResults((prev) => ({
-        ...prev,
-        [toolName]: {
-          isLoading: false,
-          result: null,
-          error: `Missing required parameters: ${missingParams.join(", ")}`,
-        },
-      }))
-      return
-    }
-
-    setToolResults((prev) => ({
-      ...prev,
-      [toolName]: { isLoading: true, result: null, error: null },
-    }))
-
-    try {
-      const response = await callMcpServerTool(
-        serverId,
-        toolName,
-        toolInputs[toolName] || {}
-      )
-
-      // Extract the text content from the response
-      const resultText = response.content
-        .filter((item) => item.type === "text")
-        .map((item) => item.text)
-        .join("\n")
-
-      setToolResults((prev) => ({
-        ...prev,
-        [toolName]: { isLoading: false, result: resultText, error: null },
-      }))
-    } catch (err: any) {
-      setToolResults((prev) => ({
-        ...prev,
-        [toolName]: {
-          isLoading: false,
-          result: null,
-          error: err.message || "Failed to run tool",
-        },
-      }))
-    }
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center p-8">
-        <div className="mb-4 text-red-500">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-        </div>
-        <h2 className="mb-2 text-xl font-semibold">Error</h2>
-        <p className="mb-4 text-gray-600">{error}</p>
-        <Link href="/mcp" className="text-blue-600 hover:underline">
-          Return to MCP Servers
-        </Link>
-      </div>
-    )
-  }
-
-  if (isLoading || !serverDetail) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
-
-  const server = serverDetail
-
-  // Count the number of tools
-  const toolsCount = server.tools?.tools?.length || 0
-
-  // Generate a seed for the avatar based on the server title
-  const avatarSeed = server.title.replace(/\s+/g, "-").toLowerCase()
+  const avatarSeed = `${agent.owner}-${agent.title}`
 
   return (
-    <div
-      className={cn(
-        "@container/main relative flex h-full flex-col items-center justify-start pt-12 md:pt-16"
-      )}
-    >
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <div className="mb-6 flex items-center text-sm text-gray-500">
-          <Link href="/" className="hover:text-gray-700">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-            </svg>
-          </Link>
-          <span className="mx-2">/</span>
-          <Link href="/agent" className="hover:text-gray-700">
-            Agent
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-700">{server.title}</span>
-        </div>
-
-        {/* Server Metadata */}
-        <div className="mb-8 rounded-lg bg-gray-50 p-6">
-          <div className="mb-4 flex items-start gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
-                alt={server.title}
-              />
-              <AvatarFallback>
-                {server.title.substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="mb-2 text-left text-3xl font-bold">
-                {server.title}
-              </h1>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <Badge variant="secondary" className="px-3 py-1">
-                  {toolsCount} tools
-                </Badge>
-                <Badge variant="outline" className="px-3 py-1">
-                  v{server.capabilities.serverInfo.version}
-                </Badge>
-                {server.server_type && (
-                  <Badge
-                    variant={
-                      server.server_type === "hosted" ? "default" : "secondary"
-                    }
-                    className={`px-3 py-1 ${server.server_type === "hosted" ? "bg-blue-500" : "bg-green-500"} text-white`}
-                  >
-                    {server.server_type === "hosted" ? "Hosted" : "Local"}
+    <div className="pt-app-header relative flex min-h-screen flex-col">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8 border-b border-border/50 pb-8">
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Info */}
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <Avatar className="h-14 w-14 flex-shrink-0 rounded-xl ring-1 ring-border/50">
+                <AvatarImage
+                  src={
+                    agent.avatar ||
+                    `https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`
+                  }
+                  alt={agent.title}
+                />
+                <AvatarFallback className="rounded-xl text-sm font-medium">
+                  {agent.title.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-3">
+                  <h1 className="truncate text-2xl font-bold text-foreground">
+                    {agent.title}
+                  </h1>
+                  <span className="text-sm text-muted-foreground">
+                    by {agent.owner}
+                  </span>
+                </div>
+                <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  {agent.description}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary" className="gap-1 text-xs">
+                    <BrainCircuit className="h-3 w-3" />
+                    {agent.category}
                   </Badge>
-                )}
+                  {agent.tools > 0 && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Wrench className="h-3 w-3" />
+                      {agent.tools} tools
+                    </Badge>
+                  )}
+                  {agent.skills > 0 && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Zap className="h-3 w-3" />
+                      {agent.skills} skills
+                    </Badge>
+                  )}
+                  {agent.knowledge > 0 && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <BookOpen className="h-3 w-3" />
+                      {agent.knowledge} 知识库
+                    </Badge>
+                  )}
+                  {agent.databases > 0 && (
+                    <Badge variant="outline" className="gap-1 text-xs">
+                      <Database className="h-3 w-3" />
+                      {agent.databases} 数据库
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-          <p className="mb-4 text-gray-700">{server.description}</p>
-          <div className="text-sm text-gray-600">
-            <div>
-              <span className="font-medium">Server Name:</span>{" "}
-              {server.capabilities.serverInfo.name}
-            </div>
-            <div>
-              <span className="font-medium">Protocol Version:</span>{" "}
-              {server.capabilities.protocolVersion}
-            </div>
+
+            {/* Right: Playground Button */}
+            <Link
+              href={`/chat?type=agent&id=${encodeURIComponent(serverId)}`}
+            >
+              <Button className="gap-2 whitespace-nowrap">
+                <Play className="h-4 w-4" weight="fill" />
+                Playground
+              </Button>
+            </Link>
           </div>
         </div>
 
-        {/* Main Content with 3/5 - 2/5 Layout */}
-        <div className="flex flex-col gap-8 md:flex-row">
-          {/* Tools Section (3/5 width) */}
-          <div className="w-full md:w-3/5">
-            <Tabs defaultValue="tools" className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="tools">Tools ({toolsCount})</TabsTrigger>
-                <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
-              </TabsList>
+        {/* Tabs */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="mb-8">
+            <TabsTrigger value="overview">概览</TabsTrigger>
+            <TabsTrigger value="settings">Agent 设定</TabsTrigger>
+            <TabsTrigger value="capabilities">Agent 能力</TabsTrigger>
+          </TabsList>
 
-              {/* Tools Tab */}
-              <TabsContent value="tools" className="space-y-6">
-                {server.tools && server.tools.tools.length > 0 ? (
-                  server.tools.tools.map((tool, index) => (
-                    <div
-                      key={index}
-                      className="rounded-lg border p-4 transition-shadow hover:shadow-sm"
-                    >
-                      <div className="flex flex-col gap-4">
-                        {/* Tool Info and Parameters */}
-                        <div className="w-full">
-                          <div className="mb-3 flex items-start justify-between">
-                            <h3 className="text-lg font-semibold">
-                              {tool.name}
-                            </h3>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRunTool(tool.name, tool)}
-                              disabled={toolResults[tool.name]?.isLoading}
-                            >
-                              <Play className="mr-1 h-4 w-4" />
-                              Run
-                            </Button>
-                          </div>
-                          <p className="mb-3 text-gray-600">
-                            {tool.description}
-                          </p>
-
-                          {tool.inputSchema && (
-                            <div className="mt-3">
-                              <h4 className="mb-2 text-sm font-medium text-gray-700">
-                                Input Parameters:
-                              </h4>
-                              <div className="rounded bg-gray-50 p-3 text-sm">
-                                {tool.inputSchema.properties && (
-                                  <div className="space-y-3">
-                                    {Object.entries(
-                                      tool.inputSchema.properties
-                                    ).map(
-                                      ([paramName, paramDetails]: [
-                                        string,
-                                        any,
-                                      ]) => (
-                                        <div
-                                          key={paramName}
-                                          className="flex flex-col"
-                                        >
-                                          <div className="mb-1 flex items-start">
-                                            <span className="font-mono text-blue-600">
-                                              {paramName}
-                                            </span>
-                                            {tool.inputSchema.required?.includes(
-                                              paramName
-                                            ) && (
-                                              <span className="ml-1 text-red-500">
-                                                *
-                                              </span>
-                                            )}
-                                            <span className="ml-2 text-gray-500">
-                                              ({paramDetails.type})
-                                            </span>
-                                          </div>
-                                          {paramDetails.description && (
-                                            <span className="mb-1 text-xs text-gray-600">
-                                              {paramDetails.description}
-                                            </span>
-                                          )}
-                                          <Input
-                                            value={
-                                              toolInputs[tool.name]?.[
-                                                paramName
-                                              ] || ""
-                                            }
-                                            onChange={(e) =>
-                                              handleInputChange(
-                                                tool.name,
-                                                paramName,
-                                                e.target.value
-                                              )
-                                            }
-                                            placeholder={`Enter ${paramName}`}
-                                            className="mt-1"
-                                          />
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Tool Results - Bottom */}
-                        <div className="mt-2 w-full border-t pt-4">
-                          <h4 className="mb-2 text-sm font-medium text-gray-700">
-                            Result:
-                          </h4>
-
-                          {toolResults[tool.name]?.isLoading && (
-                            <div className="flex items-center justify-center py-4">
-                              <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-gray-900"></div>
-                            </div>
-                          )}
-
-                          {toolResults[tool.name]?.error && (
-                            <div className="rounded bg-red-50 p-3 text-sm text-red-600">
-                              <p className="font-medium">Error:</p>
-                              <p>{toolResults[tool.name].error}</p>
-                            </div>
-                          )}
-
-                          {toolResults[tool.name]?.result && (
-                            <div className="rounded bg-gray-50 p-3">
-                              <pre className="max-h-[400px] overflow-auto rounded bg-gray-100 p-2 text-xs">
-                                {toolResults[tool.name].result}
-                              </pre>
-                            </div>
-                          )}
-
-                          {!toolResults[tool.name] && (
-                            <div className="rounded bg-gray-50 p-3 text-sm text-gray-500 italic">
-                              Run the tool to see results here
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center text-gray-500">
-                    No tools available for this MCP server.
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Capabilities Tab */}
-              <TabsContent value="capabilities">
-                <div className="rounded-lg border p-4">
-                  <h3 className="mb-4 text-lg font-semibold">
-                    Server Capabilities
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-gray-700">
-                        Protocol Version
-                      </h4>
-                      <p className="text-gray-600">
-                        {server.capabilities.protocolVersion}
+          {/* 概览 Tab */}
+          <TabsContent value="overview">
+            <div className="max-w-3xl">
+                {/* Collapsible Description */}
+                <section className="mb-8">
+                  <button
+                    onClick={() => setDescExpanded(!descExpanded)}
+                    className="mb-3 flex w-full items-center justify-between text-left"
+                  >
+                    <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                      <Sparkles className="h-5 w-5" />
+                      你可以使用该 Agent 做什么?
+                    </h2>
+                    {descExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden transition-all duration-300",
+                      descExpanded ? "max-h-96" : "max-h-0"
+                    )}
+                  >
+                    <div className="rounded-xl border border-border/50 bg-card p-5">
+                      <p className="leading-relaxed text-muted-foreground">
+                        {agent.description}
                       </p>
                     </div>
+                  </div>
+                </section>
 
-                    <div>
-                      <h4 className="font-medium text-gray-700">Server Info</h4>
-                      <div className="mt-2 border-l-2 border-gray-200 pl-4">
-                        <p>
-                          <span className="text-gray-500">Name:</span>{" "}
-                          {server.capabilities.serverInfo.name}
-                        </p>
-                        <p>
-                          <span className="text-gray-500">Version:</span>{" "}
-                          {server.capabilities.serverInfo.version}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="font-medium text-gray-700">
-                        Supported Features
-                      </h4>
-                      <div className="mt-2 space-y-2 border-l-2 border-gray-200 pl-4">
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.tools ? "bg-green-500" : "bg-gray-300"}`}
-                          ></div>
-                          <span>Tools</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.resources ? "bg-green-500" : "bg-gray-300"}`}
-                          ></div>
-                          <span>Resources</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.prompts ? "bg-green-500" : "bg-gray-300"}`}
-                          ></div>
-                          <span>Prompts</span>
-                        </div>
-                        <div className="flex items-center">
-                          <div
-                            className={`mr-2 h-3 w-3 rounded-full ${server.capabilities.capabilities.logging ? "bg-green-500" : "bg-gray-300"}`}
-                          ></div>
-                          <span>Logging</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {Object.keys(
-                      server.capabilities.capabilities.experimental || {}
-                    ).length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-gray-700">
-                          Experimental Features
-                        </h4>
-                        <div className="mt-2 border-l-2 border-gray-200 pl-4">
-                          <pre className="overflow-x-auto rounded bg-gray-50 p-2 text-sm">
-                            {JSON.stringify(
-                              server.capabilities.capabilities.experimental,
-                              null,
-                              2
+                {/* Chat Demo */}
+                <section>
+                  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                    <MessageSquare className="h-5 w-5" />
+                    Agent 演示
+                  </h2>
+                  <div className="rounded-xl border border-border/50 bg-card p-5">
+                    <div className="space-y-4">
+                      {agent.chat_demo.map((msg, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "flex gap-3",
+                            msg.role === "user"
+                              ? "flex-row-reverse"
+                              : "flex-row"
+                          )}
+                        >
+                          {/* Avatar */}
+                          <Avatar className="h-8 w-8 flex-shrink-0">
+                            {msg.role === "assistant" ? (
+                              <>
+                                <AvatarImage
+                                  src={
+                                    agent.avatar ||
+                                    `https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`
+                                  }
+                                  alt={agent.title}
+                                />
+                                <AvatarFallback className="text-xs">
+                                  <Bot className="h-4 w-4" />
+                                </AvatarFallback>
+                              </>
+                            ) : (
+                              <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                                U
+                              </AvatarFallback>
                             )}
-                          </pre>
+                          </Avatar>
+
+                          {/* Message Bubble */}
+                          <div
+                            className={cn(
+                              "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                              msg.role === "user"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted/50"
+                            )}
+                          >
+                            {msg.content.split("\n").map((line, j) => {
+                              if (line.startsWith("**") && line.endsWith("**")) {
+                                return (
+                                  <p key={j} className="font-semibold">
+                                    {line.slice(2, -2)}
+                                  </p>
+                                )
+                              }
+                              if (line.startsWith("- ")) {
+                                return (
+                                  <p key={j} className="ml-2">
+                                    &bull; {line.slice(2)}
+                                  </p>
+                                )
+                              }
+                              if (line.trim() === "") {
+                                return <div key={j} className="h-1.5" />
+                              }
+                              return <p key={j}>{line}</p>
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  </div>
+                </section>
+            </div>
+          </TabsContent>
+
+          {/* Agent 设定 Tab */}
+          <TabsContent value="settings">
+            <div className="max-w-3xl">
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Settings className="h-5 w-5" />
+                  系统提示词
+                </h2>
+                <div className="rounded-xl border border-border/50 bg-card p-5">
+                  <pre className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                    {agent.system_prompt}
+                  </pre>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <BrainCircuit className="h-5 w-5" />
+                  基本信息
+                </h2>
+                <div className="rounded-xl border border-border/50 bg-card">
+                  <div className="grid grid-cols-2 divide-x divide-border/50">
+                    <div className="p-5">
+                      <p className="text-sm text-muted-foreground">名称</p>
+                      <p className="mt-1 font-medium text-foreground">
+                        {agent.title}
+                      </p>
+                    </div>
+                    <div className="p-5">
+                      <p className="text-sm text-muted-foreground">创建者</p>
+                      <p className="mt-1 font-medium text-foreground">
+                        {agent.owner}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="border-t border-border/50 p-5">
+                    <p className="text-sm text-muted-foreground">描述</p>
+                    <p className="mt-1 text-sm leading-relaxed text-foreground">
+                      {agent.description}
+                    </p>
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Environment Variables Section (2/5 width) */}
-          {serverDetail &&
-          serverDetail.envs &&
-          Object.keys(serverDetail.envs).length > 0 ? (
-            <div className="mt-18 w-full md:w-2/5">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Environment Variables</CardTitle>
-                  <CardDescription>
-                    Configure the environment variables required by this MCP
-                    server
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Object.entries(serverDetail.envs).map(([key, value]) => (
-                      <div key={key} className="flex flex-col">
-                        <label className="mb-1 text-sm font-medium text-gray-700">
-                          {key}
-                        </label>
-                        <Input
-                          value={envInputs[key] || ""}
-                          onChange={(e) =>
-                            handleEnvInputChange(key, e.target.value)
-                          }
-                          placeholder={`Enter ${key}`}
-                        />
-                      </div>
-                    ))}
-
-                    <div className="mt-4">
-                      <Button
-                        onClick={handleConnect}
-                        disabled={isConnecting}
-                        className="w-full"
-                      >
-                        {isConnecting ? "Connecting..." : "Connect"}
-                      </Button>
-
-                      {connectResult && (
-                        <div
-                          className={`mt-2 rounded p-2 text-sm ${connectResult.success ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
-                        >
-                          {connectResult.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              </section>
             </div>
-          ) : null}
-        </div>
-      </div>
+          </TabsContent>
 
-      <div className="mx-auto mt-20 w-full max-w-7xl">
-        <Footer />
+          {/* Agent 能力 Tab */}
+          <TabsContent value="capabilities">
+            <div className="max-w-3xl">
+              {/* Tools */}
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Wrench className="h-5 w-5" />
+                  工具 ({agent.tool_list.length})
+                </h2>
+                <div className="space-y-3">
+                  {agent.tool_list.map((tool, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl border border-border/50 bg-card p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                          <Wrench className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">
+                            {tool.name}
+                          </h3>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            {tool.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Skills */}
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Zap className="h-5 w-5" />
+                  技能 ({agent.skill_list.length})
+                </h2>
+                <div className="space-y-3">
+                  {agent.skill_list.map((skill, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl border border-border/50 bg-card p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                          <Zap className="h-4 w-4 text-amber-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">
+                            {skill.name}
+                          </h3>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            {skill.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Knowledge & Database counts */}
+              <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Database className="h-5 w-5" />
+                  数据资源
+                </h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
+                    <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                    <p className="text-2xl font-bold text-foreground">
+                      {agent.knowledge}
+                    </p>
+                    <p className="text-sm text-muted-foreground">知识库</p>
+                  </div>
+                  <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
+                    <Database className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                    <p className="text-2xl font-bold text-foreground">
+                      {agent.databases}
+                    </p>
+                    <p className="text-sm text-muted-foreground">数据库</p>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </TabsContent>
+
+        </Tabs>
       </div>
     </div>
   )

@@ -6,7 +6,6 @@ import { toast } from "@/components/ui/toast"
 import { submitMcpServer } from "@/lib/mcp"
 import { CheckCircle, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { ApiSubmitForm } from "./api-submit-form"
 import { McpSubmitForm } from "./mcp-submit-form"
 import LayoutApp from "@/components/layout/layout-app"
 
@@ -92,7 +91,15 @@ export default function SubmitMcpPage() {
               </div>
             )}
 
-            <Tabs defaultValue="config" className="w-full">
+            <Tabs defaultValue="config" className="w-full" onValueChange={(value) => {
+              if (value === "api") {
+                toast({
+                  title: "敬请期待",
+                  description: "HTTP接口提交功能正在开发中，请先使用MCP配置提交",
+                  status: "info",
+                })
+              }
+            }}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="config">MCP配置提交</TabsTrigger>
                 <TabsTrigger value="api">HTTP接口提交</TabsTrigger>
@@ -112,15 +119,14 @@ export default function SubmitMcpPage() {
               </TabsContent>
 
               <TabsContent value="api" className="mt-6">
-                <div className="space-y-4">
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="bg-muted mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+                    <Loader2 className="text-muted-foreground h-8 w-8" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-medium">敬请期待</h3>
                   <p className="text-muted-foreground text-sm">
-                    通过API接口信息提交，适用于直接提供HTTP接口的服务器。
+                    HTTP接口提交功能正在开发中，请先使用MCP配置提交。
                   </p>
-                  <ApiSubmitForm
-                    onSuccess={handleSubmit}
-                    onCancel={handleCancel}
-                    disabled={isSubmitting}
-                  />
                 </div>
               </TabsContent>
             </Tabs>

@@ -35,7 +35,7 @@ export default async function RootLayout({
         <UserProvider initialUser={null}>
           <ThemeProvider
             attribute="class"
-            defaultTheme="light"
+            defaultTheme="system"
             enableSystem
             disableTransitionOnChange
           >

@@ -43,7 +43,7 @@ export function NaviMenu() {
             href="/skills"
             className={isActive("/skills") ? activeLinkClass : linkClass}
           >
-            Skills
+            Skill
           </Link>
           <Link
             href="/agent"

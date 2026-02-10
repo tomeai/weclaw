@@ -2,15 +2,15 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { getMcpRecommendList, McpRecommendItem } from "@/lib/mcp"
 import { cn } from "@/lib/utils"
 import {
   ArrowUpRight,
-  Cpu,
+  Brain,
   Globe,
   Lightning,
-  MagnifyingGlass,
+  Plugs,
+  Robot,
 } from "@phosphor-icons/react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -129,17 +129,6 @@ function ScrollingRow({
 export default function HomePage() {
   const [servers, setServers] = useState<McpRecommendItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
-
-  const handleSearch = () => {
-    if (!searchQuery.trim()) return
-    window.location.href = `/mcp?q=${encodeURIComponent(searchQuery)}`
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch()
-  }
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -167,66 +156,43 @@ export default function HomePage() {
     <div className="@container/main relative flex min-h-screen flex-col">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-4 pt-24 pb-16 sm:px-6 md:pt-32 md:pb-20 lg:px-8">
-        {/* Animated background blobs */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-float-slow absolute -top-40 -right-40 h-80 w-80 rounded-full bg-blue-500/5 blur-3xl dark:bg-blue-500/10" />
-          <div className="animate-float-slower absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-purple-500/5 blur-3xl dark:bg-purple-500/10" />
-          <div className="animate-float absolute top-1/2 left-1/2 h-60 w-60 -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/5 blur-3xl dark:bg-pink-500/8" />
-        </div>
-
         <div className="relative mx-auto max-w-4xl text-center">
           {/* Top badge */}
           <div className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-border/50 bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur-sm">
-            <Lightning className="h-4 w-4 text-yellow-500" weight="fill" />
-            <span>开放的 MCP 工具生态</span>
+            <Robot className="h-4 w-4 text-yellow-500" weight="fill" />
+            <span>下一代智能 Agent 构建平台</span>
           </div>
 
           {/* Title */}
-          <h1 className="animate-fade-in-up mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl [animation-delay:100ms]">
-            <span className="bg-gradient-to-r from-foreground via-foreground/80 to-foreground/60 bg-clip-text text-transparent">
-              构建更强大的
-            </span>
-            <br />
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-pink-400">
-              AI 系统
+          <p className="animate-fade-in-up mb-3 text-3xl font-medium tracking-wide text-muted-foreground/70 sm:text-4xl [animation-delay:100ms]">
+            赋予 Agent 无限能力
+          </p>
+          <h1 className="animate-fade-in-up mb-8 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl [animation-delay:150ms]">
+            <span className="animate-gradient-flow bg-[length:200%_auto] bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent dark:from-blue-400 dark:via-purple-400 dark:to-blue-400">
+              从想法到智能体，一步到位
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl [animation-delay:200ms]">
-            一行代码接入开放的 MCP 工具生态，支持所有主流大语言模型。
+            MCP 工具 + Skill 编排，打造能理解、能行动的 AI Agent
           </p>
 
-          {/* Search */}
-          <div className="animate-fade-in-up relative mx-auto max-w-xl [animation-delay:300ms]">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-              <MagnifyingGlass className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <Input
-              type="text"
-              placeholder="搜索 MCP 服务..."
-              className="h-12 rounded-xl border-border/50 bg-muted/30 pr-4 pl-12 text-base backdrop-blur-sm transition-all focus:border-primary/50 focus:bg-background focus:shadow-lg focus:shadow-primary/5"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-          </div>
-
           {/* Feature highlights */}
-          <div className="animate-fade-in-up mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground sm:gap-8 [animation-delay:400ms]">
+          <div className="animate-fade-in-up mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground sm:gap-8 [animation-delay:300ms]">
             <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              <span>100+ MCP 服务</span>
-            </div>
-            <div className="hidden h-4 w-px bg-border sm:block" />
-            <div className="flex items-center gap-2">
-              <Cpu className="h-4 w-4" />
-              <span>多模型支持</span>
+              <Plugs className="h-4 w-4" />
+              <span>MCP 工具生态</span>
             </div>
             <div className="hidden h-4 w-px bg-border sm:block" />
             <div className="flex items-center gap-2">
               <Lightning className="h-4 w-4" />
-              <span>即时部署</span>
+              <span>可复用 Skill</span>
+            </div>
+            <div className="hidden h-4 w-px bg-border sm:block" />
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              <span>一键构建 Agent</span>
             </div>
           </div>
         </div>

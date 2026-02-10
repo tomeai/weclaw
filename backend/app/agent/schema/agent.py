@@ -6,5 +6,5 @@ from pydantic import Field
 
 class ChatAgentParam(SchemaBase):
     user_id: str = Field(None, description='user id')
-    session_id: str = Field(None, description='session id')
+    server_name: str = Field(None, description='server_name')
     user_msg: str = Field(None, description='user msg')

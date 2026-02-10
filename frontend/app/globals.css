@@ -85,6 +85,20 @@
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-slow: float-slow 8s ease-in-out infinite;
   --animate-float-slower: float-slower 10s ease-in-out infinite;
+
+  @keyframes gradient-flow {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  --animate-gradient-flow: gradient-flow 6s ease infinite;
 }
 
 @theme inline {

@@ -18,21 +18,21 @@ const sidebarItems = [
     href: ROUTE_PROFILE,
     icon: User,
   },
-  {
-    title: "我的收藏",
-    href: ROUTE_PROFILE_FAVORITES,
-    icon: Heart,
-  },
-  {
-    title: "使用统计",
-    href: ROUTE_PROFILE_HISTORY,
-    icon: BarChart3,
-  },
-  {
-    title: "通知中心",
-    href: ROUTE_PROFILE_NOTIFICATIONS,
-    icon: Bell,
-  },
+  // {
+  //   title: "我的收藏",
+  //   href: ROUTE_PROFILE_FAVORITES,
+  //   icon: Heart,
+  // },
+  // {
+  //   title: "使用统计",
+  //   href: ROUTE_PROFILE_HISTORY,
+  //   icon: BarChart3,
+  // },
+  // {
+  //   title: "通知中心",
+  //   href: ROUTE_PROFILE_NOTIFICATIONS,
+  //   icon: Bell,
+  // },
   {
     title: "账户设置",
     href: ROUTE_PROFILE_SETTINGS,

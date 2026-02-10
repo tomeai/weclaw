@@ -1,6 +1,6 @@
 import http from "@/lib/http"
 import { PaginatedData } from "@/lib/mcp"
-import { API_ROUTE_SKILL_CATEGORIES, API_ROUTE_SKILL_SEARCH } from "./routes"
+import { API_ROUTE_SKILL_CATEGORIES, API_ROUTE_SKILL_PUBLISH, API_ROUTE_SKILL_SEARCH } from "./routes"
 
 // ============ Skill Category ============
 
@@ -16,6 +16,7 @@ export interface SkillSearchItem {
   description: string
   path: string
   owner: string
+  avatar: string
   favorite_count: number
 }
 
@@ -41,4 +42,17 @@ export function searchSkills(
     category_id: params.category_id ?? 0,
     keyword: params.keyword || "",
   })
+}
+
+// ============ Skill Publish ============
+
+export interface SkillPublishParams {
+  namespace: string
+  slug: string
+  github_url: string
+}
+
+/** 发布 Skill */
+export function publishSkill(params: SkillPublishParams): Promise<null> {
+  return http.post<null>(API_ROUTE_SKILL_PUBLISH, params)
 }

@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import {
   BarChart3,
+  Bot,
   Database,
   FileText,
   Server,
@@ -24,6 +25,11 @@ const sidebarItems = [
     title: "MCP管理",
     href: "/user/admin/mcp",
     icon: Server,
+  },
+  {
+    title: "Agent管理",
+    href: "/user/admin/agent",
+    icon: Bot,
   },
   {
     title: "分类管理",

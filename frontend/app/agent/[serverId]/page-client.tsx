@@ -161,7 +161,9 @@ export default function AgentDetailClient({
           <TabsList className="mb-8">
             <TabsTrigger value="overview">概览</TabsTrigger>
             <TabsTrigger value="settings">Agent 设定</TabsTrigger>
-            <TabsTrigger value="capabilities">Agent 能力</TabsTrigger>
+            <TabsTrigger value="tools">工具</TabsTrigger>
+            <TabsTrigger value="skills">技能</TabsTrigger>
+            <TabsTrigger value="data">数据资源</TabsTrigger>
           </TabsList>
 
           {/* 概览 Tab */}
@@ -321,92 +323,75 @@ export default function AgentDetailClient({
             </div>
           </TabsContent>
 
-          {/* Agent 能力 Tab */}
-          <TabsContent value="capabilities">
-            <div className="max-w-3xl">
-              {/* Tools */}
-              <section className="mb-8">
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <Wrench className="h-5 w-5" />
-                  工具 ({agent.tool_list.length})
-                </h2>
-                <div className="space-y-3">
-                  {agent.tool_list.map((tool, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-border/50 bg-card p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                          <Wrench className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-foreground">
-                            {tool.name}
-                          </h3>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            {tool.description}
-                          </p>
-                        </div>
-                      </div>
+          {/* 工具 Tab */}
+          <TabsContent value="tools">
+            <div className="max-w-3xl space-y-3">
+              {agent.tool_list.map((tool, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border/50 bg-card p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Wrench className="h-4 w-4 text-primary" />
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Skills */}
-              <section className="mb-8">
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <Zap className="h-5 w-5" />
-                  技能 ({agent.skill_list.length})
-                </h2>
-                <div className="space-y-3">
-                  {agent.skill_list.map((skill, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl border border-border/50 bg-card p-4"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-                          <Zap className="h-4 w-4 text-amber-500" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-foreground">
-                            {skill.name}
-                          </h3>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            {skill.description}
-                          </p>
-                        </div>
-                      </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground">
+                        {tool.name}
+                      </h3>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {tool.description}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* Knowledge & Database counts */}
-              <section>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <Database className="h-5 w-5" />
-                  数据资源
-                </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
-                    <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                    <p className="text-2xl font-bold text-foreground">
-                      {agent.knowledge}
-                    </p>
-                    <p className="text-sm text-muted-foreground">知识库</p>
-                  </div>
-                  <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
-                    <Database className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                    <p className="text-2xl font-bold text-foreground">
-                      {agent.databases}
-                    </p>
-                    <p className="text-sm text-muted-foreground">数据库</p>
                   </div>
                 </div>
-              </section>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* 技能 Tab */}
+          <TabsContent value="skills">
+            <div className="max-w-3xl space-y-3">
+              {agent.skill_list.map((skill, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-border/50 bg-card p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                      <Zap className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-foreground">
+                        {skill.name}
+                      </h3>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {skill.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* 数据资源 Tab */}
+          <TabsContent value="data">
+            <div className="max-w-3xl grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
+                <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-2xl font-bold text-foreground">
+                  {agent.knowledge}
+                </p>
+                <p className="text-sm text-muted-foreground">知识库</p>
+              </div>
+              <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
+                <Database className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-2xl font-bold text-foreground">
+                  {agent.databases}
+                </p>
+                <p className="text-sm text-muted-foreground">数据库</p>
+              </div>
             </div>
           </TabsContent>
 

@@ -203,29 +203,29 @@ export default function SkillDetailClient({
           {/* Right Column */}
           <div className="w-full lg:w-[340px]">
             {/* Install */}
-            <section className="mb-6">
-              <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <Link2 className="h-5 w-5" />
-                Install
-              </h2>
+            {/*<section className="mb-6">*/}
+            {/*  <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">*/}
+            {/*    <Link2 className="h-5 w-5" />*/}
+            {/*    Install*/}
+            {/*  </h2>*/}
 
-              <div className="rounded-xl border border-border/50 bg-card p-4">
-                <p className="mb-3 text-center text-sm text-muted-foreground">
-                  Install via Skills CLI
-                </p>
-                <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">
-                  <code className="flex-1 truncate text-sm">
-                    {skill.install_command}
-                  </code>
-                  <button
-                    onClick={handleCopy}
-                    className="flex-shrink-0 rounded p-1 transition-colors hover:bg-muted"
-                  >
-                    <Copy className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-            </section>
+            {/*  <div className="rounded-xl border border-border/50 bg-card p-4">*/}
+            {/*    <p className="mb-3 text-center text-sm text-muted-foreground">*/}
+            {/*      Install via Skills CLI*/}
+            {/*    </p>*/}
+            {/*    <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2">*/}
+            {/*      <code className="flex-1 truncate text-sm">*/}
+            {/*        {skill.install_command}*/}
+            {/*      </code>*/}
+            {/*      <button*/}
+            {/*        onClick={handleCopy}*/}
+            {/*        className="flex-shrink-0 rounded p-1 transition-colors hover:bg-muted"*/}
+            {/*      >*/}
+            {/*        <Copy className="h-4 w-4 text-muted-foreground" />*/}
+            {/*      </button>*/}
+            {/*    </div>*/}
+            {/*  </div>*/}
+            {/*</section>*/}
 
             {/* Repository */}
             <section className="mb-6">

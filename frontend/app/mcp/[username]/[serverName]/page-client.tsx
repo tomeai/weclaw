@@ -221,12 +221,15 @@ export default function ServerDetailClient({
         [toolName]: { isLoading: false, result: resultText, error: null },
       }))
     } catch (err: any) {
+      const errorMsg = err.code && err.code !== 200
+        ? err.message
+        : err.response?.data?.msg || err.message || "Failed to run tool"
       setToolResults((prev) => ({
         ...prev,
         [toolName]: {
           isLoading: false,
           result: null,
-          error: err.message || "Failed to run tool",
+          error: errorMsg,
         },
       }))
     }

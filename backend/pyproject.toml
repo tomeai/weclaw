@@ -60,10 +60,13 @@ dependencies = [
     "pygithub>=2.8.1",
     "agentscope==1.0.14",
     "aiomysql>=0.3.2",
+    "agentscope-runtime>=1.0.5",
+    "aiosqlite>=0.22.1",
 ]
 
 [dependency-groups]
 dev = [
+    "fakeredis>=2.33.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=1.2.0",
     "pytest-sugar>=1.0.0",

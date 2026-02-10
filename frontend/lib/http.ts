@@ -67,22 +67,28 @@ instance.interceptors.response.use(
           ? "请求超时，请稍后重试"
           : "网络异常，请检查网络连接"
     } else {
-      // HTTP status 错误
-      const status = error.response.status
-      const messages: Record<number, string> = {
-        400: "请求参数错误",
-        401: "未授权，请重新登录",
-        403: "没有权限访问",
-        404: "请求资源不存在",
-        500: "服务器内部错误",
-        502: "网关错误",
-        503: "服务不可用",
+      // 优先使用后端返回的业务错误信息
+      const serverMsg = error.response.data?.msg
+      if (serverMsg) {
+        errMsg = serverMsg
+      } else {
+        // HTTP status 错误
+        const status = error.response.status
+        const messages: Record<number, string> = {
+          400: "请求参数错误",
+          401: "未授权，请重新登录",
+          403: "没有权限访问",
+          404: "请求资源不存在",
+          500: "服务器内部错误",
+          502: "网关错误",
+          503: "服务不可用",
+        }
+        errMsg = messages[status] || `请求失败 (${status})`
       }
-      errMsg = messages[status] || `请求失败 (${status})`
     }
 
     toast({ title: "请求失败", description: errMsg, status: "error" })
-    return Promise.reject(error)
+    return Promise.reject(new BusinessError(error.response?.status || 0, errMsg))
   }
 )
 

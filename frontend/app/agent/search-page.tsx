@@ -238,8 +238,8 @@ export default function SearchPage() {
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {agents.map((agent, index) => (
                 <Link
-                  href={`/agent/${index}`}
-                  key={`${agent.owner}-${agent.title}-${index}`}
+                  href={`/agent/${agent.owner}/${agent.name}`}
+                  key={`${agent.owner}-${agent.name}-${index}`}
                 >
                   <div className="group relative flex h-[200px] flex-col rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
                     {/* Header: Avatar + Name + Owner */}

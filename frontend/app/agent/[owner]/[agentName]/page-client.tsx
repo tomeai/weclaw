@@ -10,17 +10,13 @@ import {
   BookOpen,
   Bot,
   BrainCircuit,
-  ChevronDown,
-  ChevronUp,
   Database,
   MessageSquare,
   Settings,
-  Sparkles,
   Wrench,
   Zap,
 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
 
 // Mock data
 const mockAgentDetail = {
@@ -70,11 +66,12 @@ const mockAgentDetail = {
 }
 
 export default function AgentDetailClient({
-  serverId,
+  owner,
+  agentName,
 }: {
-  serverId: string
+  owner: string
+  agentName: string
 }) {
-  const [descExpanded, setDescExpanded] = useState(false)
   const agent = { ...mockAgentDetail }
 
   const avatarSeed = `${agent.owner}-${agent.title}`
@@ -146,11 +143,11 @@ export default function AgentDetailClient({
 
             {/* Right: Playground Button */}
             <Link
-              href={`/chat?type=agent&id=${encodeURIComponent(serverId)}`}
+              href={`/chat?type=agent&owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(agentName)}`}
             >
               <Button className="gap-2 whitespace-nowrap">
                 <Play className="h-4 w-4" weight="fill" />
-                Playground
+                Run
               </Button>
             </Link>
           </div>
@@ -160,45 +157,15 @@ export default function AgentDetailClient({
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-8">
             <TabsTrigger value="overview">概览</TabsTrigger>
-            <TabsTrigger value="settings">Agent 设定</TabsTrigger>
+            <TabsTrigger value="settings">设定</TabsTrigger>
             <TabsTrigger value="tools">工具</TabsTrigger>
             <TabsTrigger value="skills">技能</TabsTrigger>
-            <TabsTrigger value="data">数据资源</TabsTrigger>
+            <TabsTrigger value="data">资源</TabsTrigger>
           </TabsList>
 
           {/* 概览 Tab */}
           <TabsContent value="overview">
             <div className="max-w-3xl">
-                {/* Collapsible Description */}
-                <section className="mb-8">
-                  <button
-                    onClick={() => setDescExpanded(!descExpanded)}
-                    className="mb-3 flex w-full items-center justify-between text-left"
-                  >
-                    <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                      <Sparkles className="h-5 w-5" />
-                      你可以使用该 Agent 做什么?
-                    </h2>
-                    {descExpanded ? (
-                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden transition-all duration-300",
-                      descExpanded ? "max-h-96" : "max-h-0"
-                    )}
-                  >
-                    <div className="rounded-xl border border-border/50 bg-card p-5">
-                      <p className="leading-relaxed text-muted-foreground">
-                        {agent.description}
-                      </p>
-                    </div>
-                  </div>
-                </section>
-
                 {/* Chat Demo */}
                 <section>
                   <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
@@ -375,7 +342,7 @@ export default function AgentDetailClient({
             </div>
           </TabsContent>
 
-          {/* 数据资源 Tab */}
+          {/* 资源 Tab */}
           <TabsContent value="data">
             <div className="max-w-3xl grid grid-cols-2 gap-4">
               <div className="rounded-xl border border-border/50 bg-card p-5 text-center">

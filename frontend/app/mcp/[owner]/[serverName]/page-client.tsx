@@ -26,10 +26,10 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 export default function ServerDetailClient({
-  username,
+  owner,
   serverName,
 }: {
-  username: string
+  owner: string
   serverName: string
 }) {
   const [isLoading, setIsLoading] = useState(true)
@@ -51,7 +51,7 @@ export default function ServerDetailClient({
       try {
         setIsLoading(true)
         setError(null)
-        const response = await getMcpServerDetail(username, serverName)
+        const response = await getMcpServerDetail(owner, serverName)
         setServerDetail(response)
 
         // Initialize tool inputs with default values
@@ -97,7 +97,7 @@ export default function ServerDetailClient({
     }
 
     fetchServerDetail()
-  }, [username, serverName])
+  }, [owner, serverName])
 
   const handleInputChange = (
     toolName: string,
@@ -156,7 +156,7 @@ export default function ServerDetailClient({
 
     try {
       const response = await callMcpServerTool(
-        username,
+        owner,
         serverName,
         toolName,
         toolInputs[toolName] || {}
@@ -298,7 +298,7 @@ export default function ServerDetailClient({
 
             {/* Right: Playground Button */}
             <Link
-              href={`/chat?type=mcp&username=${encodeURIComponent(username)}&server_name=${encodeURIComponent(serverName)}`}
+              href={`/chat?type=mcp&owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(serverName)}`}
             >
               <Button className="gap-2 whitespace-nowrap">
                 <Play className="h-4 w-4" weight="fill" />

@@ -2,6 +2,7 @@ import http from "@/lib/http"
 import {
   API_ROUTE_AUTH_ME,
   API_ROUTE_GITHUB_OAUTH2_LOGIN,
+  API_ROUTE_GOOGLE_OAUTH2_LOGIN,
   API_ROUTE_OAUTH_USER,
 } from "./routes"
 
@@ -24,6 +25,13 @@ export interface AuthMeData {
 export function signInWithGithub(): Promise<{ url: string }> {
   return http
     .get<string>(API_ROUTE_GITHUB_OAUTH2_LOGIN)
+    .then((url) => ({ url }))
+}
+
+/** Google OAuth 登录 */
+export function signInWithGoogle(): Promise<{ url: string }> {
+  return http
+    .get<string>(API_ROUTE_GOOGLE_OAUTH2_LOGIN)
     .then((url) => ({ url }))
 }
 

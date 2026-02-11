@@ -13,6 +13,7 @@ class SearchSkillParam(SchemaBase):
 
 class SkillDetail(SchemaBase):
     name: str = Field(description='skill name')
+    title: str = Field(description='skill title')
     description: str | None = Field(None, description='skill描述')
     path: str | None = Field(None, description='skill path')
     owner: str = Field(description='owner')

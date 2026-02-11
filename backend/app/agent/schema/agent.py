@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-from common.schema import SchemaBase
-from pydantic import Field
+from enum import Enum
+
+from pydantic import BaseModel
 
 
-class ChatAgentParam(SchemaBase):
-    user_id: str = Field(None, description='user id')
-    server_name: str = Field(None, description='server_name')
-    user_msg: str = Field(None, description='user msg')
+class ChatType(str, Enum):
+    mcp = 'mcp'
+    skill = 'skill'
+    agent = 'agent'
+
+
+class ChatRequest(BaseModel):
+    type: ChatType
+    owner: str
+    name: str
+    message: str

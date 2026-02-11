@@ -7,7 +7,7 @@ from agentscope.message import Msg
 from agentscope.model import DashScopeChatModel
 from agentscope.pipeline import stream_printing_messages
 from agentscope.tool import Toolkit
-from app.agent.schema.agent import ChatAgentParam
+from app.agent.schema.agent import ChatRequest, ChatType
 from core.conf import settings
 from database.db import get_db
 from fastapi import APIRouter, Depends
@@ -19,14 +19,17 @@ router = APIRouter()
 
 @router.post('/chat')
 async def chat_endpoint(
-    chat_msg: ChatAgentParam,
+    chat_req: ChatRequest,
     db_session: AsyncSession = Depends(get_db),
 ):
+    if chat_req.type == ChatType.mcp or chat_req.type == ChatType.skill or chat_req.type == ChatType.agent:
+        ...
+
     async def event_generator():
         map_client = HttpStatefulClient(
             name='mcp_services_stateless',
             transport='streamable_http',
-            url='https://mcp.amap.com/mcp?key=d39c17ed2cde7621672d7fd880fbb560',
+            url='https://mcp.amap.com/mcp?key=1ec31da021b2702787841ea4ee822de3',
         )
 
         toolkit = Toolkit()
@@ -50,7 +53,7 @@ async def chat_endpoint(
 
             async for msg, _ in stream_printing_messages(
                 agents=[agent],
-                coroutine_task=agent(Msg('user', chat_msg.user_msg, 'user')),
+                coroutine_task=agent(Msg('user', chat_req.message, 'user')),
             ):
                 yield f'data: {json.dumps(msg.to_dict(), ensure_ascii=False)}\n\n'
 

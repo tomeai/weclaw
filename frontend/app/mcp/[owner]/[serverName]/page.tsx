@@ -5,15 +5,15 @@ import ServerDetailClient from "./page-client"
 export default async function ServerDetailPage({
   params,
 }: {
-  params: Promise<{ username: string; serverName: string }>
+  params: Promise<{ owner: string; serverName: string }>
 }) {
-  const { username, serverName } = await params
+  const { owner, serverName } = await params
 
-  if (!serverName || !username) return notFound()
+  if (!serverName || !owner) return notFound()
 
   return (
     <LayoutApp>
-      <ServerDetailClient username={username} serverName={serverName} />
+      <ServerDetailClient owner={owner} serverName={serverName} />
     </LayoutApp>
   )
 }

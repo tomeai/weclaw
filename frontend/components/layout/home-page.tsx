@@ -175,7 +175,7 @@ export default function HomePage() {
 
           {/* Subtitle */}
           <p className="animate-fade-in-up mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl [animation-delay:200ms]">
-            MCP 工具 + Skill 编排，打造能理解、能行动的 AI Agent
+            MCP 工具 + Skill 编排，打造能理解、会行动的 AI Agent
           </p>
 
           {/* Feature highlights */}

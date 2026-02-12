@@ -1,0 +1,595 @@
+"use client"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { callMcpServerTool, getMcpServerDetail, McpServerItem } from "@/lib/mcp"
+import { cn } from "@/lib/utils"
+import { Play } from "@phosphor-icons/react"
+import {
+  Cloud,
+  Globe,
+  Info,
+  Monitor,
+  Zap,
+} from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+
+export default function ServerDetailClient({
+  owner,
+  serverName,
+}: {
+  owner: string
+  serverName: string
+}) {
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [serverDetail, setServerDetail] = useState<McpServerItem | null>(null)
+  const [toolResults, setToolResults] = useState<
+    Record<
+      string,
+      { isLoading: boolean; result: string | null; error: string | null }
+    >
+  >({})
+  const [toolInputs, setToolInputs] = useState<
+    Record<string, Record<string, any>>
+  >({})
+  const [envInputs, setEnvInputs] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const fetchServerDetail = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const response = await getMcpServerDetail(owner, serverName)
+        setServerDetail(response)
+
+        // Initialize tool inputs with default values
+        if (response.tools) {
+          const initialInputs: Record<string, Record<string, any>> = {}
+
+          response.tools.forEach((tool) => {
+            const toolName = tool.name
+            const inputs: Record<string, any> = {}
+
+            if (tool.inputSchema?.properties) {
+              Object.entries(tool.inputSchema.properties).forEach(
+                ([paramName, paramDetails]: [string, any]) => {
+                  // Set default value if available, otherwise empty string
+                  inputs[paramName] =
+                    paramDetails.default !== undefined
+                      ? paramDetails.default
+                      : ""
+                }
+              )
+            }
+
+            initialInputs[toolName] = inputs
+          })
+
+          setToolInputs(initialInputs)
+        }
+
+        // Initialize environment variables if present
+        if (response.envs && Object.keys(response.envs).length > 0) {
+          const initialEnvs: Record<string, string> = {}
+          Object.entries(response.envs).forEach(([key, value]) => {
+            initialEnvs[key] = value as string
+          })
+          setEnvInputs(initialEnvs)
+        }
+      } catch (err) {
+        console.error("Error fetching server details:", err)
+        setError("Failed to load server details. Please try again.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchServerDetail()
+  }, [owner, serverName])
+
+  const handleInputChange = (
+    toolName: string,
+    paramName: string,
+    value: string
+  ) => {
+    setToolInputs((prev) => ({
+      ...prev,
+      [toolName]: {
+        ...prev[toolName],
+        [paramName]: value,
+      },
+    }))
+  }
+
+  const validateToolInputs = (
+    toolName: string,
+    tool: any
+  ): { isValid: boolean; missingParams: string[] } => {
+    const requiredParams = tool.inputSchema?.required || []
+    const inputs = toolInputs[toolName] || {}
+
+    const missingParams = requiredParams.filter(
+      (param: string) =>
+        !inputs[param] || inputs[param].toString().trim() === ""
+    )
+
+    return {
+      isValid: missingParams.length === 0,
+      missingParams,
+    }
+  }
+
+  const handleRunTool = async (toolName: string, tool: any) => {
+    if (!serverDetail) return
+
+    // Validate required parameters
+    const { isValid, missingParams } = validateToolInputs(toolName, tool)
+
+    if (!isValid) {
+      setToolResults((prev) => ({
+        ...prev,
+        [toolName]: {
+          isLoading: false,
+          result: null,
+          error: `Missing required parameters: ${missingParams.join(", ")}`,
+        },
+      }))
+      return
+    }
+
+    setToolResults((prev) => ({
+      ...prev,
+      [toolName]: { isLoading: true, result: null, error: null },
+    }))
+
+    try {
+      const response = await callMcpServerTool(
+        owner,
+        serverName,
+        toolName,
+        toolInputs[toolName] || {}
+      )
+
+      // Extract the text content from the response
+      const resultText = response.content
+        .filter((item) => item.type === "text")
+        .map((item) => item.text)
+        .join("\n")
+
+      setToolResults((prev) => ({
+        ...prev,
+        [toolName]: { isLoading: false, result: resultText, error: null },
+      }))
+    } catch (err: any) {
+      const errorMsg = err.code && err.code !== 200
+        ? err.message
+        : err.response?.data?.msg || err.message || "Failed to run tool"
+      setToolResults((prev) => ({
+        ...prev,
+        [toolName]: {
+          isLoading: false,
+          result: null,
+          error: errorMsg,
+        },
+      }))
+    }
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-8">
+        <div className="mb-4 text-red-500">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-12 w-12"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-semibold">Error</h2>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Link href="/mcp" className="text-primary hover:underline">
+          Return to MCP Servers
+        </Link>
+      </div>
+    )
+  }
+
+  if (isLoading || !serverDetail) {
+    return (
+      <div className="flex h-full items-center justify-center p-8">
+        <div className="border-foreground h-12 w-12 animate-spin rounded-full border-b-2"></div>
+      </div>
+    )
+  }
+
+  const server = serverDetail
+
+  // Count the number of tools
+  const toolsCount = server.tools?.length || 0
+
+  // Generate a seed for the avatar based on the server title
+  const avatarSeed = server.server_title.replace(/\s+/g, "-").toLowerCase()
+
+  return (
+    <div
+      className={cn(
+        "pt-app-header relative flex min-h-screen flex-col"
+      )}
+    >
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Server Metadata */}
+        <div className="mb-8 border-b border-border/50 pb-8">
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Info */}
+            <div className="flex min-w-0 flex-1 items-start gap-4">
+              <Avatar className="h-14 w-14 flex-shrink-0 rounded-xl ring-1 ring-border/50">
+                <AvatarImage
+                  src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}`}
+                  alt={server.server_title}
+                />
+                <AvatarFallback className="rounded-xl text-sm font-medium">
+                  {server.server_title.substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-3">
+                  <h1 className="truncate text-2xl font-bold text-foreground">
+                    {server.server_title}
+                  </h1>
+                  {server.user?.username && (
+                    <span className="text-sm text-muted-foreground">
+                      by {server.user.username}
+                    </span>
+                  )}
+                </div>
+                <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  {server.description}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Zap className="h-3 w-3" />
+                    {toolsCount} tools
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Info className="h-3 w-3" />
+                    v{server.server_metadata.serverInfo.version}
+                  </Badge>
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Globe className="h-3 w-3" />
+                    {server.server_metadata.protocolVersion}
+                  </Badge>
+                  {server.server_type && (
+                    <Badge
+                      variant="secondary"
+                      className="gap-1 text-xs"
+                    >
+                      {server.server_type === "hosted" ? (
+                        <Cloud className="h-3 w-3" />
+                      ) : (
+                        <Monitor className="h-3 w-3" />
+                      )}
+                      {server.server_type === "hosted" ? "Hosted" : "Local"}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Playground Button */}
+            <Link
+              href={`/chat?type=mcp&owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(serverName)}`}
+            >
+              <Button className="gap-2 whitespace-nowrap">
+                <Play className="h-4 w-4" weight="fill" />
+                Playground
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Main Content with 3/5 - 2/5 Layout */}
+        <div className="flex flex-col gap-8 md:flex-row">
+          {/* Tools Section (3/5 width) */}
+          <div className="w-full md:w-3/5">
+            <Tabs defaultValue="tools" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="tools">Tools ({toolsCount})</TabsTrigger>
+                <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
+              </TabsList>
+
+              {/* Tools Tab */}
+              <TabsContent value="tools" className="space-y-6">
+                {server.tools && server.tools.length > 0 ? (
+                  server.tools.map((tool, index) => (
+                    <div
+                      key={index}
+                      className="rounded-lg border p-4 transition-shadow hover:shadow-sm"
+                    >
+                      <div className="flex flex-col gap-4">
+                        {/* Tool Info and Parameters */}
+                        <div className="w-full">
+                          <div className="mb-3 flex items-start justify-between">
+                            <h3 className="text-lg font-semibold">
+                              {tool.name}
+                            </h3>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRunTool(tool.name, tool)}
+                              disabled={toolResults[tool.name]?.isLoading}
+                            >
+                              <Play className="mr-1 h-4 w-4" />
+                              Run
+                            </Button>
+                          </div>
+                          <p className="text-muted-foreground mb-3">
+                            {tool.description}
+                          </p>
+
+                          {tool.inputSchema &&
+                            tool.inputSchema.properties &&
+                            Object.keys(tool.inputSchema.properties).length >
+                              0 && (
+                              <div className="mt-3">
+                                <h4 className="text-foreground mb-2 text-sm font-medium">
+                                  Input Parameters:
+                                </h4>
+                                <div className="bg-muted/50 rounded border p-3 text-sm">
+                                  {tool.inputSchema.properties && (
+                                    <div className="space-y-3">
+                                      {Object.entries(
+                                        tool.inputSchema.properties
+                                      ).map(
+                                        ([paramName, paramDetails]: [
+                                          string,
+                                          any,
+                                        ]) => (
+                                          <div
+                                            key={paramName}
+                                            className="flex flex-col"
+                                          >
+                                            <div className="mb-1 flex items-start">
+                                              <span className="font-mono text-blue-600">
+                                                {paramName}
+                                              </span>
+                                              {tool.inputSchema.required?.includes(
+                                                paramName
+                                              ) && (
+                                                <span className="ml-1 text-red-500">
+                                                  *
+                                                </span>
+                                              )}
+                                              <span className="ml-2 text-gray-500">
+                                                ({paramDetails.type})
+                                              </span>
+                                            </div>
+                                            {paramDetails.description && (
+                                              <span className="text-muted-foreground mb-1 text-xs">
+                                                {paramDetails.description}
+                                              </span>
+                                            )}
+                                            <Input
+                                              value={
+                                                toolInputs[tool.name]?.[
+                                                  paramName
+                                                ] || ""
+                                              }
+                                              onChange={(e) =>
+                                                handleInputChange(
+                                                  tool.name,
+                                                  paramName,
+                                                  e.target.value
+                                                )
+                                              }
+                                              placeholder={`Enter ${paramName}`}
+                                              className="mt-1"
+                                            />
+                                          </div>
+                                        )
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Tool Results - Bottom */}
+                        <div className="mt-2 w-full border-t pt-4">
+                          <h4 className="text-foreground mb-2 text-sm font-medium">
+                            Result:
+                          </h4>
+
+                          {toolResults[tool.name]?.isLoading && (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="border-foreground h-6 w-6 animate-spin rounded-full border-b-2"></div>
+                            </div>
+                          )}
+
+                          {toolResults[tool.name]?.error && (
+                            <div className="bg-destructive/10 text-destructive border-destructive/20 rounded border p-3 text-sm">
+                              <p className="font-medium">Error:</p>
+                              <p>{toolResults[tool.name].error}</p>
+                            </div>
+                          )}
+
+                          {toolResults[tool.name]?.result && (
+                            <div className="bg-muted/50 rounded border p-3">
+                              <pre className="bg-muted max-h-[400px] overflow-auto rounded p-2 text-xs">
+                                {(() => {
+                                  const raw = toolResults[tool.name].result!
+                                  try {
+                                    const parsed = JSON.parse(raw)
+                                    return JSON.stringify(parsed, null, 2)
+                                  } catch {
+                                    return raw
+                                  }
+                                })()}
+                              </pre>
+                            </div>
+                          )}
+
+                          {!toolResults[tool.name] && (
+                            <div className="bg-muted/30 text-muted-foreground rounded border p-3 text-sm italic">
+                              Run the tool to see results here
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground py-8 text-center">
+                    No tools available for this MCP server.
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Capabilities Tab */}
+              <TabsContent value="capabilities">
+                <div className="bg-card rounded-lg border p-4">
+                  <h3 className="mb-4 text-lg font-semibold">
+                    Server Capabilities
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-foreground font-medium">
+                        Protocol Version
+                      </h4>
+                      <p className="text-muted-foreground">
+                        {server.server_metadata.protocolVersion}
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="text-foreground font-medium">
+                        Server Info
+                      </h4>
+                      <div className="border-border mt-2 border-l-2 pl-4">
+                        <p>
+                          <span className="text-muted-foreground">Name:</span>{" "}
+                          {server.server_metadata.serverInfo.name}
+                        </p>
+                        <p>
+                          <span className="text-muted-foreground">
+                            Version:
+                          </span>{" "}
+                          {server.server_metadata.serverInfo.version}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-foreground font-medium">
+                        Supported Features
+                      </h4>
+                      <div className="border-border mt-2 space-y-2 border-l-2 pl-4">
+                        <div className="flex items-center">
+                          <div
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.tools ? "bg-green-500" : "bg-gray-300"}`}
+                          ></div>
+                          <span>Tools</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.resources ? "bg-green-500" : "bg-gray-300"}`}
+                          ></div>
+                          <span>Resources</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.prompts ? "bg-green-500" : "bg-gray-300"}`}
+                          ></div>
+                          <span>Prompts</span>
+                        </div>
+                        <div className="flex items-center">
+                          <div
+                            className={`mr-2 h-3 w-3 rounded-full ${server.server_metadata.capabilities.logging ? "bg-green-500" : "bg-gray-300"}`}
+                          ></div>
+                          <span>Logging</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {Object.keys(
+                      server.server_metadata.capabilities.experimental || {}
+                    ).length > 0 && (
+                      <div>
+                        <h4 className="text-foreground font-medium">
+                          Experimental Features
+                        </h4>
+                        <div className="border-border mt-2 border-l-2 pl-4">
+                          <pre className="bg-muted/50 overflow-x-auto rounded border p-2 text-sm">
+                            {JSON.stringify(
+                              server.server_metadata.capabilities.experimental,
+                              null,
+                              2
+                            )}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Environment Variables Section (2/5 width) */}
+          {serverDetail &&
+          serverDetail.envs &&
+          Object.keys(serverDetail.envs).length > 0 ? (
+            <div className="mt-18 w-full md:w-2/5">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Environment Variables</CardTitle>
+                  <CardDescription>
+                    此 MCP 服务器所需的环境变量
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {Object.entries(serverDetail.envs).map(([key, value]) => (
+                      <div key={key} className="flex flex-col">
+                        <label className="text-foreground mb-1 text-sm font-medium">
+                          {key}
+                        </label>
+                        <Input
+                          value={value as string}
+                          readOnly
+                          className="bg-muted/50 cursor-default"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}

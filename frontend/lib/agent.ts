@@ -18,6 +18,7 @@ export interface AgentCategory {
 
 export interface AgentSearchItem {
   title: string
+  name: string
   avatar: string
   description: string
   owner: string

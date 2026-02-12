@@ -15,6 +15,8 @@ class AgentServer(Base):
 
     __tablename__ = 'agent_server'
     id: Mapped[id_key] = mapped_column(init=False)
+    # 只允许英文
+    name: Mapped[str] = mapped_column(String(255), comment='agent name')
     title: Mapped[str] = mapped_column(String(255), comment='agent name')
     avatar: Mapped[str] = mapped_column(String(255), comment='agent avatar')
     description: Mapped[str | None] = mapped_column(Text, default=None, comment='agent描述')

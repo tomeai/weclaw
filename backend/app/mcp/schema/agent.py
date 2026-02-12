@@ -12,7 +12,8 @@ class SearchAgentParam(SchemaBase):
 
 
 class AgentDetail(SchemaBase):
-    title: str = Field(description='agent name')
+    title: str = Field(description='agent title')
+    name: str = Field(description='agent name')
     avatar: str | None = Field(None, description='agent avatar')
     description: str | None = Field(None, description='agent描述')
     owner: str = Field(description='owner')

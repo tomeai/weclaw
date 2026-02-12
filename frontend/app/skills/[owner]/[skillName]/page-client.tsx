@@ -122,7 +122,7 @@ export default function SkillDetailClient({
             </div>
           </div>
           <Link
-            href={`/chat?type=skill&owner=${encodeURIComponent(owner)}&skill_name=${encodeURIComponent(skillName)}`}
+            href={`/chat?type=skill&owner=${encodeURIComponent(owner)}&name=${encodeURIComponent(skillName)}`}
           >
             <Button className="gap-2 whitespace-nowrap">
               <Play className="h-4 w-4" weight="fill" />

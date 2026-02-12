@@ -18,6 +18,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { searchAgents, type AgentSearchItem } from "@/lib/agent"
 import { searchMcpServers, type McpSearchServerItem } from "@/lib/mcp"
 import { API_ROUTE_AGENT_CHAT } from "@/lib/routes"
@@ -32,8 +37,6 @@ import {
   Plus,
   Search,
   Server,
-  Settings2,
-  SmilePlus,
   Sparkles,
   Wrench,
   X,
@@ -102,26 +105,22 @@ const SEARCH_CONFIG: Record<
     placeholder: string
     icon: React.ReactNode
     itemIcon: React.ReactNode
-    manageLabel: string
   }
 > = {
   mcp: {
     placeholder: "搜索MCP",
     icon: <Server className="h-4 w-4" />,
     itemIcon: <Server className="h-4 w-4 text-muted-foreground" />,
-    manageLabel: "管理MCP",
   },
   skill: {
     placeholder: "搜索技能",
     icon: <Sparkles className="h-4 w-4" />,
     itemIcon: <Sparkles className="h-4 w-4 text-muted-foreground" />,
-    manageLabel: "管理技能",
   },
   agent: {
     placeholder: "搜索Agent",
     icon: <Bot className="h-4 w-4" />,
     itemIcon: <Bot className="h-4 w-4 text-muted-foreground" />,
-    manageLabel: "管理Agent",
   },
 }
 
@@ -130,13 +129,13 @@ function SearchPopover({
   onOpenChange,
   searchType,
   onSelect,
-  trigger,
+  tooltip,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   searchType: SearchType
   onSelect: (ctx: SelectedContext) => void
-  trigger: React.ReactNode
+  tooltip: string
 }) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchResult[]>([])
@@ -199,9 +198,22 @@ function SearchPopover({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+            >
+              {config.icon}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top">{tooltip}</TooltipContent>
+      </Tooltip>
       <PopoverContent
-        className="w-[420px] rounded-xl p-0"
+        className="w-[300px] rounded-xl p-0"
         align="start"
         sideOffset={8}
       >
@@ -240,7 +252,7 @@ function SearchPopover({
           {!loading &&
             results.map((item, idx) => (
               <button
-                key={`${item.owner}/${item.name}`}
+                key={`${item.owner}/${item.name}/${idx}`}
                 onClick={() => {
                   onSelect({
                     type: searchType,
@@ -278,25 +290,6 @@ function SearchPopover({
             ))}
         </ScrollArea>
 
-        {/* Footer */}
-        <div className="border-t">
-          <button
-            className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            onClick={() => {
-              onOpenChange(false)
-              const path =
-                searchType === "mcp"
-                  ? "/mcp"
-                  : searchType === "skill"
-                    ? "/skills"
-                    : "/agent"
-              window.location.href = path
-            }}
-          >
-            <Settings2 className="h-4 w-4" />
-            {config.manageLabel}
-          </button>
-        </div>
       </PopoverContent>
     </Popover>
   )
@@ -360,7 +353,7 @@ function ChatInputBar({
           </Badge>
         </div>
       )}
-      <PromptInputTextarea placeholder="分配一个任务或提问任何问题" />
+      <PromptInputTextarea placeholder="分配一个任务或提问任何问题" rows={4} className="min-h-[100px]" />
       <PromptInputActions className="justify-between">
         <div className="flex items-center gap-1">
           <PromptInputAction tooltip="添加">
@@ -377,63 +370,24 @@ function ChatInputBar({
             onOpenChange={setMcpOpen}
             searchType="mcp"
             onSelect={setSelectedContext}
-            trigger={
-              <PromptInputAction tooltip="MCP">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Server className="h-4 w-4" />
-                </Button>
-              </PromptInputAction>
-            }
+            tooltip="MCP"
           />
           <SearchPopover
             open={skillOpen}
             onOpenChange={setSkillOpen}
             searchType="skill"
             onSelect={setSelectedContext}
-            trigger={
-              <PromptInputAction tooltip="Skill">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </PromptInputAction>
-            }
+            tooltip="Skill"
           />
           <SearchPopover
             open={agentOpen}
             onOpenChange={setAgentOpen}
             searchType="agent"
             onSelect={setSelectedContext}
-            trigger={
-              <PromptInputAction tooltip="Agent">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                >
-                  <Bot className="h-4 w-4" />
-                </Button>
-              </PromptInputAction>
-            }
+            tooltip="Agent"
           />
         </div>
         <div className="flex items-center gap-1">
-          <PromptInputAction tooltip="表情">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-            >
-              <SmilePlus className="h-4 w-4" />
-            </Button>
-          </PromptInputAction>
           <PromptInputAction tooltip="语音">
             <Button
               variant="ghost"

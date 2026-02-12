@@ -1,0 +1,96 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: wemcp-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - wemcp_network
+    depends_on:
+      - wemcp_studio
+      - wemcp_server
+
+  wemcp_studio:
+    build:
+      context: ./frontend/studio
+      dockerfile: Dockerfile
+    container_name: wemcp-studio
+    image: wemcp_studio:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web/studio/.env.production:/app/.env
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - wemcp_network
+    depends_on:
+      - wemcp_server
+    restart: always
+
+  wemcp_server:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: wemcp_server:latest
+    container_name: wemcp-server
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - wemcp_worker
+    volumes:
+      - ./envs/.env.backend:/wemcp/backend/.env
+    networks:
+      - wemcp_network
+    command:
+      - bash
+      - -c
+      - |
+        wait-for-it -s wemcp_mysql:3306 -s wemcp_redis:6379 -t 300
+        supervisord -c /etc/supervisor/supervisord.conf
+        supervisorctl restart
+
+  wemcp_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        - SERVER_TYPE=celery
+    image: wemcp_celery:latest
+    container_name: wemcp-worker
+    restart: always
+    ports:
+      - "8555:8555"
+    depends_on:
+      - wemcp_redis
+    volumes:
+      - ./envs/.env.backend:/wemcp/backend/.env
+    networks:
+      - wemcp_network
+    command:
+      - bash
+      - -c
+      - |
+        wait-for-it -s wemcp_redis:6379 -t 300
+        supervisord -c /etc/supervisor/supervisord.conf
+        supervisorctl restart
+
+networks:
+  wemcp_network:
+    name: wemcp_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.10.10.0/24
+
+volumes:
+  caddy_data:
+  caddy_config:

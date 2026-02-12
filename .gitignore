@@ -5,6 +5,8 @@
 *.so
 *.dylib
 
+references/
+
 **/.next/
 **/node_modules/
 

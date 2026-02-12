@@ -83,6 +83,11 @@ async def query_func(
     )
 
 
+@agent_app.endpoint('/chat/info')
+def sync_handler():
+    return {'agents': [{'name': 'demo-agent', 'description': 'Demo agent', 'tools': ['get_weather'], 'default': True}]}
+
+
 async def main():
     """以独立进程模式部署应用"""
     print('🚀 以独立进程模式部署 AgentApp...')

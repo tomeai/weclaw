@@ -58,10 +58,11 @@ dependencies = [
     "user-agents>=2.2.0",
     "fastmcp (>=2.12.3,<3.0.0)",
     "pygithub>=2.8.1",
-    "agentscope==1.0.14",
+    "agentscope==1.0.15",
     "aiomysql>=0.3.2",
     "agentscope-runtime>=1.0.5",
     "aiosqlite>=0.22.1",
+    "ag-ui-protocol>=0.1.10",
 ]
 
 [dependency-groups]

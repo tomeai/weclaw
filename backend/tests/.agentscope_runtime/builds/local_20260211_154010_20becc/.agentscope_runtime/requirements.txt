@@ -1,0 +1,10 @@
+agentscope-runtime
+agentscope-runtime[deployment]
+agentscope-runtime[sandbox]
+celery
+fastapi
+jinja2
+psutil
+pydantic
+redis
+uvicorn

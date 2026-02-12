@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 
 class ChatType(str, Enum):
+    auto = 'auto'
     mcp = 'mcp'
     skill = 'skill'
     agent = 'agent'

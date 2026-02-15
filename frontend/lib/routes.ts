@@ -27,3 +27,7 @@ export const API_ROUTE_AGENT_ADMIN_SERVER_DETAIL = "/api/v1/admin/agent/servers"
 export const API_ROUTE_SKILL_SEARCH = "/api/v1/skill/search"
 export const API_ROUTE_SKILL_CATEGORIES = "/api/v1/skill/categories"
 export const API_ROUTE_SKILL_PUBLISH = "/api/v1/skill/publish"
+
+// CopilotKit
+export const API_ROUTE_COPILOTKIT = "/api/copilotkit"
+export const API_ROUTE_AG_UI = "/ag-ui"

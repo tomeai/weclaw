@@ -12,6 +12,9 @@
     "@ai-sdk/mistral": "^1.2.0",
     "@ai-sdk/openai": "^1.2.3",
     "@ai-sdk/react": "^1.2.6",
+    "@copilotkit/react-core": "^1.51.3",
+    "@copilotkit/react-ui": "^1.51.3",
+    "@copilotkit/runtime": "^1.51.3",
     "@next/third-parties": "^15.5.5",
     "@phosphor-icons/react": "^2.1.7",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -68,5 +71,8 @@
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@ag-ui/client": "0.0.42"
   }
 }

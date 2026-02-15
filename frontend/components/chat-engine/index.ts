@@ -21,6 +21,21 @@ export type {
   ToolCallRendererProps,
 } from "./types"
 
+// CopilotKit Types
+export type {
+  AGUIEventType,
+  AGUIEvent,
+  AGUITextMessageStartEvent,
+  AGUITextMessageContentEvent,
+  AGUITextMessageEndEvent,
+  AGUIToolCallStartEvent,
+  AGUIToolCallArgsEvent,
+  AGUIToolCallEndEvent,
+  AGUIToolCallResultEvent,
+  CopilotKitForwardedProps,
+  CopilotKitMessage,
+} from "./types/copilotkit-types"
+
 // Hooks
 export { useChat } from "./hooks"
 export {

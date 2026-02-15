@@ -106,10 +106,10 @@ function ScheduledTaskDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* 选择智能体 */}
           <div className="space-y-4">
-            <span className="text-sm font-medium">选择智能体</span>
+            <span className="mb-2 block text-sm font-medium">选择智能体</span>
             <div className="flex flex-wrap gap-2">
               {AGENT_OPTIONS.map((agent) => (
                 <button
@@ -131,7 +131,7 @@ function ScheduledTaskDialog({
 
           {/* 标题 */}
           <div className="space-y-4">
-            <label className="text-sm font-medium">
+            <label className="mb-2 block text-sm font-medium">
               标题 <span className="text-destructive">*</span>
             </label>
             <Input
@@ -143,7 +143,7 @@ function ScheduledTaskDialog({
 
           {/* 提示词 */}
           <div className="space-y-4">
-            <label className="text-sm font-medium">
+            <label className="mb-2 block text-sm font-medium">
               提示词 <span className="text-destructive">*</span>
             </label>
             <div className="relative">
@@ -162,7 +162,7 @@ function ScheduledTaskDialog({
 
           {/* 开始时间 */}
           <div className="space-y-4">
-            <span className="text-sm font-medium">开始时间</span>
+            <span className="mb-2 block text-sm font-medium">开始时间</span>
             <div className="flex items-center gap-3">
               <Select value={frequency} onValueChange={setFrequency}>
                 <SelectTrigger className="w-[140px]">

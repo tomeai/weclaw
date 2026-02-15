@@ -1,8 +1,6 @@
 "use client"
 
 import { ChatContainer } from "@/components/prompt-kit/chat-container"
-import { Loader } from "@/components/prompt-kit/loader"
-import { Markdown } from "@/components/prompt-kit/markdown"
 import {
   PromptInput,
   PromptInputAction,
@@ -23,6 +21,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import {
+  ToolcallRegistryProvider,
+  useChat,
+  ChatMessage,
+} from "@/components/chat-engine"
+import type { SelectedContext, RequestContext } from "@/components/chat-engine"
 import { searchAgents, type AgentSearchItem } from "@/lib/agent"
 import { searchMcpServers, type McpSearchServerItem } from "@/lib/mcp"
 import { API_ROUTE_AGENT_CHAT } from "@/lib/routes"
@@ -34,7 +38,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Mic,
   Paperclip,
   Search,
   Server,
@@ -44,49 +47,12 @@ import {
 } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
-// ─── SSE Types ────────────────────────────────────────────────────────────────
-
-type ContentItemText = { type: "text"; text: string }
-type ContentItemToolUse = {
-  type: "tool_use"
-  id: string
-  name: string
-  input: Record<string, unknown>
-}
-type ContentItemToolResult = {
-  type: "tool_result"
-  tool_use_id: string
-  content: string
-}
-
-type ContentItem = ContentItemText | ContentItemToolUse | ContentItemToolResult
-
-type SSEEvent = {
-  id: string
-  type: "content_block_delta"
-  content: ContentItem
-}
-
-type ChatMessage = {
-  id: string
-  role: "user" | "assistant"
-  content: ContentItem[]
-  isStreaming?: boolean
-}
-
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 type ChatClientProps = {
   type?: string
   owner?: string
   name?: string
-}
-
-type SelectedContext = {
-  type: "mcp" | "skill" | "agent"
-  owner: string
-  name: string
-  label: string
 }
 
 type SearchType = "mcp" | "skill" | "agent"
@@ -674,15 +640,6 @@ function ChatInputBar({
             </div>
           </div>
           <div className="flex items-center gap-1">
-            {/*<PromptInputAction tooltip="语音">*/}
-            {/*  <Button*/}
-            {/*    variant="ghost"*/}
-            {/*    size="icon"*/}
-            {/*    className="h-8 w-8 rounded-full"*/}
-            {/*  >*/}
-            {/*    <Mic className="h-4 w-4" />*/}
-            {/*  </Button>*/}
-            {/*</PromptInputAction>*/}
             <PromptInputAction tooltip="发送">
               <Button
                 size="icon"
@@ -713,13 +670,14 @@ function ChatInputBar({
   )
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Chat Content Component ───────────────────────────────────────────────────
 
-export default function ChatClient({ type, owner, name }: ChatClientProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState("")
-  const [isStreaming, setIsStreaming] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
+function ChatContent({
+  type,
+  owner,
+  name,
+}: ChatClientProps) {
+  // Initialize selected contexts from props
   const [selectedAgent, setSelectedAgent] =
     useState<SelectedContext | null>(() => {
       if (type === "agent" && owner && name) {
@@ -741,6 +699,32 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
   })
   const [mcpOpen, setMcpOpen] = useState(false)
   const [skillOpen, setSkillOpen] = useState(false)
+  const [input, setInput] = useState("")
+
+  // Build request context
+  const buildRequestContext = useCallback((): RequestContext => {
+    return {
+      agent: selectedAgent || undefined,
+      mcps: selectedMcps,
+      skills: selectedSkills,
+    }
+  }, [selectedAgent, selectedMcps, selectedSkills])
+
+  // Use chat engine hook
+  const { messages, status, sendMessage, abort } = useChat({
+    endpoint: API_ROUTE_AGENT_CHAT,
+  })
+
+  const isStreaming = status === "streaming"
+
+  const handleSendMessage = useCallback(() => {
+    const trimmed = input.trim()
+    if (!trimmed || isStreaming) return
+
+    const context = buildRequestContext()
+    sendMessage(trimmed, context)
+    setInput("")
+  }, [input, isStreaming, buildRequestContext, sendMessage])
 
   const onToggleMcp = useCallback((ctx: SelectedContext) => {
     setSelectedMcps((prev) => {
@@ -768,136 +752,13 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
     setSelectedSkills((prev) => prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name)))
   }, [])
 
-  const sendMessage = useCallback(async () => {
-    const trimmed = input.trim()
-    if (!trimmed || isStreaming) return
-
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: [{ type: "text", text: trimmed }],
-    }
-
-    const assistantId = crypto.randomUUID()
-    const assistantMsg: ChatMessage = {
-      id: assistantId,
-      role: "assistant",
-      content: [],
-      isStreaming: true,
-    }
-
-    setMessages((prev) => [...prev, userMsg, assistantMsg])
-    setInput("")
-    setIsStreaming(true)
-
-    const controller = new AbortController()
-    abortRef.current = controller
-
-    try {
-      const token = localStorage.getItem("auth_token")
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || ""
-
-      const res = await fetch(`${baseUrl}${API_ROUTE_AGENT_CHAT}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          type: selectedAgent?.type ?? type,
-          owner: selectedAgent?.owner ?? owner,
-          name: selectedAgent?.name ?? name,
-          message: trimmed,
-          ...(selectedMcps.length > 0 && {
-            mcps: selectedMcps.map((m) => ({
-              owner: m.owner,
-              name: m.name,
-            })),
-          }),
-          ...(selectedSkills.length > 0 && {
-            skills: selectedSkills.map((s) => ({
-              owner: s.owner,
-              name: s.name,
-            })),
-          }),
-        }),
-        signal: controller.signal,
-      })
-
-      if (!res.ok || !res.body) {
-        throw new Error(`Request failed: ${res.status}`)
-      }
-
-      const reader = res.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ""
-      const seenIds = new Map<string, ContentItem>()
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split("\n")
-        buffer = lines.pop() || ""
-
-        for (const line of lines) {
-          if (!line.startsWith("data:")) continue
-          const data = line.slice(5).trim()
-          if (!data || data === "[DONE]") continue
-
-          try {
-            const event: SSEEvent = JSON.parse(data)
-            seenIds.set(event.id, event.content)
-
-            const contentArr = Array.from(seenIds.values())
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantId ? { ...m, content: contentArr } : m
-              )
-            )
-          } catch {
-            // skip malformed JSON lines
-          }
-        }
-      }
-    } catch (err) {
-      if ((err as Error).name !== "AbortError") {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantId
-              ? {
-                  ...m,
-                  content: [
-                    ...m.content,
-                    {
-                      type: "text" as const,
-                      text: "请求失败，请重试。",
-                    },
-                  ],
-                }
-              : m
-          )
-        )
-      }
-    } finally {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === assistantId ? { ...m, isStreaming: false } : m
-        )
-      )
-      setIsStreaming(false)
-      abortRef.current = null
-    }
-  }, [input, isStreaming, type, owner, name, selectedAgent, selectedMcps, selectedSkills])
-
   const hasMessages = messages.length > 0
 
   const inputBarProps = {
     input,
     setInput,
     isStreaming,
-    sendMessage,
+    sendMessage: handleSendMessage,
     selectedAgent,
     setSelectedAgent,
     selectedMcps,
@@ -945,7 +806,7 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
     <div className="flex flex-1 flex-col overflow-hidden">
       <ChatContainer className="flex-1 px-4 py-6" autoScroll>
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <ChatMessage key={msg.id} message={msg} />
         ))}
       </ChatContainer>
 
@@ -958,133 +819,12 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
   )
 }
 
-// ─── Message Bubble ───────────────────────────────────────────────────────────
+// ─── Main Component with Provider ────────────────────────────────────────────
 
-function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === "user"
-
-  if (isUser) {
-    const text = message.content
-      .filter((c): c is ContentItemText => c.type === "text")
-      .map((c) => c.text)
-      .join("")
-
-    return (
-      <div className="mb-4 flex justify-end">
-        <div className="bg-primary text-primary-foreground max-w-[75%] rounded-2xl px-4 py-2">
-          <p className="whitespace-pre-wrap">{text}</p>
-        </div>
-      </div>
-    )
-  }
-
+export default function ChatClient(props: ChatClientProps) {
   return (
-    <div className="mb-4 flex items-start gap-3">
-      <Avatar className="mt-1 h-8 w-8 flex-shrink-0">
-        <AvatarFallback>
-          <Bot className="h-4 w-4" />
-        </AvatarFallback>
-      </Avatar>
-      <div className="max-w-[75%] space-y-2">
-        {message.content.map((item, i) => (
-          <ContentBlock key={`${message.id}-${i}`} item={item} />
-        ))}
-        {message.isStreaming && message.content.length === 0 && (
-          <Loader text="思考中" size="sm" />
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Content Block ────────────────────────────────────────────────────────────
-
-function ContentBlock({ item }: { item: ContentItem }) {
-  if (item.type === "text") {
-    return (
-      <div className="prose dark:prose-invert prose-sm max-w-none">
-        <Markdown>{item.text}</Markdown>
-      </div>
-    )
-  }
-
-  if (item.type === "tool_use") {
-    return <ToolUseCard name={item.name} input={item.input} />
-  }
-
-  if (item.type === "tool_result") {
-    return <ToolResultCard content={item.content} />
-  }
-
-  return null
-}
-
-// ─── Tool Use Card ────────────────────────────────────────────────────────────
-
-function ToolUseCard({
-  name,
-  input,
-}: {
-  name: string
-  input: Record<string, unknown>
-}) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="border-border bg-muted/50 overflow-hidden rounded-lg border">
-      <button
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
-        onClick={() => setOpen(!open)}
-      >
-        <Wrench className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
-        <span className="text-muted-foreground flex-1 truncate font-medium">
-          调用工具: {name}
-        </span>
-        {open ? (
-          <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
-        ) : (
-          <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
-        )}
-      </button>
-      {open && (
-        <div className="border-t px-3 py-2">
-          <pre className="text-muted-foreground overflow-x-auto text-xs">
-            {JSON.stringify(input, null, 2)}
-          </pre>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Tool Result Card ─────────────────────────────────────────────────────────
-
-function ToolResultCard({ content }: { content: string }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div className="border-border bg-muted/50 overflow-hidden rounded-lg border">
-      <button
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm"
-        onClick={() => setOpen(!open)}
-      >
-        <ChevronRight
-          className={cn(
-            "text-muted-foreground h-3.5 w-3.5 flex-shrink-0 transition-transform",
-            open && "rotate-90"
-          )}
-        />
-        <span className="text-muted-foreground flex-1 font-medium">
-          工具结果
-        </span>
-      </button>
-      {open && (
-        <div className="border-t px-3 py-2">
-          <pre className="text-muted-foreground overflow-x-auto whitespace-pre-wrap text-xs">
-            {content}
-          </pre>
-        </div>
-      )}
-    </div>
+    <ToolcallRegistryProvider>
+      <ChatContent {...props} />
+    </ToolcallRegistryProvider>
   )
 }

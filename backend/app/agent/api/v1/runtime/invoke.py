@@ -1,5 +1,3 @@
-import json
-
 from agentscope.agent import ReActAgent
 from agentscope.formatter import DashScopeChatFormatter
 from agentscope.mcp import HttpStatefulClient
@@ -8,6 +6,7 @@ from agentscope.model import DashScopeChatModel
 from agentscope.pipeline import stream_printing_messages
 from agentscope.tool import Toolkit
 from app.agent.schema.agent import ChatRequest, ChatType
+from common.protocol.agui.agui_adapter_utils import AGUIAdapterUtils
 from core.conf import settings
 from database.db import get_db
 from fastapi import APIRouter, Depends
@@ -24,6 +23,10 @@ async def chat_endpoint(
 ):
     if chat_req.type == ChatType.mcp or chat_req.type == ChatType.skill or chat_req.type == ChatType.agent:
         ...
+    adapter = AGUIAdapterUtils(
+        thread_id='1',
+        run_id='2',
+    )
 
     async def event_generator():
         map_client = HttpStatefulClient(
@@ -51,11 +54,14 @@ async def chat_endpoint(
                 toolkit=toolkit,
             )
 
-            async for msg, _ in stream_printing_messages(
+            async for msg, last in stream_printing_messages(
                 agents=[agent],
                 coroutine_task=agent(Msg('user', chat_req.message, 'user')),
             ):
-                yield f'data: {json.dumps(msg.to_dict(), ensure_ascii=False)}\n\n'
+                agui_events = adapter.convert_agent_event_to_agui_events(msg)
+                for agui_event in agui_events:
+                    yield adapter.as_sse_data(agui_event)
+                # yield f'data: {json.dumps(msg.to_dict(), ensure_ascii=False)}\n\n'
 
         finally:
             await map_client.close()

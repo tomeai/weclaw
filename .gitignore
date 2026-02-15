@@ -5,6 +5,7 @@
 *.so
 *.dylib
 
+design/
 references/
 
 **/.next/

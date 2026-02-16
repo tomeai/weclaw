@@ -6,44 +6,29 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import http from "@/lib/http";
 import { cn } from "@/lib/utils";
-import { BarChart3, Bot, CircleDashed, Clock, Download, FileText, Globe, HelpCircle, ImageIcon, LayoutDashboard, MessageSquare, Mic, Presentation, Settings, SlidersHorizontal, Sparkles, SquarePen, Table2, Users, type LucideIcon } from "lucide-react";
-import { useState } from "react";
+import { BarChart3, Clock, Download, FileText, HelpCircle, MessageSquare, Mic, Presentation, Settings, Sparkles, SquarePen, Table2, Users, type LucideIcon } from "lucide-react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
+// ─── Types ──────────────────────────────────────────────────────────────────
 
-type TaskItem = {
-  icon: LucideIcon
-  title: string
+type ThreadItem = {
+  thread_id: string
+  chat_title: string
 }
 
-const MOCK_TASKS: TaskItem[] = [
-  { icon: CircleDashed, title: "2025年Q2季度营销策划方案" },
-  { icon: Bot, title: "智能客服对话流程优化" },
-  { icon: FileText, title: "产品需求文档撰写与评审" },
-  { icon: BarChart3, title: "用户增长数据分析报告" },
-  { icon: Globe, title: "官网SEO优化与内容更新" },
-  { icon: MessageSquare, title: "社交媒体运营周报总结" },
-  { icon: ImageIcon, title: "品牌视觉设计素材整理" },
-  { icon: LayoutDashboard, title: "项目管理看板搭建" },
-  { icon: FileText, title: "技术架构设计文档" },
-  { icon: Bot, title: "AI助手功能测试用例" },
-  { icon: BarChart3, title: "竞品分析与市场调研" },
-  { icon: CircleDashed, title: "新员工入职培训计划" },
-  { icon: Globe, title: "多语言国际化方案设计" },
-  { icon: MessageSquare, title: "用户反馈收集与分类" },
-  { icon: FileText, title: "技术架构设计文档" },
-  { icon: Bot, title: "AI助手功能测试用例" },
-  { icon: BarChart3, title: "竞品分析与市场调研" },
-  { icon: CircleDashed, title: "新员工入职培训计划" },
-  { icon: Globe, title: "多语言国际化方案设计" },
-  { icon: MessageSquare, title: "用户反馈收集与分类" },
-]
+type ChatSidebarProps = {
+  activeThreadId?: string
+  onSelectThread: (threadId: string) => void
+  onNewChat: () => void
+}
 
-const TOP_ACTIONS = [
-  { icon: SquarePen, label: "新建任务" },
-  // { icon: Search, label: "搜索" },
-  { icon: BarChart3, label: "资源库" },
-] as const
+export type ChatSidebarRef = {
+  addThread: (thread: ThreadItem) => void
+}
+
+// ─── Top / Footer actions ───────────────────────────────────────────────────
 
 const FOOTER_ACTIONS = [
   { icon: Settings, label: "设置" },
@@ -211,22 +196,55 @@ function ScheduledTaskDialog({
 
 // ─── ChatSidebar ────────────────────────────────────────────────────────────
 
-export function ChatSidebar() {
+export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
+  function ChatSidebar({ activeThreadId, onSelectThread, onNewChat }, ref) {
   const [scheduledOpen, setScheduledOpen] = useState(false)
+  const [threads, setThreads] = useState<ThreadItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useImperativeHandle(ref, () => ({
+    addThread(thread: ThreadItem) {
+      setThreads((prev) => {
+        if (prev.some((t) => t.thread_id === thread.thread_id)) return prev
+        return [thread, ...prev]
+      })
+    },
+  }), [])
+
+  // Fetch thread list
+  const fetchThreads = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await http.get<ThreadItem[]>("/api/v1/agent/threads")
+      setThreads(data)
+    } catch {
+      // http interceptor already shows toast
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchThreads()
+  }, [fetchThreads])
 
   return (
     <aside className="border-border flex h-full w-[260px] shrink-0 flex-col overflow-hidden border-r">
       {/* Top Actions */}
       <div className="space-y-1 px-4 pt-4">
-        {TOP_ACTIONS.map((action) => (
-          <button
-            key={action.label}
-            className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
-          >
-            <action.icon className="h-4 w-4" />
-            <span>{action.label}</span>
-          </button>
-        ))}
+        <button
+          onClick={onNewChat}
+          className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
+        >
+          <SquarePen className="h-4 w-4" />
+          <span>新建对话</span>
+        </button>
+        <button
+          className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
+        >
+          <BarChart3 className="h-4 w-4" />
+          <span>资源库</span>
+        </button>
         <button
           onClick={() => setScheduledOpen(true)}
           className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
@@ -239,25 +257,36 @@ export function ChatSidebar() {
       {/* Section Header */}
       <div className="flex items-center justify-between px-7 pt-6 pb-2">
         <span className="text-muted-foreground text-xs font-medium">
-          所有任务
+          所有对话
         </span>
       </div>
 
-      {/* Task List */}
+      {/* Thread List */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-0.5 px-4 pb-4">
-          {MOCK_TASKS.map((task, idx) => (
-            <button
-              key={idx}
-              className={cn(
-                "hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm",
-                idx === 0 && "bg-accent"
-              )}
-            >
-              <task.icon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{task.title}</span>
-            </button>
-          ))}
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="border-muted-foreground h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+            </div>
+          ) : threads.length === 0 ? (
+            <div className="text-muted-foreground py-8 text-center text-sm">
+              暂无对话记录
+            </div>
+          ) : (
+            threads.map((thread) => (
+              <button
+                key={thread.thread_id}
+                onClick={() => onSelectThread(thread.thread_id)}
+                className={cn(
+                  "hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm",
+                  activeThreadId === thread.thread_id && "bg-accent"
+                )}
+              >
+                <MessageSquare className="h-4 w-4 shrink-0" />
+                <span className="truncate">{thread.chat_title}</span>
+              </button>
+            ))
+          )}
         </div>
       </ScrollArea>
 
@@ -283,4 +312,4 @@ export function ChatSidebar() {
       />
     </aside>
   )
-}
+})

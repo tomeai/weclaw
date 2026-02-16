@@ -2,17 +2,53 @@
 
 import type { SelectedContext } from "./types"
 import { CustomInput } from "./custom-input"
-import { cn } from "@/lib/utils"
+import { useFrontendTools } from "./use-frontend-tools"
 import { CopilotChat } from "@copilotkit/react-ui"
-import { useCallback, useState } from "react"
+import { useCopilotChatInternal } from "@copilotkit/react-core"
+import http from "@/lib/http"
+import { useCallback, useEffect, useState } from "react"
 
 type ChatBotProps = {
   type?: string
   owner?: string
   name?: string
+  threadId?: string
 }
 
-export function ChatBot({ type, owner, name }: ChatBotProps) {
+type ThreadMessage = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
+export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
+  const { setMessages } = useCopilotChatInternal()
+
+  // Load history messages when threadId is set
+  useEffect(() => {
+    if (!threadId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const messages = await http.get<ThreadMessage[]>(
+          `/api/v1/agent/threads/${threadId}/messages`
+        )
+        if (cancelled) return
+        if (messages?.length) {
+          setMessages(
+            messages.map((m) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+            }))
+          )
+        }
+      } catch {
+        // http interceptor already shows toast
+      }
+    })()
+    return () => { cancelled = true }
+  }, [threadId, setMessages])
   // Initialize selected contexts from props
   const [selectedAgent, setSelectedAgent] = useState<SelectedContext | null>(
     () => {
@@ -38,6 +74,9 @@ export function ChatBot({ type, owner, name }: ChatBotProps) {
   )
   const [mcpOpen, setMcpOpen] = useState(false)
   const [skillOpen, setSkillOpen] = useState(false)
+
+  // Register all frontend tools
+  useFrontendTools()
 
   const onToggleMcp = useCallback((ctx: SelectedContext) => {
     setSelectedMcps((prev) => {
@@ -139,7 +178,7 @@ export function ChatBot({ type, owner, name }: ChatBotProps) {
         instructions={buildInstructions()}
         labels={{
           title: "AI 助手",
-          initial: "你好！我可以帮你完成各种任务，请问有什么需要帮助的？",
+          // initial: "你好！我可以帮你完成各种任务，请问有什么需要帮助的？",
           placeholder: "输入 @ 选择Agent，分配任务或提问",
         }}
         Input={InputWithToolbar}

@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+*.db
+
+design/
+references/
 
 **/.next/
 **/node_modules/

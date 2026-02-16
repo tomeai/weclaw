@@ -240,3 +240,13 @@ code {
 [data-sonner-toaster] > li {
   width: 100%;
 }
+
+/* CopilotKit chat layout: fill parent and scroll messages */
+.copilotKitChat {
+  height: 100%;
+  overflow: hidden;
+}
+
+.copilotKitChat .copilotKitMessages {
+  overflow-y: auto;
+}

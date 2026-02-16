@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@/components/providers/user-provider"
+import { useUser } from "@/components/providers/user-provider";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Bot, ChevronDown, Server, Sparkles } from "lucide-react";
@@ -41,16 +41,6 @@ export function McpDropdown({ className }: McpDropdownProps) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {/*<DropdownMenuItem asChild>*/}
-        {/*  <Link*/}
-        {/*    href="/build/agent"*/}
-        {/*    className="flex cursor-pointer items-center gap-2"*/}
-        {/*  >*/}
-        {/*    <Bot className="h-4 w-4" />*/}
-        {/*    创建Agent*/}
-        {/*  </Link>*/}
-        {/*</DropdownMenuItem>*/}
-        {/*<DropdownMenuSeparator />*/}
         <DropdownMenuItem asChild>
           <Link
             href="/build/skill"
@@ -58,6 +48,16 @@ export function McpDropdown({ className }: McpDropdownProps) {
           >
             <Sparkles className="h-4 w-4" />
             创建Skill
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link
+            href="/build/agent"
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <Bot className="h-4 w-4" />
+            创建Agent
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

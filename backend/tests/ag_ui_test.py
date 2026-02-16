@@ -13,7 +13,6 @@ async def call_ag_ui_endpoint():
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=payload) as resp:
-            print(resp.status)
             assert resp.status == 200
             assert resp.headers['Content-Type'].startswith('text/event-stream')
 

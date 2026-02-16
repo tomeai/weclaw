@@ -1,6 +1,5 @@
 import { Header } from "@/components/layout/header"
 import { Suspense } from "react"
-import { ChatSidebar } from "./chat-sidebar"
 import ChatClient from "./page-client"
 
 export default async function ChatPage({
@@ -15,7 +14,6 @@ export default async function ChatPage({
       <div className="bg-background @container/mainview relative flex h-full w-full">
         <Header />
         <div className="pt-app-header flex h-dvh w-full">
-          <ChatSidebar />
           <main className="flex flex-1 flex-col overflow-hidden">
             <Suspense
               fallback={

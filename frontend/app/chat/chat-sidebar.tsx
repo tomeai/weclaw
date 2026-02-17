@@ -24,6 +24,12 @@ type ChatSidebarProps = {
   onNewChat: () => void
 }
 
+type TitleResponse = {
+  thread_id: string
+  chat_title: string
+  title_generated: boolean
+}
+
 export type ChatSidebarRef = {
   addThread: (thread: ThreadItem) => void
 }
@@ -202,14 +208,50 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
   const [threads, setThreads] = useState<ThreadItem[]>([])
   const [loading, setLoading] = useState(true)
 
+  // 轮询标题的 thread_id 集合
+  const [pollingIds, setPollingIds] = useState<Set<string>>(new Set())
+
   useImperativeHandle(ref, () => ({
     addThread(thread: ThreadItem) {
       setThreads((prev) => {
         if (prev.some((t) => t.thread_id === thread.thread_id)) return prev
         return [thread, ...prev]
       })
+      // 新对话启动标题轮询
+      if (thread.chat_title === "新对话") {
+        setPollingIds((prev) => new Set(prev).add(thread.thread_id))
+      }
     },
   }), [])
+
+  // 标题轮询
+  useEffect(() => {
+    if (pollingIds.size === 0) return
+
+    const interval = setInterval(async () => {
+      for (const tid of pollingIds) {
+        try {
+          const data = await http.get<TitleResponse>(`/api/v1/agent/threads/${tid}/title`)
+          if (data.title_generated) {
+            setThreads((prev) =>
+              prev.map((t) =>
+                t.thread_id === tid ? { ...t, chat_title: data.chat_title } : t
+              )
+            )
+            setPollingIds((prev) => {
+              const next = new Set(prev)
+              next.delete(tid)
+              return next
+            })
+          }
+        } catch {
+          // ignore polling errors
+        }
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [pollingIds])
 
   // Fetch thread list
   const fetchThreads = useCallback(async () => {

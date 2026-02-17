@@ -43,6 +43,11 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     # 创建数据库表
     await create_tables()
 
+    # 创建 SQLite 聊天表
+    from database.sqlite import create_chat_tables
+
+    await create_chat_tables()
+
     # 初始化 redis
     await redis_client.open()
 

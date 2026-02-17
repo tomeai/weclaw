@@ -51,7 +51,7 @@ wheels = [
 
 [[package]]
 name = "agentscope"
-version = "1.0.15"
+version = "1.0.16"
 source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
 dependencies = [
     { name = "aioitertools" },
@@ -76,9 +76,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "tiktoken" },
 ]
-sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/a7/77/c025262d8e856f02714c37bb5fef4156d92e4db0878dfe9f208367fced6d/agentscope-1.0.15.tar.gz", hash = "sha256:83307b417395bf2e4e36ffd2b0d3ba17c2174518283231529a42155707469a8c", size = 272091 }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/8c/36/648a0a54a20fa64be0eb9fa8bf8e1951a6ba03afaedd1f5f4abc0578f25d/agentscope-1.0.16.tar.gz", hash = "sha256:3ee4fa4059ff122e18a37daf3280db4ca84d11cbbfc8c7ee295e82af5e26a3b7", size = 277237 }
 wheels = [
-    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/36/c9/6e071a8e64a65018dd18e22c3224a63990ee299bccd6980f7b157dbf5c7b/agentscope-1.0.15-py3-none-any.whl", hash = "sha256:b19e7ef5d7964258afb30a9ad4486fbabc2d26341686bc10e6982540e30d061d", size = 382693 },
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/6d/c0/ebd4cce260d49ef0d7face5b369860f2c2e0321bb2837730074ad7ee1bed/agentscope-1.0.16-py3-none-any.whl", hash = "sha256:9c5c9c4cde806d5a986e7682b5609631d755e550db96abe2ace5703d25eb247d", size = 392278 },
 ]
 
 [[package]]
@@ -5140,7 +5140,7 @@ server = [
 [package.metadata]
 requires-dist = [
     { name = "ag-ui-protocol", specifier = ">=0.1.10" },
-    { name = "agentscope", specifier = "==1.0.15" },
+    { name = "agentscope", specifier = "==1.0.16" },
     { name = "agentscope-runtime", specifier = ">=1.0.5" },
     { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "aiomysql", specifier = ">=0.3.2" },

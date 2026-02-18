@@ -86,10 +86,16 @@ class Settings(BaseSettings):
     TOKEN_REFRESH_REDIS_PREFIX: str = 'wemcp:refresh_token'
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = [  # JWT / RBAC 路由白名单
         f'{FASTAPI_API_V1_PATH}/auth/login',
+        f'{FASTAPI_API_V1_PATH}/admin/auth/send-code',
+        f'{FASTAPI_API_V1_PATH}/admin/auth/email-login',
     ]
     TOKEN_REQUEST_PATH_EXCLUDE_PATTERN: list[Pattern[str]] = [  # JWT / RBAC 路由白名单（正则）
         rf'^{FASTAPI_API_V1_PATH}/monitors/(redis|server)$',
     ]
+
+    # Email 验证码
+    EMAIL_CODE_REDIS_PREFIX: str = 'wemcp:email_code'
+    EMAIL_CODE_EXPIRE_SECONDS: int = 300  # 5 分钟
 
     # JWT
     JWT_USER_REDIS_PREFIX: str = 'wemcp:user'
@@ -145,6 +151,12 @@ class Settings(BaseSettings):
     CORS_EXPOSE_HEADERS: list[str] = [
         'X-Request-ID',
     ]
+
+    # smtp配置
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
 
     # 中间件配置
     MIDDLEWARE_CORS: bool = True

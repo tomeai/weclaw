@@ -135,14 +135,17 @@ class AddMcpServerParam(BaseModel):
     description: str | None = Field(None, description='描述')
     mcpServers: McpServersWrapper = Field(description='mcp server config')
 
-    # @field_validator('git')
-    # def validate_git(cls, v: Optional[str]) -> Optional[str]:
-    #     if v is None:
-    #         return v
-    #     git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
-    #     if not git_regex.match(v):
-    #         raise ValueError(f'Invalid git URL: {v}')
-    #     return v
+    @field_validator('server_title')
+    @classmethod
+    def validate_server_title(cls, v: str) -> str:
+        import re
+
+        v = v.strip()
+        if not v:
+            raise ValueError('server_title cannot be empty')
+        if not re.match(r'^[a-zA-Z0-9_\-. ]+$', v):
+            raise ValueError('server_title only allows English letters, numbers, spaces, hyphens, underscores and dots')
+        return v
 
     @field_validator('mcpServers')
     def validate_mcpservers(cls, v):

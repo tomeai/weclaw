@@ -61,6 +61,13 @@ export function McpSubmitForm({
   const [error, setError] = useState<string | null>(null)
 
   const handleInputChange = (field: string, value: string) => {
+    if (field === "server_title") {
+      // Only allow English letters, numbers, spaces, hyphens, underscores and dots
+      if (value && !/^[a-zA-Z0-9_\-. ]*$/.test(value)) {
+        setError("Server title only allows English letters, numbers, spaces, hyphens, underscores and dots")
+        return
+      }
+    }
     setFormData((prev) => ({ ...prev, [field]: value }))
     setError(null)
   }
@@ -132,7 +139,7 @@ export function McpSubmitForm({
               onChange={(e) =>
                 handleInputChange("server_title", e.target.value)
               }
-              placeholder="输入MCP服务器的标题"
+              placeholder="Enter server title (English only)"
               disabled={isSubmitting || disabled}
             />
           </div>

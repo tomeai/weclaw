@@ -34,6 +34,9 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
     async def get_mcp_by_title(self, db: AsyncSession, mcp_user: User, title: str) -> McpServer:
         return await self.select_model_by_column(db, user_id=mcp_user.id, title=title)
 
+    async def get_by_server_title(self, db: AsyncSession, server_title: str) -> McpServer | None:
+        return await self.select_model_by_column(db, server_title=server_title)
+
     async def get_mcp_last_7_day(self) -> Select:
         now = datetime.utcnow()
         seven_days_ago = now - timedelta(days=7)

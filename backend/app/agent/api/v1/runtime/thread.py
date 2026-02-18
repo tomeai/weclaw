@@ -24,9 +24,10 @@ from agentscope_runtime.engine.deployers.adapter.agui.agui_adapter_utils import 
 from app.agent.model.thread import ChatThread
 from app.agent.schema.agent import RunBody
 from common.response.response_schema import response_base
+from common.security.jwt import DependsJwtAuth
 from core.conf import settings
 from database.sqlite import async_session_marker, get_db
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from sqlalchemy import select
@@ -60,20 +61,29 @@ async def generate_title(thread_id: str, query: str):
         logger.error('Failed to generate title for thread %s: %s', thread_id, e)
 
 
-@router.post('/chat')
+@router.post('/chat', dependencies=[DependsJwtAuth])
 async def chat_endpoint(
+    request: Request,
     chat_req: RunBody,
     db_session: AsyncSession = Depends(get_db),
 ):
     thread_id = chat_req.threadId
     run_id = chat_req.runId
-    first_query = chat_req.messages[-1].content if chat_req.messages else ''
+    user_id = str(request.user.id)
+
+    # 从最后一条有内容的 user 消息中提取 first_query
+    first_query = ''
+    for m in reversed(chat_req.messages):
+        if m.role == 'user' and m.content:
+            first_query = m.content
+            break
 
     # 持久化聊天线程元信息
     existing = await db_session.get(ChatThread, thread_id)
     if not existing:
         chat_thread = ChatThread(
             thread_id=thread_id,
+            user_id=user_id,
             first_query=first_query,
             chat_title='新对话',
             title_generated=False,
@@ -96,7 +106,7 @@ async def chat_endpoint(
 
         memory = AsyncSQLAlchemyMemory(
             engine_or_session=db_session,
-            user_id='user_1',
+            user_id=user_id,
             session_id=thread_id,
         )
 
@@ -129,7 +139,7 @@ async def chat_endpoint(
             async for msg, last in stream_printing_messages(
                 agents=[agent],
                 coroutine_task=agent(
-                    Msg('user', chat_req.messages[-1].content, 'user'),
+                    Msg('user', first_query or '', 'user'),
                 ),
             ):
                 # Convert Msg chunk -> runtime Content events
@@ -183,12 +193,16 @@ async def chat_endpoint(
     )
 
 
-@router.get('/threads')
+@router.get('/threads', dependencies=[DependsJwtAuth])
 async def list_threads(
+    request: Request,
     db_session: AsyncSession = Depends(get_db),
 ):
     """消息摘要列表"""
-    result = await db_session.execute(select(ChatThread).order_by(ChatThread.start_time.desc()))
+    user_id = str(request.user.id)
+    result = await db_session.execute(
+        select(ChatThread).where(ChatThread.user_id == user_id).order_by(ChatThread.start_time.desc())
+    )
     threads = result.scalars().all()
     return response_base.success(
         data=[
@@ -225,14 +239,16 @@ async def get_thread_title(
     )
 
 
-@router.get('/threads/{thread_id}/messages')
+@router.get('/threads/{thread_id}/messages', dependencies=[DependsJwtAuth])
 async def get_thread_messages(
+    request: Request,
     thread_id: str,
     db_session: AsyncSession = Depends(get_db),
 ):
+    user_id = str(request.user.id)
     async with AsyncSQLAlchemyMemory(
         engine_or_session=db_session,
-        user_id='user_1',
+        user_id=user_id,
         session_id=thread_id,
     ) as memory:
         msgs = await memory.get_memory()

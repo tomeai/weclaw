@@ -47,46 +47,6 @@ const mockStats = {
   unreadNotifications: 3,
 }
 
-// 模拟最近活动数据
-const mockRecentActivities = [
-  {
-    id: "1",
-    action: "调用了",
-    target: "Code Interpreter",
-    type: "agent" as const,
-    detail: "代码执行",
-    time: "10分钟前",
-    status: "success" as const,
-  },
-  {
-    id: "2",
-    action: "收藏了",
-    target: "Web Scraper",
-    type: "mcp" as const,
-    detail: "",
-    time: "1小时前",
-    status: "success" as const,
-  },
-  {
-    id: "3",
-    action: "调用了",
-    target: "Database Query",
-    type: "agent" as const,
-    detail: "数据查询",
-    time: "2小时前",
-    status: "error" as const,
-  },
-  {
-    id: "4",
-    action: "发布了",
-    target: "Custom Analytics",
-    type: "mcp" as const,
-    detail: "MCP审核通过",
-    time: "3天前",
-    status: "success" as const,
-  },
-]
-
 // 模拟用户MCP
 const mockUserMcps = [
   {

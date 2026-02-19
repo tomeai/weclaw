@@ -1,74 +1,27 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import json
+import uuid
 
 from datetime import timedelta
 from typing import Any
-from uuid import uuid4
 
-from app.admin.model import User
-from app.admin.schema.user import GetUserInfoWithRelationDetail
-from common.dataclasses import AccessToken, NewToken, RefreshToken, TokenPayload
-from common.exception import errors
-from common.exception.errors import TokenError
-from core.conf import settings
-from database.db import async_db_session
-from database.redis import redis_client
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
-from fastapi.security.http import HTTPAuthorizationCredentials
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import ExpiredSignatureError, JWTError, jwt
-from pwdlib import PasswordHash
-from pwdlib.hashers.bcrypt import BcryptHasher
 from pydantic_core import from_json
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils.serializers import select_as_dict
-from utils.timezone import timezone
 
+from backend.app.admin.model import User
+from backend.app.admin.schema.user import GetUserInfoWithRelationDetail
+from backend.common.dataclasses import AccessToken, NewToken, RefreshToken, TokenPayload
+from backend.common.exception import errors
+from backend.core.conf import settings
+from backend.database.db import async_db_session
+from backend.database.redis import redis_client
+from backend.utils.timezone import timezone
 
-class CustomHTTPBearer(HTTPBearer):
-    """
-    自定义 HTTPBearer 认证类
-
-    Issues: https://github.com/fastapi/fastapi/issues/10177
-    """
-
-    async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
-        try:
-            return await super().__call__(request)
-        except HTTPException as e:
-            if e.status_code == 403:
-                raise TokenError()
-            raise e
-
-
-# JWT authorizes dependency injection
-DependsJwtAuth = Depends(CustomHTTPBearer())
-
-password_hash = PasswordHash((BcryptHasher(),))
-
-
-def get_hash_password(password: str, salt: bytes | None) -> str:
-    """
-    使用哈希算法加密密码
-
-    :param password: 密码
-    :param salt: 盐值
-    :return:
-    """
-    return password_hash.hash(password, salt=salt)
-
-
-def password_verify(plain_password: str, hashed_password: str) -> bool:
-    """
-    密码验证
-
-    :param plain_password: 待验证的密码
-    :param hashed_password: 哈希密码
-    :return:
-    """
-    return password_hash.verify(plain_password, hashed_password)
+# JWT dependency injection
+DependsJwtAuth = Depends(HTTPBearer())
 
 
 def jwt_encode(payload: dict[str, Any]) -> str:
@@ -105,11 +58,13 @@ def jwt_decode(token: str) -> TokenPayload:
     except (JWTError, Exception):
         raise errors.TokenError(msg='Token 无效')
     return TokenPayload(
-        id=int(user_id), session_uuid=session_uuid, expire_time=timezone.from_datetime(timezone.to_utc(expire))
+        id=int(user_id),
+        session_uuid=session_uuid,
+        expire_time=timezone.from_datetime(timezone.to_utc(expire)),
     )
 
 
-async def create_access_token(user_id: int, multi_login: bool, **kwargs) -> AccessToken:
+async def create_access_token(user_id: int, *, multi_login: bool, **kwargs) -> AccessToken:
     """
     生成加密 token
 
@@ -119,7 +74,7 @@ async def create_access_token(user_id: int, multi_login: bool, **kwargs) -> Acce
     :return:
     """
     expire = timezone.now() + timedelta(seconds=settings.TOKEN_EXPIRE_SECONDS)
-    session_uuid = str(uuid4())
+    session_uuid = str(uuid.uuid4())
     access_token = jwt_encode({
         'session_uuid': session_uuid,
         'exp': timezone.to_utc(expire).timestamp(),
@@ -146,7 +101,7 @@ async def create_access_token(user_id: int, multi_login: bool, **kwargs) -> Acce
     return AccessToken(access_token=access_token, access_token_expire_time=expire, session_uuid=session_uuid)
 
 
-async def create_refresh_token(session_uuid: str, user_id: int, multi_login: bool) -> RefreshToken:
+async def create_refresh_token(session_uuid: str, user_id: int, *, multi_login: bool) -> RefreshToken:
     """
     生成加密刷新 token，仅用于创建新的 token
 
@@ -174,7 +129,12 @@ async def create_refresh_token(session_uuid: str, user_id: int, multi_login: boo
 
 
 async def create_new_token(
-    refresh_token: str, session_uuid: str, user_id: int, multi_login: bool, **kwargs
+    refresh_token: str,
+    session_uuid: str,
+    user_id: int,
+    *,
+    multi_login: bool,
+    **kwargs,
 ) -> NewToken:
     """
     生成新的 token
@@ -193,8 +153,8 @@ async def create_new_token(
     await redis_client.delete(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}:{session_uuid}')
     await redis_client.delete(f'{settings.TOKEN_REDIS_PREFIX}:{user_id}:{session_uuid}')
 
-    new_access_token = await create_access_token(user_id, multi_login, **kwargs)
-    new_refresh_token = await create_refresh_token(new_access_token.session_uuid, user_id, multi_login)
+    new_access_token = await create_access_token(user_id, multi_login=multi_login, **kwargs)
+    new_refresh_token = await create_refresh_token(new_access_token.session_uuid, user_id, multi_login=multi_login)
     return NewToken(
         new_access_token=new_access_token.access_token,
         new_access_token_expire_time=new_access_token.access_token_expire_time,
@@ -238,26 +198,60 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     :param pk: 用户 ID
     :return:
     """
-    from app.admin.crud.crud_user import user_dao
+    from backend.app.admin.crud.crud_user import user_dao
 
-    user = await user_dao.get_with_relation(db, user_id=pk)
+    user = await user_dao.get_join(db, user_id=pk)
     if not user:
         raise errors.TokenError(msg='Token 无效')
     if not user.status:
         raise errors.AuthorizationError(msg='用户已被锁定，请联系系统管理员')
+    if user.dept_id:
+        if not user.dept.status:
+            raise errors.AuthorizationError(msg='用户所属部门已被锁定，请联系系统管理员')
+        if user.dept.del_flag:
+            raise errors.AuthorizationError(msg='用户所属部门已被删除，请联系系统管理员')
+    if user.roles:
+        role_status = [role.status for role in user.roles]
+        if all(status == 0 for status in role_status):
+            raise errors.AuthorizationError(msg='用户所属角色已被锁定，请联系系统管理员')
     return user
 
 
-def superuser_verify(request: Request) -> bool:
+async def get_jwt_user(user_id: int) -> GetUserInfoWithRelationDetail:
     """
-    验证当前用户权限
+    获取 JWT 用户
+
+    :param user_id:
+    :return:
+    """
+    cache_user = await redis_client.get(f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}')
+    if not cache_user:
+        async with async_db_session() as db:
+            current_user = await get_current_user(db, user_id)
+            user = GetUserInfoWithRelationDetail.model_validate(current_user)
+            await redis_client.setex(
+                f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}',
+                settings.TOKEN_EXPIRE_SECONDS,
+                user.model_dump_json(),
+            )
+    else:
+        # TODO: 在恰当的时机，应替换为使用 model_validate_json
+        # https://docs.pydantic.dev/latest/concepts/json/#partial-json-parsing
+        user = GetUserInfoWithRelationDetail.model_validate(from_json(cache_user, allow_partial=True))
+    return user
+
+
+def superuser_verify(request: Request, _token: str = DependsJwtAuth) -> bool:
+    """
+    验证当前用户超级管理员权限
 
     :param request: FastAPI 请求对象
+    :param _token: JWT 令牌
     :return:
     """
     superuser = request.user.is_superuser
     if not superuser or not request.user.is_staff:
-        raise errors.AuthorizationError()
+        raise errors.AuthorizationError
     return superuser
 
 
@@ -277,18 +271,8 @@ async def jwt_authentication(token: str) -> GetUserInfoWithRelationDetail:
     if token != redis_token:
         raise errors.TokenError(msg='Token 已失效')
 
-    cache_user = await redis_client.get(f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}')
-    if not cache_user:
-        async with async_db_session() as db:
-            current_user = await get_current_user(db, user_id)
-            user = GetUserInfoWithRelationDetail(**select_as_dict(current_user))
-            await redis_client.setex(
-                f'{settings.JWT_USER_REDIS_PREFIX}:{user_id}',
-                settings.TOKEN_EXPIRE_SECONDS,
-                user.model_dump_json(),
-            )
-    else:
-        # TODO: 在恰当的时机，应替换为使用 model_validate_json
-        # https://docs.pydantic.dev/latest/concepts/json/#partial-json-parsing
-        user = GetUserInfoWithRelationDetail.model_validate(from_json(cache_user, allow_partial=True))
-    return user
+    return await get_jwt_user(user_id)
+
+
+# 超级管理员鉴权依赖注入
+DependsSuperUser = Depends(superuser_verify)

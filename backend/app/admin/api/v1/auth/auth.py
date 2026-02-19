@@ -22,7 +22,7 @@ class EmailLoginParam(BaseModel):
 @router.post('/send-code', summary='发送邮箱验证码')
 async def send_email_code(obj: SendCodeParam) -> ResponseModel:
     await auth_service.send_email_code(email=obj.email)
-    return response_base.success(msg='验证码已发送')
+    return response_base.success()
 
 
 @router.post('/email-login', summary='邮箱验证码登录')

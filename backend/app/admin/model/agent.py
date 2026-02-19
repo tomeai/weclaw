@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from common.model import Base, id_key
-from sqlalchemy import JSON, Boolean, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-if TYPE_CHECKING:
-    from app.admin.model import AgentCategory, User
+from sqlalchemy import JSON, BigInteger, Boolean, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class AgentServer(Base):
@@ -37,18 +32,8 @@ class AgentServer(Base):
     # 是否公开
     is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')
 
-    # 分类一对多
-    category_id: Mapped[int | None] = mapped_column(
-        ForeignKey('agent_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='agent 分类ID'
-    )
-    category: Mapped[AgentCategory | None] = relationship(init=False, back_populates='agent_servers')
+    # 分类逻辑外键
+    category_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='agent 分类ID')
 
-    # 用户一对多
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey('sys_user.id', ondelete='SET NULL'),
-        nullable=True,
-        default=None,
-        comment='用户关联ID',
-    )
-
-    user: Mapped[User | None] = relationship(init=False, back_populates='agent_servers')
+    # 用户逻辑外键
+    user_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='用户关联ID')

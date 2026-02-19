@@ -11,14 +11,7 @@ from common.enums import LoginLogStatusType
 from common.exception import errors
 from common.i18n import t
 from common.log import log
-from common.security.jwt import (
-    create_access_token,
-    create_new_token,
-    create_refresh_token,
-    get_token,
-    jwt_decode,
-    password_verify,
-)
+from common.security.jwt import create_access_token, create_new_token, create_refresh_token, get_token, jwt_decode
 from core.conf import settings
 from database.db import async_db_session, uuid4_str
 from database.redis import redis_client
@@ -28,6 +21,7 @@ from fastapi.security import HTTPBasicCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask, BackgroundTasks
 from utils.email import send_verification_email
+from utils.password_security import password_verify
 from utils.timezone import timezone
 
 

@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 from common.enums import UserSocialType
-from common.schema import SchemaBase
-from pydantic import Field
+from pydantic import ConfigDict, Field
+
+from backend.common.schema import SchemaBase
 
 
 class UserSocialSchemaBase(SchemaBase):
@@ -20,3 +19,11 @@ class CreateUserSocialParam(UserSocialSchemaBase):
 
 class UpdateUserSocialParam(SchemaBase):
     """更新用户社交参数"""
+
+
+class GetUserSocialDetail(CreateUserSocialParam):
+    """获取用户社交详情"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(description='用户社交 ID')

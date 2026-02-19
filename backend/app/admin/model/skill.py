@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from common.model import Base, id_key
-from sqlalchemy import Boolean, ForeignKey, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-if TYPE_CHECKING:
-    from app.admin.model import SkillCategory, User
+from sqlalchemy import BigInteger, Boolean, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class AgentSkill(Base):
@@ -28,18 +23,8 @@ class AgentSkill(Base):
     # 是否公开
     is_public: Mapped[bool | None] = mapped_column(Boolean, default=False, comment='是否公开')
 
-    # 分类一对多
-    category_id: Mapped[int | None] = mapped_column(
-        ForeignKey('skill_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='skill 分类ID'
-    )
-    category: Mapped[SkillCategory | None] = relationship(init=False, back_populates='agent_skills')
+    # 分类逻辑外键
+    category_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='skill 分类ID')
 
-    # 用户一对多
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey('sys_user.id', ondelete='SET NULL'),
-        nullable=True,
-        default=None,
-        comment='用户关联ID',
-    )
-
-    user: Mapped[User | None] = relationship(init=False, back_populates='agent_skills')
+    # 用户逻辑外键
+    user_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='用户关联ID')

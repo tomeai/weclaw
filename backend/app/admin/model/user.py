@@ -3,18 +3,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-from app.admin.model.m2m import sys_user_role
-from common.model import Base, id_key
+from common.model import Base, TimeZone, id_key
 from database.db import uuid4_str
 from sqlalchemy import VARBINARY, Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import BYTEA, INTEGER
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from utils.timezone import timezone
-
-if TYPE_CHECKING:
-    from app.admin.model import AgentServer, AgentSkill, McpServer, Role
 
 
 class User(Base):
@@ -47,10 +42,6 @@ class User(Base):
     last_login_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次登录时间'
     )
-    # 一对多
-    mcp_servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='user')
-    agent_servers: Mapped[list[AgentServer]] = relationship(init=False, back_populates='user')
-    agent_skills: Mapped[list[AgentSkill]] = relationship(init=False, back_populates='user')
-
-    # 多对多
-    roles: Mapped[list[Role]] = relationship(init=False, secondary=sys_user_role, back_populates='users')
+    last_password_changed_time: Mapped[datetime | None] = mapped_column(
+        TimeZone, init=False, default_factory=timezone.now, comment='上次密码变更时间'
+    )

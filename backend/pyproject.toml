@@ -20,7 +20,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "bcrypt>=4.3.0",
     "cappa>=0.30.0",
-    "celery>=5.5.3",
+    "celery>=5.6.2",
     # When celery version < 6.0.0
     # https://github.com/celery/celery/issues/7874
     "celery-aio-pool>=0.1.0rc8",
@@ -28,9 +28,7 @@ dependencies = [
     "dulwich>=0.24.1",
     "fast-agent-mcp>=0.2.25",
     "fast-captcha>=0.3.2",
-    "fastapi-limiter>=0.1.6",
-    "fastapi-oauth20>=0.0.1",
-    "fastapi-pagination>=0.14.0",
+    "fastapi-pagination>=0.15.10",
     "fastapi[standard-no-fastapi-cloud-cli]>=0.116.1",
     "flower>=2.0.1",
     "gevent>=25.8.2",
@@ -63,6 +61,11 @@ dependencies = [
     "agentscope-runtime>=1.0.5",
     "aiosqlite>=0.22.1",
     "ag-ui-protocol>=0.1.10",
+    "starlette-context>=0.4.0",
+    "pyrate-limiter>=4.0.2",
+    "cachebox>=5.2.2",
+    "aiosmtplib>=5.1.0",
+    "fastapi-oauth20>=0.0.3",
 ]
 
 [dependency-groups]

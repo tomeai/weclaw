@@ -76,6 +76,17 @@ class Settings(BaseSettings):
     # Redis
     REDIS_TIMEOUT: int = 5
 
+    # Grafana
+    GRAFANA_METRICS_ENABLE: bool = False
+    GRAFANA_OTLP_GRPC_ENDPOINT: str = 'wemcp_alloy:4317'
+
+    # Snowflake
+    SNOWFLAKE_DATACENTER_ID: int | None = None
+    SNOWFLAKE_WORKER_ID: int | None = None
+    SNOWFLAKE_REDIS_PREFIX: str = 'wemcp:snowflake'
+    SNOWFLAKE_HEARTBEAT_INTERVAL_SECONDS: int = 30
+    SNOWFLAKE_NODE_TTL_SECONDS: int = 60
+
     # Token
     TOKEN_ALGORITHM: str = 'HS256'
     TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24  # 1 天
@@ -127,15 +138,18 @@ class Settings(BaseSettings):
     # github oauth
     OAUTH2_GITHUB_CLIENT_ID: str = ''
     OAUTH2_GITHUB_CLIENT_SECRET: str = ''
+    OAUTH2_GITHUB_REDIRECT_URI: str = ''
     # google oauth
     OAUTH2_GOOGLE_CLIENT_ID: str = ''
     OAUTH2_GOOGLE_CLIENT_SECRET: str = ''
-    # gitee
-    OAUTH2_GITEE_CLIENT_ID: str = ''
-    OAUTH2_GITEE_CLIENT_SECRET: str = ''
+    OAUTH2_GOOGLE_REDIRECT_URI: str = ''
 
-    # oauth callback
-    OAUTH2_FRONTEND_REDIRECT_URI: str
+    OAUTH2_FRONTEND_LOGIN_REDIRECT_URI: str
+    OAUTH2_STATE_REDIS_PREFIX: str = 'wemcp:oauth2:state'
+    OAUTH2_STATE_EXPIRE_SECONDS: int = 180  # 3 分钟
+
+    # 登录
+    LOGIN_CAPTCHA_REDIS_PREFIX: str = 'wemcp:login:captcha'
 
     # Socket.IO
     WS_NO_AUTH_MARKER: str = 'internal'
@@ -186,6 +200,17 @@ class Settings(BaseSettings):
 
     # 追踪 ID
     TRACE_ID_REQUEST_HEADER_KEY: str = 'X-Request-ID'
+
+    # 缓存
+    CACHE_LOCAL_ENABLED: bool = True
+    CACHE_LOCAL_MAXSIZE: int = 100000
+    CACHE_LOCAL_TTL: int = 60 * 60 * 2  # 2 小时
+    CACHE_REDIS_TTL: int = 60 * 60 * 2  # 2 小时
+    CACHE_CONFIG_REDIS_PREFIX: str = 'fba:cache:config'
+    CACHE_DICT_REDIS_PREFIX: str = 'fba:cache:dict'
+    CACHE_PUBSUB_CHANNEL: str = 'fba:cache:invalidate'
+    CACHE_PUBSUB_RECONNECT_DELAY: int = 5  # 重连延迟（秒）
+    CACHE_PUBSUB_MAX_RECONNECT_ATTEMPTS: int = 10  # 最大重连次数
 
     # 日志
     LOG_CID_DEFAULT_VALUE: str = '-'

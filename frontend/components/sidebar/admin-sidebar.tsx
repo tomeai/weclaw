@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils"
 import {
   BarChart3,
   Bot,
-  Database,
   FileText,
   Server,
   Settings,
@@ -38,27 +37,22 @@ const sidebarItems = [
   },
   {
     title: "用户管理",
-    href: "/user/admin/users",
+    href: "/user/admin/user",
     icon: Users,
   },
   {
     title: "权限管理",
-    href: "/user/admin/permissions",
+    href: "/user/admin/permission",
     icon: Shield,
   },
   {
-    title: "数据统计",
-    href: "user/admin/analytics",
-    icon: Database,
-  },
-  {
     title: "系统设置",
-    href: "/user/admin/settings",
+    href: "/user/admin/setting",
     icon: Settings,
   },
   {
     title: "操作日志",
-    href: "/user/admin/logs",
+    href: "/user/admin/log",
     icon: FileText,
   },
 ]

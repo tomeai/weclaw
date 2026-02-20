@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import random
+
 from app.admin.crud.crud_user import user_dao
 from app.admin.model import User
 from app.admin.schema.token import GetLoginToken, GetNewToken
-from app.admin.schema.user import AuthLoginParam
+from app.admin.schema.user import AddOAuth2UserParam, AuthLoginParam
 from app.admin.service.login_log_service import login_log_service
 from common.enums import LoginLogStatusType
 from common.exception import errors
 from common.i18n import t
 from common.log import log
-from common.security.jwt import (
-    create_access_token,
-    create_new_token,
-    create_refresh_token,
-    get_token,
-    jwt_decode,
-    password_verify,
-)
+from common.security.jwt import create_access_token, create_new_token, create_refresh_token, get_token, jwt_decode
 from core.conf import settings
 from database.db import async_db_session, uuid4_str
 from database.redis import redis_client
+from fast_captcha import text_captcha
 from fastapi import Request, Response
 from fastapi.security import HTTPBasicCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.background import BackgroundTask, BackgroundTasks
+from utils.email import send_verification_email
+from utils.password_security import password_verify
 from utils.timezone import timezone
 
 
@@ -241,6 +239,99 @@ class AuthService:
         await redis_client.delete(f'{settings.TOKEN_EXTRA_INFO_REDIS_PREFIX}:{user_id}:{session_uuid}')
         if refresh_token:
             await redis_client.delete(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}:{refresh_token}')
+
+    @staticmethod
+    async def send_email_code(*, email: str) -> None:
+        """
+        发送邮箱验证码
+
+        :param email: 邮箱地址
+        :return:
+        """
+        code = str(random.randint(100000, 999999))
+        redis_key = f'{settings.EMAIL_CODE_REDIS_PREFIX}:{email}'
+        await redis_client.set(redis_key, code, ex=settings.EMAIL_CODE_EXPIRE_SECONDS)
+        await send_verification_email(email, code)
+
+    async def email_login(
+        self, *, request: Request, response: Response, email: str, code: str, background_tasks: BackgroundTasks
+    ) -> GetLoginToken:
+        """
+        邮箱验证码登录
+
+        :param request: 请求对象
+        :param response: 响应对象
+        :param email: 邮箱地址
+        :param code: 验证码
+        :param background_tasks: 后台任务
+        :return:
+        """
+        redis_key = f'{settings.EMAIL_CODE_REDIS_PREFIX}:{email}'
+        cached_code = await redis_client.get(redis_key)
+        if not cached_code:
+            raise errors.RequestError(msg='验证码已过期，请重新发送')
+        if cached_code != code:
+            raise errors.RequestError(msg='验证码错误')
+
+        # 验证通过，删除验证码
+        await redis_client.delete(redis_key)
+
+        async with async_db_session.begin() as db:
+            user = await user_dao.check_email(db, email)
+            if not user:
+                # 新用户，自动创建
+                email_prefix = email.split('@')[0]
+                username = f'{email_prefix}_{text_captcha(5)}'
+                new_user = AddOAuth2UserParam(username=username, password=None, nickname=username, email=email)
+                await user_dao.add_by_oauth2(db, new_user)
+                await db.flush()
+                user = await user_dao.check_email(db, email)
+            else:
+                await user_dao.update_login_time(db, user.username)
+
+            await db.refresh(user)
+
+            # 签发 JWT
+            access_token = await create_access_token(
+                user.id,
+                user.is_multi_login,
+                username=user.username,
+                nickname=user.nickname or f'#{text_captcha(5)}',
+                last_login_time=timezone.to_str(timezone.now()),
+                ip=request.state.ip,
+                os=request.state.os,
+                browser=request.state.browser,
+                device=request.state.device,
+            )
+            refresh_token = await create_refresh_token(access_token.session_uuid, user.id, user.is_multi_login)
+            response.set_cookie(
+                key=settings.COOKIE_REFRESH_TOKEN_KEY,
+                value=refresh_token.refresh_token,
+                max_age=settings.COOKIE_REFRESH_TOKEN_EXPIRE_SECONDS,
+                expires=timezone.to_utc(refresh_token.refresh_token_expire_time),
+                httponly=True,
+            )
+
+            background_tasks.add_task(
+                login_log_service.create,
+                **dict(
+                    db=db,
+                    request=request,
+                    user_uuid=user.uuid,
+                    username=user.username,
+                    login_time=timezone.now(),
+                    status=LoginLogStatusType.success.value,
+                    msg='邮箱验证码登录成功',
+                ),
+            )
+
+            data = GetLoginToken(
+                access_token=access_token.access_token,
+                access_token_expire_time=access_token.access_token_expire_time,
+                session_uuid=access_token.session_uuid,
+                user=user,  # type: ignore
+            )
+            return data
 
 
 auth_service: AuthService = AuthService()

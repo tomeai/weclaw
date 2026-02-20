@@ -114,7 +114,13 @@ class UserSocialType(StrEnum):
 
     github = 'GitHub'
     google = 'Google'
-    linux_do = 'LinuxDo'
+
+
+class UserSocialAuthType(StrEnum):
+    """用户社交授权类型"""
+
+    login = 'login'
+    binding = 'binding'
 
 
 class FileType(StrEnum):

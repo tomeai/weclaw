@@ -9,6 +9,14 @@ engine = create_async_engine(
     pool_timeout=30,
 )
 
+
+async def create_chat_tables():
+    from app.agent.model.thread import ChatBase
+
+    async with engine.begin() as conn:
+        await conn.run_sync(ChatBase.metadata.create_all)
+
+
 # 创建会话制造器
 async_session_marker = async_sessionmaker(
     engine,

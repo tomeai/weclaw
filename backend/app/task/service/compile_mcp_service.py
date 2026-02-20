@@ -68,7 +68,8 @@ class CompileMcpService:
             logger.info('compile mcp_server success')
             async with async_db_session.begin() as db:
                 user = await user_dao.get_by_username(db, mcp_user)
-                mcp_server.user = user
+                if user:
+                    mcp_server.user_id = user.id
                 await mcp_server_dao.add_mcp(db, mcp_server)
             return 'success'
 

@@ -9,9 +9,7 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from app.admin.model.agent import AgentServer
     from app.admin.model.mcp import McpServer
-    from app.admin.model.skill import AgentSkill
 
 
 class McpCategory(Base):
@@ -22,8 +20,14 @@ class McpCategory(Base):
     name: Mapped[str] = mapped_column(String(20), unique=True, comment='类目名称')
     is_recommend: Mapped[int] = mapped_column(default=0, comment='是否推荐类目')
 
-    # mcp server一对多
-    mcp_servers: Mapped[list[McpServer]] = relationship(init=False, back_populates='category')
+    # 只读关联（无 DB 约束，仅用于 ORM 查询加载）
+    mcp_servers: Mapped[list[McpServer]] = relationship(
+        'McpServer',
+        primaryjoin='McpCategory.id == foreign(McpServer.category_id)',
+        viewonly=True,
+        init=False,
+        default_factory=list,
+    )
 
 
 class AgentCategory(Base):
@@ -34,9 +38,6 @@ class AgentCategory(Base):
     name: Mapped[str] = mapped_column(String(20), unique=True, comment='类目名称')
     is_recommend: Mapped[bool] = mapped_column(default=False, comment='是否推荐类目')
 
-    # agent server一对多
-    agent_servers: Mapped[list[AgentServer]] = relationship(init=False, back_populates='category')
-
 
 class SkillCategory(Base):
     """skill category"""
@@ -46,6 +47,3 @@ class SkillCategory(Base):
     id: Mapped[id_key] = mapped_column(init=False)
     name: Mapped[str] = mapped_column(String(20), unique=True, comment='类目名称')
     is_recommend: Mapped[bool] = mapped_column(default=False, comment='是否推荐类目')
-
-    # skills 一对多
-    agent_skills: Mapped[list[AgentSkill]] = relationship(init=False, back_populates='category')

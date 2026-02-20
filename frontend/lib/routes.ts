@@ -15,6 +15,8 @@ export const API_ROUTE_OAUTH_USER = "/api/v1/admin/oauth2/user/me"
 export const API_ROUTE_AUTH_ME = "/api/v1/admin/auth/me"
 export const API_ROUTE_GITHUB_OAUTH2_LOGIN = "/api/v1/admin/oauth/github"
 export const API_ROUTE_GOOGLE_OAUTH2_LOGIN = "/api/v1/admin/oauth/google"
+export const API_ROUTE_SEND_EMAIL_CODE = "/api/v1/admin/auth/send-code"
+export const API_ROUTE_EMAIL_LOGIN = "/api/v1/admin/auth/email-login"
 
 // Agent
 export const API_ROUTE_AGENT_CHAT = "/api/v1/agent/chat"

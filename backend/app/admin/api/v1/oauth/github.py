@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import json
+import uuid
+
+from typing import Annotated
+
 from app.admin.service.oauth2_service import oauth2_service
-from common.enums import UserSocialType
+from common.enums import UserSocialAuthType, UserSocialType
 from common.response.response_schema import ResponseSchemaModel, response_base
 from core.conf import settings
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
-from fastapi_limiter.depends import RateLimiter
+from database.redis import redis_client
+from fastapi import APIRouter, BackgroundTasks, Depends, Response
 from fastapi_oauth20 import FastAPIOAuth20, GitHubOAuth20
+from pyrate_limiter import Duration, Rate
 from starlette.responses import RedirectResponse
+
+from backend.database.db import CurrentSessionTransaction
+from backend.utils.limiter import RateLimiter
 
 router = APIRouter(prefix='/github')
 
@@ -15,8 +24,16 @@ github_client = GitHubOAuth20(settings.OAUTH2_GITHUB_CLIENT_ID, settings.OAUTH2_
 
 
 @router.get('', summary='获取 Github 授权链接')
-async def get_github_oauth2_url(request: Request) -> ResponseSchemaModel[str]:
-    auth_url = await github_client.get_authorization_url(redirect_uri=f'{request.url}/callback')
+async def get_github_oauth2_url() -> ResponseSchemaModel[str]:
+    state = str(uuid.uuid4())
+
+    await redis_client.setex(
+        f'{settings.OAUTH2_STATE_REDIS_PREFIX}:{state}',
+        settings.OAUTH2_STATE_EXPIRE_SECONDS,
+        json.dumps({'type': UserSocialAuthType.login.value}),
+    )
+
+    auth_url = await github_client.get_authorization_url(redirect_uri=settings.OAUTH2_GITHUB_REDIRECT_URI, state=state)
     return response_base.success(data=auth_url)
 
 
@@ -24,24 +41,34 @@ async def get_github_oauth2_url(request: Request) -> ResponseSchemaModel[str]:
     '/callback',
     summary='Github 授权自动重定向',
     description='Github 授权后，自动重定向到当前地址并获取用户信息，通过用户信息自动创建系统用户',
-    dependencies=[Depends(RateLimiter(times=5, minutes=1))],
+    dependencies=[Depends(RateLimiter(Rate(5, Duration.MINUTE)))],
 )
 async def github_oauth2_callback(
-    request: Request,
+    db: CurrentSessionTransaction,
     response: Response,
     background_tasks: BackgroundTasks,
-    oauth2: FastAPIOAuth20 = Depends(FastAPIOAuth20(github_client, redirect_route_name='github_oauth2_callback')),
+    oauth2: Annotated[
+        FastAPIOAuth20,
+        Depends(FastAPIOAuth20(github_client, redirect_uri=settings.OAUTH2_GITHUB_REDIRECT_URI)),
+    ],
 ):
-    token, _state = oauth2
-    access_token = token['access_token']
+    token_data, state = oauth2
+    access_token = token_data['access_token']
     user = await github_client.get_userinfo(access_token)
-    data = await oauth2_service.create_with_login(
-        request=request,
+    data = await oauth2_service.login_or_binding(
+        db=db,
         response=response,
         background_tasks=background_tasks,
         user=user,
         social=UserSocialType.github,
+        state=state,
     )
+
+    # 绑定流程
+    if data is None:
+        return RedirectResponse(url=settings.OAUTH2_FRONTEND_BINDING_REDIRECT_URI)
+
+    # 登录流程
     return RedirectResponse(
-        url=f'{settings.OAUTH2_FRONTEND_REDIRECT_URI}?access_token={data.access_token}&session_uuid={data.session_uuid}'
+        url=f'{settings.OAUTH2_FRONTEND_LOGIN_REDIRECT_URI}?access_token={data.access_token}&session_uuid={data.session_uuid}',
     )

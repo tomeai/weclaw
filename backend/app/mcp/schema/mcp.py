@@ -68,13 +68,9 @@ class McpSearchDetail(McpBaseDetail):
 
 
 class McpRecommendDetail(SchemaBase):
-    # server_title: str = Field(description='名称')
     server_name: str = Field(description='mcp name')
     description: str | None = Field(None, description='描述')
     server_type: str = Field(description='类型')
-    # capabilities: Dict[str, Any] | None = Field(None, description='能力')
-    # tools: int | None = Field(None, description='工具数量')
-    # user: GetUserInfo | None = Field(None, description='user')
     owner: str = Field(description='owner')
     call_count: int = Field(description='调用量')
 
@@ -84,13 +80,6 @@ class McpRecommendDetail(SchemaBase):
         data.owner = data.user.username
         data.call_count = 1889
         return data
-
-    # @model_validator(mode='before')
-    # @classmethod
-    # def handel(cls, data: Any) -> Self:
-    #     # data.capabilities = data.server_metadata['capabilities']
-    #     data.tools = len(data.tools)
-    #     return data
 
 
 class GetMcpRecommendDetail(SchemaBase):
@@ -135,14 +124,19 @@ class AddMcpServerParam(BaseModel):
     description: str | None = Field(None, description='描述')
     mcpServers: McpServersWrapper = Field(description='mcp server config')
 
-    # @field_validator('git')
-    # def validate_git(cls, v: Optional[str]) -> Optional[str]:
-    #     if v is None:
-    #         return v
-    #     git_regex = re.compile(r'^(?:https:\/\/|git@|git:\/\/)([\w.@:/\-~]+)(\.git)?$')
-    #     if not git_regex.match(v):
-    #         raise ValueError(f'Invalid git URL: {v}')
-    #     return v
+    @field_validator('server_title')
+    @classmethod
+    def validate_server_title(cls, v: str) -> str:
+        import re
+
+        v = v.strip()
+        if not v:
+            raise ValueError('server_title cannot be empty')
+        if not re.match(r'^[a-zA-Z0-9_\-. \u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]+$', v):
+            raise ValueError(
+                'server_title only allows Chinese/English letters, numbers, spaces, hyphens, underscores and dots'
+            )
+        return v
 
     @field_validator('mcpServers')
     def validate_mcpservers(cls, v):

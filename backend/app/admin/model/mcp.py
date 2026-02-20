@@ -6,11 +6,12 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from common.model import Base, id_key
-from sqlalchemy import JSON, Boolean, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import JSON, BigInteger, Boolean, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from app.admin.model import McpCategory, User
+    from app.admin.model.category import McpCategory
+    from app.admin.model.user import User
 
 
 class TransportType(Enum):
@@ -81,20 +82,26 @@ class McpServer(Base):
     # 是否首页推荐
     is_recommend: Mapped[bool] = mapped_column(Boolean, default=False, comment='是否推荐')
 
-    # 分类一对多
-    category_id: Mapped[int | None] = mapped_column(
-        ForeignKey('mcp_category.id', ondelete='SET NULL'), nullable=True, default=None, comment='MCP 分类ID'
-    )
-    category: Mapped[McpCategory | None] = relationship(init=False, back_populates='mcp_servers')
+    # 分类逻辑外键
+    category_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='MCP 分类ID')
 
-    # 用户一对多
-    user_id: Mapped[int | None] = mapped_column(
-        ForeignKey('sys_user.id', ondelete='SET NULL'),
-        nullable=True,
+    # 用户逻辑外键
+    user_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='用户关联ID')
+
+    # 只读关联（无 DB 约束，仅用于 ORM 查询加载）
+    user: Mapped[User | None] = relationship(
+        'User',
+        primaryjoin='foreign(McpServer.user_id) == User.id',
+        viewonly=True,
+        init=False,
         default=None,
-        comment='用户关联ID',
     )
-
-    user: Mapped[User | None] = relationship(init=False, back_populates='mcp_servers')
+    category: Mapped[McpCategory | None] = relationship(
+        'McpCategory',
+        primaryjoin='foreign(McpServer.category_id) == McpCategory.id',
+        viewonly=True,
+        init=False,
+        default=None,
+    )
 
     __table_args__ = (UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),)

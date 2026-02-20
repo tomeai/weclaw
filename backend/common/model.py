@@ -3,7 +3,10 @@
 from datetime import datetime
 from typing import Annotated
 
-from sqlalchemy import BigInteger, DateTime, TypeDecorator
+from common.enums import DataBaseType
+from core.conf import settings
+from sqlalchemy import BigInteger, DateTime, Text, TypeDecorator
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, declared_attr, mapped_column
 from utils.timezone import timezone
@@ -22,6 +25,19 @@ id_key = Annotated[
         comment='主键 ID',
     ),
 ]
+
+
+class UniversalText(TypeDecorator[str]):
+    """PostgreSQL、MySQL 兼容性（长）文本类型"""
+
+    impl = LONGTEXT if DataBaseType.mysql == settings.DATABASE_TYPE else Text
+    cache_ok = True
+
+    def process_bind_param(self, value: str | None, dialect) -> str | None:
+        return value
+
+    def process_result_value(self, value: str | None, dialect) -> str | None:
+        return value
 
 
 # Mixin: 一种面向对象编程概念, 使结构变得更加清晰, `Wiki <https://en.wikipedia.org/wiki/Mixin/>`__

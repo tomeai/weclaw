@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
+import { AuthGuard } from "@/components/providers/auth-guard"
 import { UserProvider } from "@/components/providers/user-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/config"
@@ -40,7 +41,7 @@ export default async function RootLayout({
             disableTransitionOnChange
           >
             <Toaster position="top-center" />
-            {children}
+            <AuthGuard>{children}</AuthGuard>
             <GoogleAnalytics gaId="G-LP938NM4ZC" />
           </ThemeProvider>
         </UserProvider>

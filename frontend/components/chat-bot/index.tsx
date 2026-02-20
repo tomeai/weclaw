@@ -6,13 +6,14 @@ import { useFrontendTools } from "./use-frontend-tools"
 import { CopilotChat } from "@copilotkit/react-ui"
 import { useCopilotChatInternal } from "@copilotkit/react-core"
 import http from "@/lib/http"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 type ChatBotProps = {
   type?: string
   owner?: string
   name?: string
   threadId?: string
+  onSendMessage?: () => void
 }
 
 type ThreadMessage = {
@@ -21,8 +22,10 @@ type ThreadMessage = {
   content: string
 }
 
-export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
+export function ChatBot({ type, owner, name, threadId, onSendMessage }: ChatBotProps) {
   const { setMessages } = useCopilotChatInternal()
+  const setMessagesRef = useRef(setMessages)
+  setMessagesRef.current = setMessages
 
   // Load history messages when threadId is set
   useEffect(() => {
@@ -35,7 +38,7 @@ export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
         )
         if (cancelled) return
         if (messages?.length) {
-          setMessages(
+          setMessagesRef.current(
             messages.map((m) => ({
               id: m.id,
               role: m.role,
@@ -48,7 +51,7 @@ export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
       }
     })()
     return () => { cancelled = true }
-  }, [threadId, setMessages])
+  }, [threadId])
   // Initialize selected contexts from props
   const [selectedAgent, setSelectedAgent] = useState<SelectedContext | null>(
     () => {
@@ -144,6 +147,10 @@ export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
     (props: { inProgress: boolean; onSend: (text: string) => void; onStop?: () => void; chatReady?: boolean }) => (
       <CustomInput
         {...props}
+        onSend={(text: string) => {
+          onSendMessage?.()
+          props.onSend(text)
+        }}
         selectedAgent={selectedAgent}
         setSelectedAgent={setSelectedAgent}
         selectedMcps={selectedMcps}
@@ -168,6 +175,7 @@ export function ChatBot({ type, owner, name, threadId }: ChatBotProps) {
       onRemoveSkill,
       mcpOpen,
       skillOpen,
+      onSendMessage,
     ]
   )
 

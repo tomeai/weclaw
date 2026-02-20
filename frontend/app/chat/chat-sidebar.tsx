@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import http from "@/lib/http";
+import http from "@/lib/http"
+import { useTitlePolling } from "@/hooks/use-title-polling";
 import { cn } from "@/lib/utils";
+import { AccountModal } from "@/components/user/account-modal";
 import { BarChart3, Clock, Download, FileText, HelpCircle, MessageSquare, Mic, Presentation, Settings, Sparkles, SquarePen, Table2, Users, type LucideIcon } from "lucide-react";
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
@@ -23,6 +25,7 @@ type ChatSidebarProps = {
   onSelectThread: (threadId: string) => void
   onNewChat: () => void
 }
+
 
 export type ChatSidebarRef = {
   addThread: (thread: ThreadItem) => void
@@ -198,9 +201,16 @@ function ScheduledTaskDialog({
 
 export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
   function ChatSidebar({ activeThreadId, onSelectThread, onNewChat }, ref) {
-  const [scheduledOpen, setScheduledOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [accountModalTab, setAccountModalTab] = useState("settings")
   const [threads, setThreads] = useState<ThreadItem[]>([])
   const [loading, setLoading] = useState(true)
+
+  const { startPolling } = useTitlePolling((threadId, title) => {
+    setThreads((prev) =>
+      prev.map((t) => (t.thread_id === threadId ? { ...t, chat_title: title } : t))
+    )
+  })
 
   useImperativeHandle(ref, () => ({
     addThread(thread: ThreadItem) {
@@ -208,8 +218,11 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         if (prev.some((t) => t.thread_id === thread.thread_id)) return prev
         return [thread, ...prev]
       })
+      if (thread.chat_title === "新对话") {
+        startPolling(thread.thread_id)
+      }
     },
-  }), [])
+  }), [startPolling])
 
   // Fetch thread list
   const fetchThreads = useCallback(async () => {
@@ -246,7 +259,7 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
           <span>资源库</span>
         </button>
         <button
-          onClick={() => setScheduledOpen(true)}
+          onClick={() => { setAccountModalTab("scheduled"); setSettingsOpen(true) }}
           className="hover:bg-accent flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
         >
           <Clock className="h-4 w-4" />
@@ -296,6 +309,7 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
           {FOOTER_ACTIONS.map((action) => (
             <button
               key={action.label}
+              onClick={action.label === "设置" ? () => { setAccountModalTab("settings"); setSettingsOpen(true) } : undefined}
               className="text-muted-foreground hover:bg-accent hover:text-foreground flex flex-col items-center gap-1 rounded-lg px-3 py-1.5"
             >
               <action.icon className="h-4 w-4" />
@@ -305,10 +319,11 @@ export const ChatSidebar = forwardRef<ChatSidebarRef, ChatSidebarProps>(
         </div>
       </div>
 
-      {/* Scheduled Task Dialog */}
-      <ScheduledTaskDialog
-        open={scheduledOpen}
-        onOpenChange={setScheduledOpen}
+      {/* Account / Settings Modal */}
+      <AccountModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        defaultTab={accountModalTab}
       />
     </aside>
   )

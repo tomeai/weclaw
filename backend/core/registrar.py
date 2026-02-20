@@ -1,35 +1,36 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import os
 
 from asyncio import create_task
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 import socketio
 
-from asgi_correlation_id import CorrelationIdMiddleware
-from common.exception.exception_handler import register_exception
-from common.log import set_custom_logfile, setup_logging
-from core.conf import settings
-from core.path_conf import STATIC_DIR, UPLOAD_DIR
-from database.db import create_tables
-from database.redis import redis_client
 from fastapi import FastAPI
-from fastapi_limiter import FastAPILimiter
 from fastapi_pagination import add_pagination
-from middleware.access_middleware import AccessMiddleware
-from middleware.i18n_middleware import I18nMiddleware
-from middleware.jwt_auth_middleware import JwtAuthMiddleware
-from middleware.opera_log_middleware import OperaLogMiddleware
-from middleware.state_middleware import StateMiddleware
+from prometheus_client import make_asgi_app
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
-from starlette.types import ASGIApp
-from utils.health_check import ensure_unique_route_names, http_limit_callback
-from utils.openapi import simplify_operation_ids
-from utils.serializers import MsgSpecJSONResponse
+from starlette_context.middleware import ContextMiddleware
+
+from backend import __version__
+from backend.common.cache.pubsub import cache_pubsub_manager
+from backend.common.exception.exception_handler import register_exception
+from backend.common.log import set_custom_logfile, setup_logging
+from backend.common.response.response_code import StandardResponseCode
+from backend.core.conf import settings
+from backend.core.path_conf import STATIC_DIR, UPLOAD_DIR
+from backend.database.db import create_tables
+from backend.database.redis import redis_client
+from backend.middleware.access_middleware import AccessMiddleware
+from backend.middleware.i18n_middleware import I18nMiddleware
+from backend.middleware.jwt_auth_middleware import JwtAuthMiddleware
+from backend.middleware.opera_log_middleware import OperaLogMiddleware
+from backend.middleware.state_middleware import StateMiddleware
+from backend.utils.openapi import ensure_unique_route_names, simplify_operation_ids
+from backend.utils.serializers import MsgSpecJSONResponse
+from backend.utils.snowflake import snowflake
 
 
 @asynccontextmanager
@@ -44,19 +45,24 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     await create_tables()
 
     # 初始化 redis
-    await redis_client.open()
+    await redis_client.init()
 
-    # 初始化 limiter
-    await FastAPILimiter.init(
-        redis=redis_client,
-        prefix=settings.REQUEST_LIMITER_REDIS_PREFIX,
-        http_callback=http_limit_callback,
-    )
+    # 初始化 snowflake 节点
+    await snowflake.init()
 
     # 创建操作日志任务
     create_task(OperaLogMiddleware.consumer())
 
+    # 启动缓存 Pub/Sub 监听器
+    cache_pubsub_manager.start_listener()
+
     yield
+
+    # 停止缓存 Pub/Sub 监听器
+    await cache_pubsub_manager.stop_listener()
+
+    # 释放 snowflake 节点
+    await snowflake.shutdown()
 
     # 关闭 redis 连接
     await redis_client.aclose()
@@ -65,24 +71,9 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
 def register_app() -> FastAPI:
     """注册 FastAPI 应用"""
 
-    class MyFastAPI(FastAPI):
-        if settings.MIDDLEWARE_CORS:
-            # Related issues
-            # https://github.com/fastapi/fastapi/discussions/7847
-            # https://github.com/fastapi/fastapi/discussions/8027
-            def build_middleware_stack(self) -> ASGIApp:
-                return CORSMiddleware(
-                    super().build_middleware_stack(),
-                    allow_origins=settings.CORS_ALLOWED_ORIGINS,
-                    allow_credentials=True,
-                    allow_methods=['*'],
-                    allow_headers=['*'],
-                    expose_headers=settings.CORS_EXPOSE_HEADERS,
-                )
-
-    app = MyFastAPI(
+    app = FastAPI(
         title=settings.FASTAPI_TITLE,
-        version=settings.FASTAPI_VERSION,
+        version=__version__,
         description=settings.FASTAPI_DESCRIPTION,
         docs_url=settings.FASTAPI_DOCS_URL,
         redoc_url=settings.FASTAPI_REDOC_URL,
@@ -99,6 +90,9 @@ def register_app() -> FastAPI:
     register_router(app)
     register_page(app)
     register_exception(app)
+
+    if settings.GRAFANA_METRICS_ENABLE:
+        register_metrics(app)
 
     return app
 
@@ -152,8 +146,27 @@ def register_middleware(app: FastAPI) -> None:
     # Access log
     app.add_middleware(AccessMiddleware)
 
-    # Trace ID
-    app.add_middleware(CorrelationIdMiddleware, validator=False)
+    # ContextVar
+    app.add_middleware(
+        ContextMiddleware,
+        default_error_response=MsgSpecJSONResponse(
+            content={'code': StandardResponseCode.HTTP_400, 'msg': 'BAD_REQUEST', 'data': None},
+            status_code=StandardResponseCode.HTTP_400,
+        ),
+    )
+
+    # CORS
+    # https://github.com/fastapi-practices/fastapi_best_architecture/pull/789/changes
+    # https://github.com/open-telemetry/opentelemetry-python-contrib/issues/4031
+    if settings.MIDDLEWARE_CORS:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.CORS_ALLOWED_ORIGINS,
+            allow_credentials=True,
+            allow_methods=['*'],
+            allow_headers=['*'],
+            expose_headers=settings.CORS_EXPOSE_HEADERS,
+        )
 
 
 def register_router(app: FastAPI) -> None:
@@ -163,7 +176,6 @@ def register_router(app: FastAPI) -> None:
     :param app: FastAPI 应用实例
     :return:
     """
-    # API
     from app.router import router as router
 
     app.include_router(router, dependencies=None)
@@ -190,7 +202,7 @@ def register_socket_app(app: FastAPI) -> None:
     :param app: FastAPI 应用实例
     :return:
     """
-    from common.socketio.server import sio
+    from backend.common.socketio.server import sio
 
     socket_app = socketio.ASGIApp(
         socketio_server=sio,
@@ -199,3 +211,14 @@ def register_socket_app(app: FastAPI) -> None:
         socketio_path='/ws/socket.io',
     )
     app.mount('/ws', socket_app)
+
+
+def register_metrics(app: FastAPI) -> None:
+    """
+    注册指标
+
+    :param app: FastAPI 应用实例
+    :return:
+    """
+    metrics_app = make_asgi_app()
+    app.mount('/metrics', metrics_app)

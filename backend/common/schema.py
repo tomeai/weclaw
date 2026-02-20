@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, validate_email
 from utils.timezone import timezone
@@ -28,3 +28,9 @@ class SchemaBase(BaseModel):
             else timezone.to_str(x)
         },
     )
+
+
+def ser_string(value: Any) -> str | None:
+    if value:
+        return str(value)
+    return value

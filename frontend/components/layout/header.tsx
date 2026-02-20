@@ -2,6 +2,7 @@
 
 import { NaviMenu } from "@/components/layout/navi-menu"
 import { McpDropdown } from "@/components/mcp/mcp-dropdown"
+import { AccountModal } from "@/components/user/account-modal"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -21,6 +22,7 @@ export function Header() {
   const { user, isJwtAuthenticated, signOut } = useUser()
   const isLoggedIn = !!user || isJwtAuthenticated
   const [isScrolled, setIsScrolled] = useState(false)
+  const [accountModalOpen, setAccountModalOpen] = useState(false)
 
   const handleSignOut = async () => {
     await signOut()
@@ -59,6 +61,7 @@ export function Header() {
   }, [])
 
   return (
+    <>
     <header
       className={`h-app-header fixed top-0 right-0 left-0 z-50 border-b transition-all duration-300 ${
         isScrolled
@@ -123,10 +126,11 @@ export function Header() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/user/profile" className="cursor-pointer">
-                      个人中心
-                    </Link>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => setAccountModalOpen(true)}
+                  >
+                    个人中心
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/user/admin" className="cursor-pointer">
@@ -150,5 +154,11 @@ export function Header() {
         </div>
       </div>
     </header>
+
+    <AccountModal
+      open={accountModalOpen}
+      onOpenChange={setAccountModalOpen}
+    />
+    </>
   )
 }

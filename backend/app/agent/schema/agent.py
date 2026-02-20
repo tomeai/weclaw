@@ -31,10 +31,23 @@ class Tool(BaseModel):
     parameters: ToolParameters
 
 
+class FunctionInfo(BaseModel):
+    name: str
+    arguments: str
+
+
+class ToolCall(BaseModel):
+    id: str
+    type: str = 'function'
+    function: FunctionInfo
+
+
 class Message(BaseModel):
     id: str
     role: Literal['user', 'assistant', 'system', 'tool']
-    content: str
+    content: Optional[str] = None
+    toolCalls: Optional[List[ToolCall]] = None
+    toolCallId: Optional[str] = None
 
 
 class RunBody(BaseModel):

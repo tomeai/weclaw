@@ -1,4 +1,4 @@
-from app.admin.model import AgentServer, User
+from app.admin.model import AgentServer
 from sqlalchemy import Select
 from sqlalchemy.orm import noload, selectinload
 from sqlalchemy_crud_plus import CRUDPlus
@@ -16,9 +16,7 @@ class CRUDAgentServer(CRUDPlus[AgentServer]):
             'desc',
             load_options=[
                 noload(self.model.category),
-                selectinload(self.model.user).options(
-                    noload(User.mcp_servers), noload(User.agent_skills), noload(User.roles), noload(User.agent_servers)
-                ),
+                selectinload(self.model.user),
             ],
             **filters,
         )

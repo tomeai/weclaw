@@ -1,4 +1,4 @@
-from app.admin.model import McpCategory, McpServer, User
+from app.admin.model import McpCategory, McpServer
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
@@ -24,7 +24,7 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             pk=pk,
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
-                selectinload(self.model.user).options(noload(User.mcp_servers), noload(User.roles)),
+                selectinload(self.model.user),
             ],
         )
 
@@ -51,9 +51,7 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             'desc',
             load_options=[
                 selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
-                selectinload(self.model.user).options(
-                    noload(User.mcp_servers), noload(User.agent_skills), noload(User.roles), noload(User.agent_servers)
-                ),
+                selectinload(self.model.user),
             ],
             **filters,
         )

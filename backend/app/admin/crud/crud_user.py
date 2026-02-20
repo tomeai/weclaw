@@ -2,12 +2,7 @@ from typing import Any
 
 import bcrypt
 
-from sqlalchemy import Select, delete, insert, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy_crud_plus import CRUDPlus, JoinConfig
-from utils.password_security import get_hash_password
-
-from backend.app.admin.model import (
+from app.admin.model import (
     DataRule,
     DataScope,
     Menu,
@@ -18,15 +13,19 @@ from backend.app.admin.model import (
     role_menu,
     user_role,
 )
-from backend.app.admin.schema.user import (
+from app.admin.schema.user import (
     AddOAuth2UserParam,
     AddUserParam,
     AddUserRoleParam,
     UpdateUserParam,
 )
-from backend.utils.dynamic_import import import_module_cached
-from backend.utils.serializers import select_join_serialize
-from backend.utils.timezone import timezone
+from sqlalchemy import Select, delete, insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy_crud_plus import CRUDPlus
+from utils.dynamic_import import import_module_cached
+from utils.password_security import get_hash_password
+from utils.serializers import select_join_serialize
+from utils.timezone import timezone
 
 
 class CRUDUser(CRUDPlus[User]):
@@ -72,11 +71,10 @@ class CRUDUser(CRUDPlus[User]):
         """
         return await self.select_model_by_column(db, email=email)
 
-    async def get_select(self, dept: int | None, username: str | None, phone: str | None, status: int | None) -> Select:
+    async def get_select(self, username: str | None, phone: str | None, status: int | None) -> Select:
         """
         获取用户列表查询表达式
 
-        :param dept: 部门 ID
         :param username: 用户名
         :param phone: 电话号码
         :param status: 用户状态
@@ -84,8 +82,6 @@ class CRUDUser(CRUDPlus[User]):
         """
         filters = {}
 
-        if dept:
-            filters['dept_id'] = dept
         if username:
             filters['username__like'] = f'%{username}%'
         if phone:
@@ -93,15 +89,7 @@ class CRUDUser(CRUDPlus[User]):
         if status is not None:
             filters['status'] = status
 
-        return await self.select_order(
-            'id',
-            'desc',
-            join_conditions=[
-                JoinConfig(model=user_role, join_on=user_role.c.user_id == self.model.id),
-                JoinConfig(model=Role, join_on=Role.id == user_role.c.role_id, fill_result=True),
-            ],
-            **filters,
-        )
+        return await self.select_order('id', 'desc', **filters)
 
     async def add(self, db: AsyncSession, obj: AddUserParam) -> None:
         """
@@ -324,32 +312,33 @@ class CRUDUser(CRUDPlus[User]):
         :param username: 用户名
         :return:
         """
-        filters = {}
+        filters = []
 
         if user_id:
-            filters['id'] = user_id
+            filters.append(User.id == user_id)
         if username:
-            filters['username'] = username
+            filters.append(User.username == username)
 
-        result = await self.select_models(
-            db,
-            join_conditions=[
-                JoinConfig(model=user_role, join_on=user_role.c.user_id == self.model.id),
-                JoinConfig(model=Role, join_on=Role.id == user_role.c.role_id, fill_result=True),
-                JoinConfig(model=role_menu, join_on=role_menu.c.role_id == Role.id),
-                JoinConfig(model=Menu, join_on=Menu.id == role_menu.c.menu_id, fill_result=True),
-                JoinConfig(model=role_data_scope, join_on=role_data_scope.c.role_id == Role.id),
-                JoinConfig(model=DataScope, join_on=DataScope.id == role_data_scope.c.data_scope_id, fill_result=True),
-                JoinConfig(model=data_scope_rule, join_on=data_scope_rule.c.data_scope_id == DataScope.id),
-                JoinConfig(model=DataRule, join_on=DataRule.id == data_scope_rule.c.data_rule_id, fill_result=True),
-            ],
-            **filters,
+        stmt = (
+            select(User, Role, Menu, DataScope, DataRule)
+            .outerjoin(user_role, user_role.c.user_id == User.id)
+            .outerjoin(Role, Role.id == user_role.c.role_id)
+            .outerjoin(role_menu, role_menu.c.role_id == Role.id)
+            .outerjoin(Menu, Menu.id == role_menu.c.menu_id)
+            .outerjoin(role_data_scope, role_data_scope.c.role_id == Role.id)
+            .outerjoin(DataScope, DataScope.id == role_data_scope.c.data_scope_id)
+            .outerjoin(data_scope_rule, data_scope_rule.c.data_scope_id == DataScope.id)
+            .outerjoin(DataRule, DataRule.id == data_scope_rule.c.data_rule_id)
         )
+        if filters:
+            stmt = stmt.where(*filters)
+
+        result = await db.execute(stmt)
+        rows = result.all()
 
         return select_join_serialize(
-            result,
+            rows,
             relationships=[
-                'User-m2o-Dept',
                 'User-m2m-Role',
                 'Role-m2m-Menu',
                 'Role-m2m-DataScope:scopes',

@@ -1,18 +1,17 @@
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Select, delete, insert
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy_crud_plus import CRUDPlus, JoinConfig
-
-from backend.app.admin.model import DataRule, DataScope, data_scope_rule
-from backend.app.admin.schema.data_scope import (
+from app.admin.model import DataRule, DataScope, data_scope_rule
+from app.admin.schema.data_scope import (
     CreateDataScopeParam,
     CreateDataScopeRuleParam,
     UpdateDataScopeParam,
     UpdateDataScopeRuleParam,
 )
-from backend.utils.serializers import select_join_serialize
+from sqlalchemy import Select, delete, insert, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy_crud_plus import CRUDPlus
+from utils.serializers import select_join_serialize
 
 
 class CRUDDataScope(CRUDPlus[DataScope]):
@@ -46,16 +45,16 @@ class CRUDDataScope(CRUDPlus[DataScope]):
         :param pk: 范围 ID
         :return:
         """
-        result = await self.select_models(
-            db,
-            id=pk,
-            join_conditions=[
-                JoinConfig(model=data_scope_rule, join_on=data_scope_rule.c.data_scope_id == self.model.id),
-                JoinConfig(model=DataRule, join_on=DataRule.id == data_scope_rule.c.data_rule_id, fill_result=True),
-            ],
+        stmt = (
+            select(DataScope, DataRule)
+            .outerjoin(data_scope_rule, data_scope_rule.c.data_scope_id == DataScope.id)
+            .outerjoin(DataRule, DataRule.id == data_scope_rule.c.data_rule_id)
+            .where(DataScope.id == pk)
         )
+        result = await db.execute(stmt)
+        rows = result.all()
 
-        return select_join_serialize(result, relationships=['DataScope-m2m-DataRule:rules'])
+        return select_join_serialize(rows, relationships=['DataScope-m2m-DataRule:rules'])
 
     async def get_all(self, db: AsyncSession) -> Sequence[DataScope]:
         """

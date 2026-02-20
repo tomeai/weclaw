@@ -1,6 +1,7 @@
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.task.tasks.tasks import compile_mcp_server
+from common.exception import errors
 from common.response.response_schema import ResponseModel, response_base
 from common.security.jwt import DependsJwtAuth
 from database.db import async_db_session
@@ -22,9 +23,11 @@ async def compile_package(request: Request, obj: AddMcpServerParam) -> ResponseM
     async with async_db_session() as db:
         existing = await mcp_server_dao.get_by_server_title(db, obj.server_title)
         if existing:
-            return response_base.fail(msg=f'server_title "{obj.server_title}" already exists')
+            raise errors.ServerError(msg='server_title is exist')
 
     username = request.user.username
+    if not username:
+        raise errors.ServerError(msg='username is null')
     result = compile_mcp_server.apply_async((username, obj.model_dump()))
     return response_base.success(data={'task_id': result.id, 'status': result.status})
 

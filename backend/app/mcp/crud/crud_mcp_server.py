@@ -55,9 +55,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             select(self.model)
             .where(self.model.is_recommend.is_(True), self.model.is_public.is_(True))
             .options(
-                selectinload(self.model.user).options(
-                    noload(User.mcp_servers), noload(User.roles), noload(User.agent_servers)
-                ),
+                selectinload(self.model.user),
                 noload(self.model.category),
             )
             .order_by(desc(self.model.updated_time))
@@ -76,10 +74,7 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
             'desc',
             load_options=[
                 noload(self.model.category),
-                # selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
-                selectinload(self.model.user).options(
-                    noload(User.mcp_servers), noload(User.agent_skills), noload(User.roles), noload(User.agent_servers)
-                ),
+                selectinload(self.model.user),
             ],
             **filters,
         )

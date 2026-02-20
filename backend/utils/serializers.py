@@ -3,13 +3,12 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Any, TypeVar
 
+from common.log import log
 from fastapi.encoders import decimal_encoder
 from msgspec import json
 from sqlalchemy import Row, RowMapping
 from sqlalchemy.orm import ColumnProperty, SynonymProperty, class_mapper
 from starlette.responses import JSONResponse
-
-from backend.common.log import log
 
 RowData = Row[Any] | RowMapping | Any
 

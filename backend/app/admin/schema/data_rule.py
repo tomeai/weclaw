@@ -1,9 +1,8 @@
 from datetime import datetime
 
+from common.enums import RoleDataRuleExpressionType, RoleDataRuleOperatorType
+from common.schema import SchemaBase
 from pydantic import ConfigDict, Field
-
-from backend.common.enums import RoleDataRuleExpressionType, RoleDataRuleOperatorType
-from backend.common.schema import SchemaBase
 
 
 class DataRuleSchemaBase(SchemaBase):

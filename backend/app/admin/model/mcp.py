@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from common.model import Base, id_key
 from sqlalchemy import JSON, BigInteger, Boolean, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.admin.model.category import McpCategory
+    from app.admin.model.user import User
 
 
 class TransportType(Enum):
@@ -83,5 +87,21 @@ class McpServer(Base):
 
     # 用户逻辑外键
     user_id: Mapped[int | None] = mapped_column(BigInteger, default=None, index=True, comment='用户关联ID')
+
+    # 只读关联（无 DB 约束，仅用于 ORM 查询加载）
+    user: Mapped[User | None] = relationship(
+        'User',
+        primaryjoin='foreign(McpServer.user_id) == User.id',
+        viewonly=True,
+        init=False,
+        default=None,
+    )
+    category: Mapped[McpCategory | None] = relationship(
+        'McpCategory',
+        primaryjoin='foreign(McpServer.category_id) == McpCategory.id',
+        viewonly=True,
+        init=False,
+        default=None,
+    )
 
     __table_args__ = (UniqueConstraint('user_id', 'server_name', name='uix_user_server_name'),)

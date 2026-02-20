@@ -1,9 +1,8 @@
 from datetime import datetime
 
+from common.enums import StatusType
+from common.schema import CustomEmailStr, CustomPhoneNumber, SchemaBase
 from pydantic import ConfigDict, Field
-
-from backend.common.enums import StatusType
-from backend.common.schema import CustomEmailStr, CustomPhoneNumber, SchemaBase
 
 
 class DeptSchemaBase(SchemaBase):

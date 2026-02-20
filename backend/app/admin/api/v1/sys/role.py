@@ -1,9 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query
-
-from backend.app.admin.schema.menu import GetMenuTree
-from backend.app.admin.schema.role import (
+from app.admin.schema.menu import GetMenuTree
+from app.admin.schema.role import (
     CreateRoleParam,
     DeleteRoleParam,
     GetRoleDetail,
@@ -12,13 +10,14 @@ from backend.app.admin.schema.role import (
     UpdateRoleParam,
     UpdateRoleScopeParam,
 )
-from backend.app.admin.service.role_service import role_service
-from backend.common.pagination import DependsPagination, PageData
-from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
-from backend.common.security.jwt import DependsJwtAuth
-from backend.common.security.permission import RequestPermission
-from backend.common.security.rbac import DependsRBAC
-from backend.database.db import CurrentSession, CurrentSessionTransaction
+from app.admin.service.role_service import role_service
+from common.pagination import DependsPagination, PageData
+from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
+from common.security.jwt import DependsJwtAuth
+from common.security.permission import RequestPermission
+from common.security.rbac import DependsRBAC
+from database.db import CurrentSession, CurrentSessionTransaction
+from fastapi import APIRouter, Depends, Path, Query
 
 router = APIRouter()
 

@@ -1,31 +1,23 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Path, Query, Request
-
-from backend.app.admin.schema.role import GetRoleDetail
-from backend.app.admin.schema.user import (
+from app.admin.schema.role import GetRoleDetail
+from app.admin.schema.user import (
     AddUserParam,
-    GetCurrentUserInfoWithRelationDetail,
     GetUserInfoWithRelationDetail,
     ResetPasswordParam,
     UpdateUserParam,
 )
-from backend.app.admin.service.user_service import user_service
-from backend.common.enums import UserPermissionType
-from backend.common.pagination import DependsPagination, PageData
-from backend.common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
-from backend.common.security.jwt import DependsJwtAuth, DependsSuperUser
-from backend.common.security.permission import RequestPermission
-from backend.common.security.rbac import DependsRBAC
-from backend.database.db import CurrentSession, CurrentSessionTransaction
+from app.admin.service.user_service import user_service
+from common.enums import UserPermissionType
+from common.pagination import DependsPagination, PageData
+from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
+from common.security.jwt import DependsJwtAuth, DependsSuperUser
+from common.security.permission import RequestPermission
+from common.security.rbac import DependsRBAC
+from database.db import CurrentSession, CurrentSessionTransaction
+from fastapi import APIRouter, Body, Depends, Path, Query, Request
 
 router = APIRouter()
-
-
-@router.get('/me', summary='获取当前用户信息', dependencies=[DependsJwtAuth])
-async def get_current_user(request: Request) -> ResponseSchemaModel[GetCurrentUserInfoWithRelationDetail]:
-    data = request.user.model_dump()
-    return response_base.success(data=data)
 
 
 @router.get('/{pk}', summary='获取用户信息', dependencies=[DependsJwtAuth])
@@ -55,12 +47,11 @@ async def get_user_roles(
 )
 async def get_users_paginated(
     db: CurrentSession,
-    dept: Annotated[int | None, Query(description='部门 ID')] = None,
     username: Annotated[str | None, Query(description='用户名')] = None,
     phone: Annotated[str | None, Query(description='手机号')] = None,
     status: Annotated[int | None, Query(description='状态')] = None,
 ) -> ResponseSchemaModel[PageData[GetUserInfoWithRelationDetail]]:
-    page_data = await user_service.get_list(db=db, dept=dept, username=username, phone=phone, status=status)
+    page_data = await user_service.get_list(db=db, username=username, phone=phone, status=status)
     return response_base.success(data=page_data)
 
 

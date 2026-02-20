@@ -62,9 +62,9 @@ export function McpSubmitForm({
 
   const handleInputChange = (field: string, value: string) => {
     if (field === "server_title") {
-      // Only allow English letters, numbers, spaces, hyphens, underscores and dots
-      if (value && !/^[a-zA-Z0-9_\-. ]*$/.test(value)) {
-        setError("Server title only allows English letters, numbers, spaces, hyphens, underscores and dots")
+      // Allow Chinese/English letters, numbers, spaces, hyphens, underscores and dots
+      if (value && !/^[a-zA-Z0-9_\-. \u4e00-\u9fff\u3400-\u4dbf\uff00-\uffef]*$/.test(value)) {
+        setError("标题只允许中英文字母、数字、空格、连字符、下划线和点")
         return
       }
     }
@@ -139,7 +139,7 @@ export function McpSubmitForm({
               onChange={(e) =>
                 handleInputChange("server_title", e.target.value)
               }
-              placeholder="Enter server title (English only)"
+              placeholder="请输入服务器标题（支持中英文）"
               disabled={isSubmitting || disabled}
             />
           </div>

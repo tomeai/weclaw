@@ -1,23 +1,21 @@
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.app.admin.crud.crud_data_scope import data_scope_dao
-from backend.app.admin.crud.crud_menu import menu_dao
-from backend.app.admin.crud.crud_role import role_dao
-from backend.app.admin.model import Role
-from backend.app.admin.schema.role import (
+from app.admin.crud.crud_data_scope import data_scope_dao
+from app.admin.crud.crud_role import role_dao
+from app.admin.model import Role
+from app.admin.schema.role import (
     CreateRoleParam,
     DeleteRoleParam,
     UpdateRoleMenuParam,
     UpdateRoleParam,
     UpdateRoleScopeParam,
 )
-from backend.app.admin.utils.cache import user_cache_manager
-from backend.common.exception import errors
-from backend.common.pagination import paging_data
-from backend.utils.build_tree import get_tree_data
+from common.exception import errors
+from common.pagination import paging_data
+from sqlalchemy.ext.asyncio import AsyncSession
+from utils.build_tree import get_tree_data
+from utils.cache import user_cache_manager
 
 
 class RoleService:
@@ -145,10 +143,6 @@ class RoleService:
         role = await role_dao.get(db, pk)
         if not role:
             raise errors.NotFoundError(msg='角色不存在')
-        for menu_id in menu_ids.menus:
-            menu = await menu_dao.get(db, menu_id)
-            if not menu:
-                raise errors.NotFoundError(msg='菜单不存在')
         count = await role_dao.update_menus(db, pk, menu_ids)
         await user_cache_manager.clear_by_role_id(db, [pk])
         return count

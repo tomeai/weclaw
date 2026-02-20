@@ -4,21 +4,20 @@ import uuid
 from datetime import timedelta
 from typing import Any
 
+from app.admin.model import User
+from app.admin.schema.user import GetUserInfoWithRelationDetail
+from common.dataclasses import AccessToken, NewToken, RefreshToken, TokenPayload
+from common.exception import errors
+from core.conf import settings
+from database.db import async_db_session
+from database.redis import redis_client
 from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
 from fastapi.security.utils import get_authorization_scheme_param
 from jose import ExpiredSignatureError, JWTError, jwt
 from pydantic_core import from_json
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.app.admin.model import User
-from backend.app.admin.schema.user import GetUserInfoWithRelationDetail
-from backend.common.dataclasses import AccessToken, NewToken, RefreshToken, TokenPayload
-from backend.common.exception import errors
-from backend.core.conf import settings
-from backend.database.db import async_db_session
-from backend.database.redis import redis_client
-from backend.utils.timezone import timezone
+from utils.timezone import timezone
 
 # JWT dependency injection
 DependsJwtAuth = Depends(HTTPBearer())
@@ -198,18 +197,13 @@ async def get_current_user(db: AsyncSession, pk: int) -> User:
     :param pk: 用户 ID
     :return:
     """
-    from backend.app.admin.crud.crud_user import user_dao
+    from app.admin.crud.crud_user import user_dao
 
     user = await user_dao.get_join(db, user_id=pk)
     if not user:
         raise errors.TokenError(msg='Token 无效')
     if not user.status:
         raise errors.AuthorizationError(msg='用户已被锁定，请联系系统管理员')
-    if user.dept_id:
-        if not user.dept.status:
-            raise errors.AuthorizationError(msg='用户所属部门已被锁定，请联系系统管理员')
-        if user.dept.del_flag:
-            raise errors.AuthorizationError(msg='用户所属部门已被删除，请联系系统管理员')
     if user.roles:
         role_status = [role.status for role in user.roles]
         if all(status == 0 for status in role_status):

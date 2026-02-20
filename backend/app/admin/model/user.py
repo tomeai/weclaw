@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from common.model import Base, TimeZone, id_key
+from common.model import Base, id_key
 from database.db import uuid4_str
 from sqlalchemy import VARBINARY, Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import BYTEA, INTEGER
@@ -43,5 +43,5 @@ class User(Base):
         DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次登录时间'
     )
     last_password_changed_time: Mapped[datetime | None] = mapped_column(
-        TimeZone, init=False, default_factory=timezone.now, comment='上次密码变更时间'
+        DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次密码变更时间'
     )

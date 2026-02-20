@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 
-from common.model import Base, UniversalText, id_key
+from common.model import Base, id_key
+from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy.dialects.postgresql import TEXT
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -23,8 +25,11 @@ class Menu(Base):
     status: Mapped[int] = mapped_column(default=1, comment='菜单状态（0停用 1正常）')
     display: Mapped[int] = mapped_column(default=1, comment='是否显示（0否 1是）')
     cache: Mapped[int] = mapped_column(default=1, comment='是否缓存（0否 1是）')
-    link: Mapped[str | None] = mapped_column(UniversalText, default=None, comment='外链地址')
-    remark: Mapped[str | None] = mapped_column(UniversalText, default=None, comment='备注')
-
+    link: Mapped[str | None] = mapped_column(
+        LONGTEXT().with_variant(TEXT, 'postgresql'), default=None, comment='外链地址'
+    )
+    remark: Mapped[str | None] = mapped_column(
+        LONGTEXT().with_variant(TEXT, 'postgresql'), default=None, comment='备注'
+    )
     # 父级菜单（自引用逻辑外键）
     parent_id: Mapped[int | None] = mapped_column(sa.BigInteger, default=None, index=True, comment='父菜单ID')

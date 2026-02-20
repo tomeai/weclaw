@@ -1,10 +1,12 @@
 import http from "@/lib/http"
 import { PaginatedData } from "@/lib/mcp"
 import {
+  API_ROUTE_AGENTS,
   API_ROUTE_AGENT_CATEGORIES,
-  API_ROUTE_AGENT_SEARCH,
   API_ROUTE_AGENT_ADMIN_SERVERS,
   API_ROUTE_AGENT_ADMIN_SERVER_DETAIL,
+  API_ROUTE_AGENT_ADMIN_CATEGORY,
+  API_ROUTE_AGENT_ADMIN_CATEGORY_CREATE,
 } from "./routes"
 
 // ============ Agent Category ============
@@ -44,11 +46,13 @@ export function getAgentCategories(): Promise<AgentCategory[]> {
 export function searchAgents(
   params: AgentSearchParams = {}
 ): Promise<PaginatedData<AgentSearchItem>> {
-  return http.post<PaginatedData<AgentSearchItem>>(API_ROUTE_AGENT_SEARCH, {
-    page: params.page || 1,
-    size: params.size || 10,
-    category_id: params.category_id ?? 0,
-    keyword: params.keyword || "",
+  return http.get<PaginatedData<AgentSearchItem>>(API_ROUTE_AGENTS, {
+    params: {
+      page: params.page || 1,
+      size: params.size || 10,
+      category_id: params.category_id ?? undefined,
+      keyword: params.keyword || undefined,
+    },
   })
 }
 
@@ -88,6 +92,45 @@ export function getAgentAdminServers(
       category_id: params.category_id ?? 0,
     }
   )
+}
+
+// ============ Admin Agent Category ============
+
+export interface AgentAdminCategoryItem {
+  id: number
+  name: string
+  is_recommend: number
+  created_time: string
+  updated_time?: string | null
+}
+
+export interface AgentAdminCategoryParams {
+  is_recommend?: number
+}
+
+export interface AgentAdminCategoryCreateParams {
+  name: string
+  is_recommend: number
+}
+
+/** 管理端 - 获取 Agent 分类列表 */
+export function getAgentAdminCategories(
+  params: AgentAdminCategoryParams = {}
+): Promise<PaginatedData<AgentAdminCategoryItem>> {
+  return http.post<PaginatedData<AgentAdminCategoryItem>>(
+    API_ROUTE_AGENT_ADMIN_CATEGORY,
+    {
+      is_recommend: params.is_recommend ?? -1,
+      ...params,
+    }
+  )
+}
+
+/** 管理端 - 创建 Agent 分类 */
+export function createAgentAdminCategory(
+  params: AgentAdminCategoryCreateParams
+): Promise<null> {
+  return http.post<null>(API_ROUTE_AGENT_ADMIN_CATEGORY_CREATE, params)
 }
 
 /** 管理端 - 删除 Agent */

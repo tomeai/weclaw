@@ -68,6 +68,7 @@ class Settings(BaseSettings):
     DATABASE_ECHO: bool = False
     DATABASE_POOL_ECHO: bool = False
     DATABASE_SCHEMA: str = 'wemcp'
+    DATABASE_CHAT_SCHEMA: str = 'wemcp_chat'
     DATABASE_CHARSET: str = 'utf8mb4'
 
     # github
@@ -200,6 +201,8 @@ class Settings(BaseSettings):
 
     # 追踪 ID
     TRACE_ID_REQUEST_HEADER_KEY: str = 'X-Request-ID'
+    TRACE_ID_LOG_LENGTH: int = 32  # UUID 长度，必须小于等于 32
+    TRACE_ID_LOG_DEFAULT_VALUE: str = '-'
 
     # 缓存
     CACHE_LOCAL_ENABLED: bool = True
@@ -240,12 +243,13 @@ class Settings(BaseSettings):
         f'{FASTAPI_API_V1_PATH}/oauth2/linux-do/callback',
     ]
     OPERA_LOG_ENCRYPT_TYPE: int = 1  # 0: AES (性能损耗); 1: md5; 2: ItsDangerous; 3: 不加密, others: 替换为 ******
-    OPERA_LOG_ENCRYPT_KEY_INCLUDE: list[str] = [  # 将加密接口入参参数对应的值
+    OPERA_LOG_REDACT_KEYS: list[str] = [
         'password',
         'old_password',
         'new_password',
         'confirm_password',
     ]
+    OPERA_LOG_QUEUE_MAXSIZE: int = 100000
 
     @model_validator(mode='before')
     @classmethod

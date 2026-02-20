@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-from app.admin.model import McpServer, User
+from app.admin.model import User
+from app.mcp.model import McpServer
 from app.mcp.schema.mcp import UpdateMcpServerParam
 from sqlalchemy import Select, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession

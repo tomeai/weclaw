@@ -1,4 +1,4 @@
-from app.admin.model import AgentCategory
+from app.agent.model import AgentCategory
 from sqlalchemy import select
 from sqlalchemy_crud_plus import CRUDPlus
 

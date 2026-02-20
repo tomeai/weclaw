@@ -1,4 +1,4 @@
-from app.admin.model import McpCategory, McpServer
+from app.mcp.model import McpCategory, McpServer
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload

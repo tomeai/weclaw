@@ -1,4 +1,4 @@
-from app.admin.model import SkillCategory
+from app.skills.model import SkillCategory
 from sqlalchemy import select
 from sqlalchemy_crud_plus import CRUDPlus
 

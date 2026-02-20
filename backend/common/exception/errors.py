@@ -7,6 +7,19 @@ from fastapi import HTTPException
 from starlette.background import BackgroundTask
 
 
+class BaseExceptionError(Exception):
+    """基础异常混入类"""
+
+    code: int
+
+    def __init__(self, *, msg: str | None = None, data: Any = None, background: BackgroundTask | None = None) -> None:
+        self.msg = msg
+        self.data = data
+        # The original background task: https://www.starlette.io/background/
+        self.background = background
+        super().__init__(msg)
+
+
 class BaseExceptionMixin(Exception):
     """基础异常混入类"""
 

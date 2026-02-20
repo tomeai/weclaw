@@ -1,4 +1,4 @@
-from app.admin.model import AgentSkill
+from app.skills.model import AgentSkill
 from sqlalchemy import Select
 from sqlalchemy.orm import noload, selectinload
 from sqlalchemy_crud_plus import CRUDPlus

@@ -21,5 +21,16 @@ class CRUDSkill(CRUDPlus[AgentSkill]):
             **filters,
         )
 
+    async def get_my_skills(self, user_id: int) -> Select:
+        return await self.select_order(
+            'updated_time',
+            'desc',
+            load_options=[
+                noload(self.model.category),
+                selectinload(self.model.user),
+            ],
+            user_id=user_id,
+        )
+
 
 skill_dao: CRUDSkill = CRUDSkill(AgentSkill)

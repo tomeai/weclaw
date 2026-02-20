@@ -10,6 +10,10 @@ class SkillService:
         return await skill_dao.get_list(keyword, category_id)
 
     @staticmethod
+    async def get_my_skills(*, user_id: int) -> Select:
+        return await skill_dao.get_my_skills(user_id=user_id)
+
+    @staticmethod
     async def get_categories() -> list:
         async with async_db_session() as db:
             stmt = await skill_category_dao.get_all_categories()

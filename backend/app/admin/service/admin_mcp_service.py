@@ -37,5 +37,9 @@ class McpAdminServerService:
             count = await mcp_admin_server_dao.update_description(db, mcp_id, description)
         return count
 
+    @staticmethod
+    async def get_my_mcps(*, user_id: int) -> Select:
+        return await mcp_admin_server_dao.get_my_mcps(user_id=user_id)
+
 
 mcp_admin_server_service: McpAdminServerService = McpAdminServerService()

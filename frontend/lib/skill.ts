@@ -1,6 +1,7 @@
 import http from "@/lib/http"
 import { PaginatedData } from "@/lib/mcp"
 import {
+  API_ROUTE_MY_SKILLS,
   API_ROUTE_SKILLS,
   API_ROUTE_SKILL_ADMIN_CATEGORY,
   API_ROUTE_SKILL_ADMIN_CATEGORY_CREATE,
@@ -137,4 +138,29 @@ export function createSkillAdminCategory(
   params: SkillAdminCategoryCreateParams
 ): Promise<null> {
   return http.post<null>(API_ROUTE_SKILL_ADMIN_CATEGORY_CREATE, params)
+}
+
+// ============ My Skills ============
+
+export interface MySkillItem {
+  id: number
+  name: string
+  title: string
+  avatar: string | null
+  description: string | null
+  repository: string | null
+  owner: string
+  is_public: boolean | null
+  created_time: string
+  updated_time: string | null
+}
+
+/** 获取我的 Skill 列表 */
+export function getMySkills(
+  params: { page?: number; size?: number } = {}
+): Promise<PaginatedData<MySkillItem>> {
+  return http.get<PaginatedData<MySkillItem>>(API_ROUTE_MY_SKILLS, {
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  })
 }

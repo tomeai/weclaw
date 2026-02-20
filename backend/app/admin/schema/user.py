@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from app.admin.schema.role import GetRoleDetail
+from app.admin.schema.role import GetRoleWithRelationDetail
 from common.enums import StatusType
 from common.schema import CustomEmailStr, CustomPhoneNumber, SchemaBase, ser_string
 from pydantic import ConfigDict, Field, HttpUrl, PlainSerializer, model_validator
@@ -97,7 +97,7 @@ class GetUserInfoWithRelationDetail(GetUserInfoDetail):
 
     model_config = ConfigDict(from_attributes=True)
 
-    roles: list[GetRoleDetail] = Field(default=[], description='角色列表')
+    roles: list[GetRoleWithRelationDetail] = Field(default=[], description='角色列表')
 
 
 class GetCurrentUserInfoWithRelationDetail(GetUserInfoWithRelationDetail):

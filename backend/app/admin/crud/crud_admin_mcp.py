@@ -56,5 +56,16 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
             **filters,
         )
 
+    async def get_my_mcps(self, user_id: int) -> Select:
+        return await self.select_order(
+            'updated_time',
+            'desc',
+            load_options=[
+                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                selectinload(self.model.user),
+            ],
+            user_id=user_id,
+        )
+
 
 mcp_admin_server_dao: CRUDMcpAdminServer = CRUDMcpAdminServer(McpServer)

@@ -7,6 +7,7 @@ import {
   API_ROUTE_AGENT_ADMIN_SERVER_DETAIL,
   API_ROUTE_AGENT_ADMIN_CATEGORY,
   API_ROUTE_AGENT_ADMIN_CATEGORY_CREATE,
+  API_ROUTE_MY_AGENTS,
 } from "./routes"
 
 // ============ Agent Category ============
@@ -140,4 +141,31 @@ export function deleteAgentAdmin(
   return http.delete<null>(
     `${API_ROUTE_AGENT_ADMIN_SERVER_DETAIL}/${agentId}`
   )
+}
+
+// ============ My Agents ============
+
+export interface MyAgentItem {
+  id: number
+  title: string
+  avatar: string | null
+  description: string | null
+  owner: string
+  tools: number
+  skills: number
+  knowledge: number
+  databases: number
+  is_public: boolean | null
+  created_time: string
+  updated_time: string | null
+}
+
+/** 获取我的 Agent 列表 */
+export function getMyAgents(
+  params: { page?: number; size?: number } = {}
+): Promise<PaginatedData<MyAgentItem>> {
+  return http.get<PaginatedData<MyAgentItem>>(API_ROUTE_MY_AGENTS, {
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  })
 }

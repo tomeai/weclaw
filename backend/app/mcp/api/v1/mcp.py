@@ -1,5 +1,7 @@
 from typing import Annotated, List
 
+from app.admin.schema.mcp import MyMcpDetail
+from app.admin.service.admin_mcp_service import mcp_admin_server_service
 from app.mcp.schema.category import GetCategoryBase
 from app.mcp.schema.mcp import (
     CallToolParam,
@@ -16,7 +18,7 @@ from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
 from common.security.jwt import DependsJwtAuth
 from database.db import CurrentSession
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Request
 from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
 
@@ -54,6 +56,20 @@ async def get_mcp_categories() -> ResponseSchemaModel[List[GetCategoryBase]]:
 async def get_recommend_category_mcp() -> ResponseSchemaModel[List[GetMcpRecommendDetail] | None]:
     result = await mcp_category_service.get_recommend_category()
     return response_base.success(data=result)
+
+
+@router.get(
+    '/mine',
+    summary='获取我的 MCP 列表',
+    dependencies=[DependsJwtAuth, DependsPagination],
+)
+async def get_my_mcps(
+    request: Request,
+    db: CurrentSession,
+) -> ResponseSchemaModel[PageData[MyMcpDetail]]:
+    mcp_select = await mcp_admin_server_service.get_my_mcps(user_id=request.user.id)
+    page_data = await paging_data(db, mcp_select)
+    return response_base.success(data=page_data)
 
 
 @router.get('/feed', summary='feed', dependencies=[DependsJwtAuth])

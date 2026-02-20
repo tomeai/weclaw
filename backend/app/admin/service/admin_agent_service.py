@@ -44,5 +44,9 @@ class AgentAdminServerService:
     async def delete_agent(db: AsyncSession, agent_id: int) -> int:
         return await agent_admin_server_dao.delete_agent(db, agent_id)
 
+    @staticmethod
+    async def get_my_agents(*, user_id: int) -> Select:
+        return await agent_admin_server_dao.get_my_agents(user_id=user_id)
+
 
 agent_admin_server_service: AgentAdminServerService = AgentAdminServerService()

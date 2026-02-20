@@ -27,64 +27,15 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { AUTH_DAILY_MESSAGE_LIMIT } from "@/lib/config";
+import { getMyMcps, MyMcpItem } from "@/lib/mcp";
+import { getMyAgents, MyAgentItem } from "@/lib/agent";
+import { getMySkills, MySkillItem } from "@/lib/skill";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bot, Clock, Languages, MessageSquare, Monitor, Moon, MoreHorizontal, Pencil, Plus, Save, Server, Settings, Star, Sun, User, Users, X, Zap } from "lucide-react";
+import { Bot, Clock, Languages, Monitor, Moon, MoreHorizontal, Pencil, Plus, Save, Server, Settings, Sparkles, Sun, User, X, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-
-// ---------- mock data (same as existing profile page) ----------
-const mockUserMcps = [
-  {
-    id: "1",
-    name: "Custom Analytics",
-    description: "自定义数据分析MCP，支持多维度报表",
-    status: "published" as const,
-    calls: 89,
-    rating: 4.6,
-    tools: 5,
-  },
-  {
-    id: "2",
-    name: "Log Monitor",
-    description: "实时日志监控与告警工具",
-    status: "published" as const,
-    calls: 45,
-    rating: 4.3,
-    tools: 3,
-  },
-  {
-    id: "3",
-    name: "Data Formatter",
-    description: "通用数据格式转换工具（开发中）",
-    status: "draft" as const,
-    calls: 0,
-    rating: 0,
-    tools: 2,
-  },
-]
-
-const mockUserAgents = [
-  {
-    id: "1",
-    name: "智能数据助手",
-    description: "集成多个MCP的数据分析Agent，支持自然语言查询和可视化",
-    status: "published" as const,
-    mcpCount: 3,
-    users: 128,
-    conversations: 1560,
-  },
-  {
-    id: "2",
-    name: "代码审查助手",
-    description: "自动化代码审查Agent，支持多语言代码质量分析和建议",
-    status: "published" as const,
-    mcpCount: 2,
-    users: 76,
-    conversations: 890,
-  },
-]
 
 // ---------- sidebar nav items ----------
 type NavItem = {
@@ -96,7 +47,8 @@ type NavItem = {
 const navItems: NavItem[] = [
   { key: "account", label: "我的账户", icon: User },
   { key: "mcp", label: "我的MCP", icon: Server },
-  { key: "agent", label: "我的Agent", icon: Bot },
+  // { key: "agent", label: "我的Agent", icon: Bot },
+  { key: "skill", label: "我的Skill", icon: Sparkles },
   { key: "scheduled", label: "定时任务", icon: Clock },
   { key: "settings", label: "系统设置", icon: Settings },
 ]
@@ -223,10 +175,39 @@ function AccountPanel() {
 }
 
 function McpPanel() {
+  const [mcps, setMcps] = useState<MyMcpItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getMyMcps({ page: 1, size: 20 })
+      .then((data) => setMcps(data.items))
+      .catch(() => setMcps([]))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-muted/40 h-20 animate-pulse rounded-xl border" />
+        ))}
+      </div>
+    )
+  }
+
+  if (mcps.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Server className="text-muted-foreground mb-3 h-10 w-10" />
+        <p className="text-muted-foreground text-sm">还没有创建任何 MCP</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        {mockUserMcps.map((mcp) => (
+        {mcps.map((mcp) => (
           <div
             key={mcp.id}
             className="bg-muted/40 hover:bg-muted/60 flex items-start justify-between rounded-xl border p-4 transition-colors"
@@ -237,32 +218,18 @@ function McpPanel() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{mcp.name}</span>
+                  <span className="text-sm font-medium">{mcp.server_title}</span>
                   <Badge
-                    variant={
-                      mcp.status === "published" ? "default" : "secondary"
-                    }
+                    variant={mcp.is_public ? "default" : "secondary"}
                     className="h-4 px-1.5 text-[10px]"
                   >
-                    {mcp.status === "published" ? "已发布" : "草稿"}
+                    {mcp.is_public ? "已发布" : "草稿"}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-                  {mcp.description}
+                  {mcp.description ?? "暂无描述"}
                 </p>
-                {mcp.status === "published" && (
-                  <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Zap className="h-3 w-3" />
-                      {mcp.calls}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      {mcp.rating}
-                    </span>
-                    <span>{mcp.tools} tools</span>
-                  </div>
-                )}
+                <p className="text-muted-foreground mt-1 text-xs">{mcp.server_name}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs">
@@ -276,10 +243,39 @@ function McpPanel() {
 }
 
 function AgentPanel() {
+  const [agents, setAgents] = useState<MyAgentItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getMyAgents({ page: 1, size: 20 })
+      .then((data) => setAgents(data.items))
+      .catch(() => setAgents([]))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-muted/40 h-20 animate-pulse rounded-xl border" />
+        ))}
+      </div>
+    )
+  }
+
+  if (agents.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Bot className="text-muted-foreground mb-3 h-10 w-10" />
+        <p className="text-muted-foreground text-sm">还没有创建任何 Agent</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-3">
-        {mockUserAgents.map((agent) => (
+        {agents.map((agent) => (
           <div
             key={agent.id}
             className="bg-muted/40 hover:bg-muted/60 flex items-start justify-between rounded-xl border p-4 transition-colors"
@@ -290,33 +286,103 @@ function AgentPanel() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{agent.name}</span>
+                  <span className="text-sm font-medium">{agent.title}</span>
                   <Badge
-                    variant={
-                      agent.status === "published" ? "default" : "secondary"
-                    }
+                    variant={agent.is_public ? "default" : "secondary"}
                     className="h-4 px-1.5 text-[10px]"
                   >
-                    {agent.status === "published" ? "已发布" : "草稿"}
+                    {agent.is_public ? "已发布" : "草稿"}
                   </Badge>
                 </div>
                 <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
-                  {agent.description}
+                  {agent.description ?? "暂无描述"}
                 </p>
                 <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Server className="h-3 w-3" />
-                    {agent.mcpCount} MCP
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {agent.users}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" />
-                    {agent.conversations}
-                  </span>
+                  {agent.tools > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Zap className="h-3 w-3" />
+                      {agent.tools} tools
+                    </span>
+                  )}
+                  {agent.skills > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      {agent.skills} skills
+                    </span>
+                  )}
                 </div>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs">
+              管理
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SkillPanel() {
+  const [skills, setSkills] = useState<MySkillItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    getMySkills({ page: 1, size: 20 })
+      .then((data) => setSkills(data.items))
+      .catch(() => setSkills([]))
+      .finally(() => setIsLoading(false))
+  }, [])
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-muted/40 h-20 animate-pulse rounded-xl border" />
+        ))}
+      </div>
+    )
+  }
+
+  if (skills.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Sparkles className="text-muted-foreground mb-3 h-10 w-10" />
+        <p className="text-muted-foreground text-sm">还没有发布任何 Skill</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3">
+        {skills.map((skill) => (
+          <div
+            key={skill.id}
+            className="bg-muted/40 hover:bg-muted/60 flex items-start justify-between rounded-xl border p-4 transition-colors"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{skill.title || skill.name}</span>
+                  <Badge
+                    variant={skill.is_public ? "default" : "secondary"}
+                    className="h-4 px-1.5 text-[10px]"
+                  >
+                    {skill.is_public ? "已发布" : "草稿"}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground mt-0.5 line-clamp-1 text-xs">
+                  {skill.description ?? "暂无描述"}
+                </p>
+                {skill.repository && (
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    {skill.name}
+                  </p>
+                )}
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs">
@@ -761,6 +827,7 @@ export function AccountModal({
               {activeKey === "account" && <AccountPanel />}
               {activeKey === "mcp" && <McpPanel />}
               {activeKey === "agent" && <AgentPanel />}
+              {activeKey === "skill" && <SkillPanel />}
               {activeKey === "scheduled" && <ScheduledTaskPanel />}
               {activeKey === "settings" && <SettingsPanel />}
             </div>

@@ -1,11 +1,14 @@
 from typing import List
 
+from app.admin.schema.agent import AdminAgentBaseDetail
+from app.admin.service.admin_agent_service import agent_admin_server_service
 from app.agent.service.agent_server_service import agent_server_service
 from app.mcp.schema.agent import AgentCategoryDetail, AgentDetail
 from common.pagination import DependsPagination, PageData, paging_data
 from common.response.response_schema import ResponseSchemaModel, response_base
+from common.security.jwt import DependsJwtAuth
 from database.db import CurrentSession
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 
 router = APIRouter()
 
@@ -29,3 +32,17 @@ async def search_agent(
 async def get_agent_categories() -> ResponseSchemaModel[List[AgentCategoryDetail]]:
     result = await agent_server_service.get_categories()
     return response_base.success(data=result)
+
+
+@router.get(
+    '/mine',
+    summary='获取我的 Agent 列表',
+    dependencies=[DependsJwtAuth, DependsPagination],
+)
+async def get_my_agents(
+    request: Request,
+    db: CurrentSession,
+) -> ResponseSchemaModel[PageData[AdminAgentBaseDetail]]:
+    agent_select = await agent_admin_server_service.get_my_agents(user_id=request.user.id)
+    page_data = await paging_data(db, agent_select)
+    return response_base.success(data=page_data)

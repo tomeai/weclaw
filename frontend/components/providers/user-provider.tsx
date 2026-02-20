@@ -9,6 +9,8 @@ export type UserProfile = {
   avatar: string
   email: string
   daily_message_count: number
+  is_staff: boolean
+  is_superuser: boolean
 }
 
 type UserContextType = {
@@ -54,6 +56,8 @@ export function UserProvider({
               avatar: userData.avatar || "",
               email: userData.email || "",
               daily_message_count: 0,
+              is_staff: userData.is_staff ?? false,
+              is_superuser: userData.is_superuser ?? false,
             })
           } catch (error) {
             console.error("Failed to fetch user data with JWT token:", error)

@@ -151,6 +151,8 @@ export default function LoginPage() {
         avatar: userData.avatar || "",
         email: userData.email || "",
         daily_message_count: 0,
+        is_staff: userData.is_staff ?? false,
+        is_superuser: userData.is_superuser ?? false,
       })
 
       toast.success("登录成功")

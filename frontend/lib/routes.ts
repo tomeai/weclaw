@@ -1,4 +1,5 @@
 export const API_ROUTE_MCPS = "/api/v1/mcp"
+export const API_ROUTE_MY_MCPS = "/api/v1/mcp/mine"
 export const API_ROUTE_MCP_CATEGORIES = "/api/v1/mcp/categories"
 export const API_ROUTE_MCP_CATEGORIES_RECOMMEND = "/api/v1/mcp/categories/recommend"
 export const API_ROUTE_MCP_SERVER_DETAIL = "/api/v1/mcp"
@@ -19,6 +20,7 @@ export const API_ROUTE_EMAIL_LOGIN = "/api/v1/admin/auth/email-login"
 
 // Agent
 export const API_ROUTE_AGENTS = "/api/v1/agent"
+export const API_ROUTE_MY_AGENTS = "/api/v1/agent/mine"
 export const API_ROUTE_AGENT_CHAT = "/api/v1/agent/chat"
 export const API_ROUTE_AGENT_CATEGORIES = "/api/v1/agent/categories"
 export const API_ROUTE_AGENT_ADMIN_SERVERS = "/api/v1/admin/agent/servers"
@@ -30,6 +32,7 @@ export const API_ROUTE_AGENT_ADMIN_CATEGORY_CREATE = "/api/v1/admin/agent/catego
 export const API_ROUTE_SKILLS = "/api/v1/skill"
 export const API_ROUTE_SKILL_CATEGORIES = "/api/v1/skill/categories"
 export const API_ROUTE_SKILL_PUBLISH = "/api/v1/skill/publish"
+export const API_ROUTE_MY_SKILLS = "/api/v1/skill/mine"
 export const API_ROUTE_SKILL_ADMIN_SERVERS = "/api/v1/admin/skill/servers"
 export const API_ROUTE_SKILL_ADMIN_SERVER_DETAIL = "/api/v1/admin/skill/servers"
 export const API_ROUTE_SKILL_ADMIN_CATEGORY = "/api/v1/admin/skill/categories/get"
@@ -38,3 +41,8 @@ export const API_ROUTE_SKILL_ADMIN_CATEGORY_CREATE = "/api/v1/admin/skill/catego
 // CopilotKit
 export const API_ROUTE_COPILOTKIT = "/api/copilotkit"
 export const API_ROUTE_AG_UI = "/ag-ui"
+
+// Sys - User & Role Management
+export const API_ROUTE_SYS_USERS = "/api/v1/admin/sys/users"
+export const API_ROUTE_SYS_ROLES = "/api/v1/admin/sys/roles"
+export const API_ROUTE_SYS_MENUS = "/api/v1/admin/sys/menus"

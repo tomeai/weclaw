@@ -51,5 +51,16 @@ class CRUDAgentAdminServer(CRUDPlus[AgentServer]):
     async def delete_agent(self, db: AsyncSession, agent_id: int) -> int:
         return await self.delete_model(db, agent_id)
 
+    async def get_my_agents(self, user_id: int) -> Select:
+        return await self.select_order(
+            'updated_time',
+            'desc',
+            load_options=[
+                noload(self.model.category),
+                selectinload(self.model.user),
+            ],
+            user_id=user_id,
+        )
+
 
 agent_admin_server_dao: CRUDAgentAdminServer = CRUDAgentAdminServer(AgentServer)

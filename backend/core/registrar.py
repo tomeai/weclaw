@@ -15,7 +15,6 @@ from starlette.staticfiles import StaticFiles
 from starlette_context.middleware import ContextMiddleware
 
 from backend import __version__
-from backend.common.cache.pubsub import cache_pubsub_manager
 from backend.common.exception.exception_handler import register_exception
 from backend.common.log import set_custom_logfile, setup_logging
 from backend.common.response.response_code import StandardResponseCode
@@ -54,12 +53,12 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     create_task(OperaLogMiddleware.consumer())
 
     # 启动缓存 Pub/Sub 监听器
-    cache_pubsub_manager.start_listener()
+    # cache_pubsub_manager.start_listener()
 
     yield
 
     # 停止缓存 Pub/Sub 监听器
-    await cache_pubsub_manager.stop_listener()
+    # await cache_pubsub_manager.stop_listener()
 
     # 释放 snowflake 节点
     await snowflake.shutdown()

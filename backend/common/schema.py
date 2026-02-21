@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated, Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, validate_email
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_serializer, validate_email
 from utils.timezone import timezone
 
 CustomPhoneNumber = Annotated[str, Field(pattern=r'^1[3-9]\d{9}$')]
@@ -22,12 +22,17 @@ class SchemaBase(BaseModel):
 
     model_config = ConfigDict(
         use_enum_values=True,
-        json_encoders={
-            datetime: lambda x: timezone.to_str(timezone.from_datetime(x))
-            if x.tzinfo is not None and x.tzinfo != timezone.tz_info
-            else timezone.to_str(x)
-        },
     )
+
+    @field_serializer('*', when_used='json')
+    def serialize_datetime(self, value):
+        if isinstance(value, datetime):
+            return (
+                timezone.to_str(timezone.from_datetime(value))
+                if value.tzinfo is not None and value.tzinfo != timezone.tz_info
+                else timezone.to_str(value)
+            )
+        return value
 
 
 def ser_string(value: Any) -> str | None:

@@ -1,5 +1,5 @@
-from app.admin.model import McpCategory
 from app.admin.schema.category import AddCategoryParam
+from app.mcp.model import McpCategory
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload

@@ -8,8 +8,8 @@ import {
   Server,
   Settings,
   Shield,
-  Tags,
   Users,
+  Zap,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -17,7 +17,7 @@ import { usePathname } from "next/navigation"
 const sidebarItems = [
   {
     title: "系统概览",
-    href: "/user//admin",
+    href: "/user/admin",
     icon: BarChart3,
   },
   {
@@ -31,9 +31,9 @@ const sidebarItems = [
     icon: Bot,
   },
   {
-    title: "分类管理",
-    href: "/user/admin/category",
-    icon: Tags,
+    title: "Skill管理",
+    href: "/user/admin/skill",
+    icon: Zap,
   },
   {
     title: "用户管理",

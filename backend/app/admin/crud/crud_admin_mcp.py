@@ -1,4 +1,4 @@
-from app.admin.model import McpCategory, McpServer
+from app.mcp.model import McpCategory, McpServer
 from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload, selectinload
@@ -54,6 +54,17 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
                 selectinload(self.model.user),
             ],
             **filters,
+        )
+
+    async def get_my_mcps(self, user_id: int) -> Select:
+        return await self.select_order(
+            'updated_time',
+            'desc',
+            load_options=[
+                selectinload(self.model.category).options(noload(McpCategory.mcp_servers)),
+                selectinload(self.model.user),
+            ],
+            user_id=user_id,
         )
 
 

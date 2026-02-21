@@ -38,7 +38,7 @@ export function useTitlePolling(
         countsRef.current.set(tid, count)
 
         try {
-          const data = await http.get<TitleResponse>(`/api/v1/agent/threads/${tid}/title`)
+          const data = await http.get<TitleResponse>(`/api/v1/agent/threads/${tid}`)
           if (data.title_generated) {
             onTitleResolved(tid, data.chat_title)
             toStop.push(tid)

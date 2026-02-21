@@ -138,6 +138,13 @@ const http = {
     return res.data.data
   },
 
+  /** DELETE 请求，携带 body（用于批量删除等场景） */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async deleteBody<T = any>(url: string, data: any = {}): Promise<T> {
+    const res = await instance.delete<ApiResponse<T>>(url, { data })
+    return res.data.data
+  },
+
   /** 需要拿到完整响应体 { code, msg, data } 时使用 */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getRaw<T = any>(url: string, params: Record<string, any> = {}): Promise<ApiResponse<T>> {

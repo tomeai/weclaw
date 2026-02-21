@@ -1,5 +1,5 @@
 import http from "@/lib/http";
-import { API_ROUTE_MCP_ADMIN_CATEGORY, API_ROUTE_MCP_ADMIN_CATEGORY_CREATE, API_ROUTE_MCP_ADMIN_SERVER_DETAIL, API_ROUTE_MCP_ADMIN_SERVERS, API_ROUTE_MCP_CATEGORIES, API_ROUTE_MCP_DEPLOY_PACKAGE, API_ROUTE_MCP_SEARCH, API_ROUTE_MCP_SERVER_CALL, API_ROUTE_MCP_SERVER_DETAIL, API_ROUTE_MCP_SERVER_FEED, API_ROUTE_MCP_SERVER_RECOMMEND } from "./routes";
+import { API_ROUTE_MCP_ADMIN_CATEGORY, API_ROUTE_MCP_ADMIN_CATEGORY_CREATE, API_ROUTE_MCP_ADMIN_SERVER_DETAIL, API_ROUTE_MCP_ADMIN_SERVERS, API_ROUTE_MCP_CATEGORIES, API_ROUTE_MCP_CATEGORIES_RECOMMEND, API_ROUTE_MCP_DEPLOY_PACKAGE, API_ROUTE_MCP_SERVER_DETAIL, API_ROUTE_MCP_SERVER_FEED, API_ROUTE_MCP_SERVER_RECOMMEND, API_ROUTE_MCPS, API_ROUTE_MY_MCPS } from "./routes";
 
 
 // ============ 通用类型 ============
@@ -208,11 +208,13 @@ export function getMcpCategories(): Promise<McpCategory[]> {
 export function searchMcpServers(
   params: McpSearchParams = {}
 ): Promise<PaginatedData<McpSearchServerItem>> {
-  return http.post<PaginatedData<McpSearchServerItem>>(API_ROUTE_MCP_SEARCH, {
-    page: params.page || 1,
-    size: params.size || 10,
-    category_id: params.category_id ?? 0,
-    keyword: params.keyword || "",
+  return http.get<PaginatedData<McpSearchServerItem>>(API_ROUTE_MCPS, {
+    params: {
+      page: params.page || 1,
+      size: params.size || 10,
+      category_id: params.category_id ?? undefined,
+      keyword: params.keyword || undefined,
+    },
   })
 }
 
@@ -239,7 +241,7 @@ export function callMcpServerTool(
   args: Record<string, any>
 ): Promise<McpServerCallResult> {
   return http.post<McpServerCallResult>(
-    `${API_ROUTE_MCP_SERVER_CALL}/${username}/${serverName}`,
+    `${API_ROUTE_MCPS}/${username}/${serverName}/invoke`,
     {
       tool_name: toolName,
       arguments: args,
@@ -249,7 +251,7 @@ export function callMcpServerTool(
 
 /** 获取推荐 MCP 服务器（分类） */
 export function getMcpServerRecommend(): Promise<McpRecommendCategory[]> {
-  return http.get<McpRecommendCategory[]>(API_ROUTE_MCP_SERVER_RECOMMEND)
+  return http.get<McpRecommendCategory[]>(API_ROUTE_MCP_CATEGORIES_RECOMMEND)
 }
 
 // ============ 推荐列表（扁平） ============
@@ -332,4 +334,28 @@ export interface McpSubmitData {
 /** 提交 MCP 服务器配置 */
 export function submitMcpServer(data: McpSubmitData): Promise<any> {
   return http.post(API_ROUTE_MCP_DEPLOY_PACKAGE, data)
+}
+
+// ============ My MCPs ============
+
+export interface MyMcpItem {
+  id: number
+  server_title: string
+  server_name: string
+  description: string | null
+  server_type: "hosted" | "local"
+  is_public: boolean | null
+  owner: string
+  created_time: string
+  updated_time: string | null
+}
+
+/** 获取我的 MCP 列表 */
+export function getMyMcps(
+  params: { page?: number; size?: number } = {}
+): Promise<PaginatedData<MyMcpItem>> {
+  return http.get<PaginatedData<MyMcpItem>>(API_ROUTE_MY_MCPS, {
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  })
 }

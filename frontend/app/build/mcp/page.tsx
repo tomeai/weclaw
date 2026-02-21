@@ -16,6 +16,12 @@ export default function SubmitMcpPage() {
   >("idle")
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const handleSuccess = () => {
+    setTimeout(() => {
+      window.location.href = "/mcp"
+    }, 3000)
+  }
+
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true)
     setSubmitStatus("idle")
@@ -29,6 +35,7 @@ export default function SubmitMcpPage() {
         description: "MCP服务器已成功提交，正在审核中",
         status: "success",
       })
+      handleSuccess()
     } catch (error: any) {
       console.error("提交MCP失败:", error)
       setSubmitStatus("error")
@@ -36,13 +43,6 @@ export default function SubmitMcpPage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const handleSuccess = () => {
-    // 提交成功后可以显示成功状态，而不是立即跳转
-    setTimeout(() => {
-      window.location.href = "/mcp"
-    }, 3000)
   }
 
   const handleCancel = () => {
@@ -133,7 +133,7 @@ export default function SubmitMcpPage() {
 
             {isSubmitting && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                <div className="flex items-center space-x-3 rounded-lg bg-white p-6 shadow-lg">
+                <div className="flex items-center space-x-3 rounded-lg bg-background p-6 shadow-lg border">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
                   <span>正在提交，请稍候...</span>
                 </div>

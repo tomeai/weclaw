@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import json
 
 from typing import Any
@@ -11,18 +9,17 @@ from app.admin.schema.user import AddOAuth2UserParam
 from app.admin.schema.user_social import CreateUserSocialParam
 from app.admin.service.login_log_service import login_log_service
 from app.admin.service.user_social_service import user_social_service
+from common.context import ctx
 from common.enums import LoginLogStatusType, UserSocialAuthType, UserSocialType
 from common.exception import errors
 from common.i18n import t
 from common.security import jwt
 from core.conf import settings
+from database.redis import redis_client
 from fast_captcha import text_captcha
 from fastapi import BackgroundTasks, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.timezone import timezone
-
-from backend.common.context import ctx
-from backend.database.redis import redis_client
 
 
 class OAuth2Service:

@@ -1,11 +1,17 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import time
 
-from common.log import log
+from common.prometheus.instruments import (
+    PROMETHEUS_APP_NAME,
+    PROMETHEUS_REQUEST_COUNTER,
+    PROMETHEUS_REQUEST_IN_PROGRESS_GAUGE,
+)
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from utils.timezone import timezone
+
+from backend.common.context import ctx
+from backend.common.log import log
+from backend.core.conf import settings
+from backend.utils.timezone import timezone
 
 
 class AccessMiddleware(BaseHTTPMiddleware):
@@ -19,27 +25,22 @@ class AccessMiddleware(BaseHTTPMiddleware):
         :param call_next: 下一个中间件或路由处理函数
         :return:
         """
-        path = request.url.path if not request.url.query else request.url.path + '/' + request.url.query
+        path = request.url.path
+        method = request.method
 
-        if request.method != 'OPTIONS':
-            log.debug(f'--> 请求开始[{path}]')
+        if method != 'OPTIONS':
+            log.debug(f'--> 请求开始[{path if not request.url.query else request.url.path + "/" + request.url.query}]')
 
         perf_time = time.perf_counter()
-        request.state.perf_time = perf_time
+        ctx.perf_time = perf_time
 
         start_time = timezone.now()
-        request.state.start_time = start_time
+        ctx.start_time = start_time
+
+        if path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+            PROMETHEUS_REQUEST_IN_PROGRESS_GAUGE.labels(app_name=PROMETHEUS_APP_NAME, method=method, path=path).inc()
+            PROMETHEUS_REQUEST_COUNTER.labels(app_name=PROMETHEUS_APP_NAME, method=method, path=path).inc()
 
         response = await call_next(request)
-
-        elapsed = (time.perf_counter() - perf_time) * 1000
-
-        if request.method != 'OPTIONS':
-            log.debug('<-- 请求结束')
-
-            log.info(
-                f'{request.client.host: <15} | {request.method: <8} | {response.status_code: <6} | '
-                f'{path} | {elapsed:.3f}ms'
-            )
 
         return response

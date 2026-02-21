@@ -132,11 +132,13 @@ export function Header() {
                   >
                     个人中心
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/user/admin" className="cursor-pointer">
-                      系统管理
-                    </Link>
-                  </DropdownMenuItem>
+                  {(user?.is_staff || user?.is_superuser) && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/user/admin" className="cursor-pointer">
+                        系统管理
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="cursor-pointer text-red-600 focus:text-red-600"

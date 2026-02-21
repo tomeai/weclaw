@@ -91,11 +91,11 @@ services:
     container_name: wemcp-mysql
     restart: always
     environment:
-      MYSQL_DATABASE: wemcp
       MYSQL_ROOT_PASSWORD: 123456
       TZ: Asia/Shanghai
     volumes:
       - wemcp_mysql:/var/lib/mysql
+      - ./sql/mysql/init:/docker-entrypoint-initdb.d
     networks:
       - wemcp_network
     command:

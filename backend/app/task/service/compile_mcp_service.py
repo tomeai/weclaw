@@ -1,7 +1,7 @@
 from app.admin.crud.crud_user import user_dao
-from app.admin.model import McpServer
-from app.admin.model.mcp import CompileType, RuntimeType, ServerType, TransportType
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
+from app.mcp.model import McpServer
+from app.mcp.schema.enums import CompileType, RuntimeType, ServerType, TransportType
 from app.mcp.schema.mcp import AddMcpServerParam
 from database.db import async_db_session
 from fastmcp import Client

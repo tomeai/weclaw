@@ -39,6 +39,17 @@ class GetAdminMcpDetail(SchemaBase):
     is_public: int | None = Field(None, description='是否公开')
 
 
+class MyMcpDetail(SchemaBase):
+    id: int = Field(description='id')
+    server_title: str = Field(description='名称')
+    server_name: str = Field(description='mcp name')
+    description: str | None = Field(None, description='描述')
+    server_type: str = Field(description='类型')
+    is_public: bool | None = Field(None, description='是否公开')
+    created_time: datetime = Field(description='创建时间')
+    updated_time: datetime | None = Field(None, description='更新时间')
+
+
 class UpdateMcpServerParam(SchemaBase):
     server_title: str | None = Field(None, description='名称')
     description: str | None = Field(None, description='描述')

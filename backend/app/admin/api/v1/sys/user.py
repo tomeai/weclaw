@@ -20,7 +20,14 @@ from fastapi import APIRouter, Body, Depends, Path, Query, Request
 router = APIRouter()
 
 
-@router.get('/{pk}', summary='获取用户信息', dependencies=[DependsJwtAuth])
+@router.get(
+    '/{pk}',
+    summary='获取用户信息',
+    dependencies=[
+        Depends(RequestPermission('sys:user:list')),
+        DependsRBAC,
+    ],
+)
 async def get_userinfo(
     db: CurrentSession,
     pk: Annotated[int, Path(description='用户 ID')],
@@ -29,7 +36,14 @@ async def get_userinfo(
     return response_base.success(data=data)
 
 
-@router.get('/{pk}/roles', summary='获取用户所有角色', dependencies=[DependsJwtAuth])
+@router.get(
+    '/{pk}/roles',
+    summary='获取用户所有角色',
+    dependencies=[
+        Depends(RequestPermission('sys:user:list')),
+        DependsRBAC,
+    ],
+)
 async def get_user_roles(
     db: CurrentSession, pk: Annotated[int, Path(description='用户 ID')]
 ) -> ResponseSchemaModel[list[GetRoleDetail]]:
@@ -41,7 +55,8 @@ async def get_user_roles(
     '',
     summary='分页获取所有用户',
     dependencies=[
-        DependsJwtAuth,
+        Depends(RequestPermission('sys:user:list')),
+        DependsRBAC,
         DependsPagination,
     ],
 )
@@ -55,7 +70,14 @@ async def get_users_paginated(
     return response_base.success(data=page_data)
 
 
-@router.post('', summary='创建用户', dependencies=[DependsSuperUser])
+@router.post(
+    '',
+    summary='创建用户',
+    dependencies=[
+        Depends(RequestPermission('sys:user:add')),
+        DependsRBAC,
+    ],
+)
 async def create_user(
     db: CurrentSessionTransaction, obj: AddUserParam
 ) -> ResponseSchemaModel[GetUserInfoWithRelationDetail]:
@@ -64,7 +86,14 @@ async def create_user(
     return response_base.success(data=data)
 
 
-@router.put('/{pk}', summary='更新用户信息', dependencies=[DependsSuperUser])
+@router.put(
+    '/{pk}',
+    summary='更新用户信息',
+    dependencies=[
+        Depends(RequestPermission('sys:user:edit')),
+        DependsRBAC,
+    ],
+)
 async def update_user(
     db: CurrentSessionTransaction,
     pk: Annotated[int, Path(description='用户 ID')],
@@ -76,7 +105,11 @@ async def update_user(
     return response_base.fail()
 
 
-@router.put('/{pk}/permissions', summary='更新用户权限', dependencies=[DependsSuperUser])
+@router.put(
+    '/{pk}/permissions',
+    summary='更新用户权限',
+    dependencies=[DependsSuperUser],
+)
 async def update_user_permission(
     db: CurrentSessionTransaction,
     request: Request,
@@ -99,7 +132,14 @@ async def update_user_password(
     return response_base.fail()
 
 
-@router.put('/{pk}/password', summary='重置用户密码', dependencies=[DependsSuperUser])
+@router.put(
+    '/{pk}/password',
+    summary='重置用户密码',
+    dependencies=[
+        Depends(RequestPermission('sys:user:password:reset')),
+        DependsRBAC,
+    ],
+)
 async def reset_user_password(
     db: CurrentSessionTransaction,
     pk: Annotated[int, Path(description='用户 ID')],

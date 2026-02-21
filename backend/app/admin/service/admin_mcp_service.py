@@ -1,6 +1,6 @@
 from app.admin.crud.crud_admin_category import mcp_admin_category_dao
 from app.admin.crud.crud_admin_mcp import mcp_admin_server_dao
-from app.admin.model import McpServer
+from app.mcp.model import McpServer
 from common.exception import errors
 from database.db import async_db_session
 from sqlalchemy import Select
@@ -36,6 +36,10 @@ class McpAdminServerService:
         if description:
             count = await mcp_admin_server_dao.update_description(db, mcp_id, description)
         return count
+
+    @staticmethod
+    async def get_my_mcps(*, user_id: int) -> Select:
+        return await mcp_admin_server_dao.get_my_mcps(user_id=user_id)
 
 
 mcp_admin_server_service: McpAdminServerService = McpAdminServerService()

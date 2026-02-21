@@ -1,4 +1,4 @@
-from app.admin.model import AgentServer
+from app.agent.model import AgentServer
 from sqlalchemy import Select
 from sqlalchemy.orm import noload, selectinload
 from sqlalchemy_crud_plus import CRUDPlus

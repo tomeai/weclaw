@@ -1,4 +1,4 @@
-from app.admin.model import McpCategory, McpServer
+from app.mcp.model import McpCategory, McpServer
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy_crud_plus import CRUDPlus

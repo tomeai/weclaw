@@ -45,12 +45,12 @@ export function NaviMenu() {
           >
             Skill
           </Link>
-          <Link
-            href="/agent"
-            className={isActive("/agent") ? activeLinkClass : linkClass}
-          >
-            Agent
-          </Link>
+          {/*<Link*/}
+          {/*  href="/agent"*/}
+          {/*  className={isActive("/agent") ? activeLinkClass : linkClass}*/}
+          {/*>*/}
+          {/*  Agent*/}
+          {/*</Link>*/}
         </div>
 
         {/* Mobile Navigation */}
@@ -83,15 +83,15 @@ export function NaviMenu() {
                 >
                   Skills
                 </Link>
-                <Link
-                  href="/agent"
-                  className={
-                    isActive("/agent") ? mobileActiveLinkClass : mobileLinkClass
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  Agent
-                </Link>
+                {/*<Link*/}
+                {/*  href="/agent"*/}
+                {/*  className={*/}
+                {/*    isActive("/agent") ? mobileActiveLinkClass : mobileLinkClass*/}
+                {/*  }*/}
+                {/*  onClick={() => setOpen(false)}*/}
+                {/*>*/}
+                {/*  Agent*/}
+                {/*</Link>*/}
                 <div className="py-2">
                   <AddMcpButton
                     onClick={

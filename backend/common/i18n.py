@@ -1,40 +1,52 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import glob
 import json
-import os
 
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from common.context import ctx
 from core.conf import settings
 from core.path_conf import LOCALE_DIR
+from starlette_context.errors import ContextDoesNotExistError
 
 
 class I18n:
     """国际化管理器"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.locales: dict[str, dict[str, Any]] = {}
-        self.current_language: str = settings.I18N_DEFAULT_LANGUAGE
+        self.load_locales()
 
-    def load_locales(self):
+    @property
+    def current_language(self) -> str:
+        """获取当前请求的语言"""
+        try:
+            return ctx.language
+        except (AttributeError, LookupError, ContextDoesNotExistError):
+            return settings.I18N_DEFAULT_LANGUAGE
+
+    @current_language.setter
+    def current_language(self, language: str) -> None:
+        """设置当前请求的语言"""
+        ctx.language = language
+
+    def load_locales(self) -> None:
         """加载语言文本"""
         patterns = [
-            os.path.join(LOCALE_DIR, '*.json'),
-            os.path.join(LOCALE_DIR, '*.yaml'),
-            os.path.join(LOCALE_DIR, '*.yml'),
+            LOCALE_DIR / '*.json',
+            LOCALE_DIR / '*.yaml',
+            LOCALE_DIR / '*.yml',
         ]
 
         lang_files = []
 
         for pattern in patterns:
-            lang_files.extend(glob.glob(pattern))
+            lang_files.extend(glob.glob(str(pattern)))
 
         for lang_file in lang_files:
-            with open(lang_file, 'r', encoding='utf-8') as f:
+            with open(lang_file, encoding='utf-8') as f:
                 lang = Path(lang_file).stem
                 file_type = Path(lang_file).suffix[1:]
                 match file_type:
@@ -57,7 +69,7 @@ class I18n:
         try:
             translation = self.locales[self.current_language]
         except KeyError:
-            keys = 'error.language_not_found'
+            keys = 'error.language_not_found'.split('.')
             translation = self.locales[settings.I18N_DEFAULT_LANGUAGE]
 
         for k in keys:
@@ -65,10 +77,8 @@ class I18n:
                 translation = translation[k]
             else:
                 # Pydantic 兼容
-                if keys[0] == 'pydantic':
-                    translation = None
-                else:
-                    translation = key
+                translation = None if keys[0] == 'pydantic' else key
+                break
 
         if translation and kwargs:
             translation = translation.format(**kwargs)

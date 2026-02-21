@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+import json
 import time
 
 from asyncio import Queue
@@ -7,24 +6,31 @@ from typing import Any
 
 from app.admin.schema.opera_log import CreateOperaLogParam
 from app.admin.service.opera_log_service import opera_log_service
-from asgiref.sync import sync_to_async
-from common.enums import OperaLogCipherType, StatusType
+from common.context import ctx
+from common.enums import StatusType
 from common.log import log
+from common.prometheus.instruments import (
+    PROMETHEUS_APP_NAME,
+    PROMETHEUS_EXCEPTION_COUNTER,
+    PROMETHEUS_REQUEST_COST_TIME_HISTOGRAM,
+    PROMETHEUS_REQUEST_IN_PROGRESS_GAUGE,
+    PROMETHEUS_RESPONSE_COUNTER,
+)
 from common.queue import batch_dequeue
 from common.response.response_code import StandardResponseCode
 from core.conf import settings
+from database.db import async_db_session
 from fastapi import Response
 from starlette.datastructures import UploadFile
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from utils.encrypt import AESCipher, ItsDCipher, Md5Cipher
 from utils.trace_id import get_request_trace_id
 
 
 class OperaLogMiddleware(BaseHTTPMiddleware):
     """操作日志中间件"""
 
-    opera_log_queue: Queue = Queue(maxsize=100000)
+    opera_log_queue: Queue = Queue(maxsize=settings.OPERA_LOG_QUEUE_MAXSIZE)
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """
@@ -34,85 +40,112 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         :param call_next: 下一个中间件或路由处理函数
         :return:
         """
-        response = None
         path = request.url.path
+        method = request.method
+        args = await self.get_request_args(request)
+        code = 200
+        msg = 'Success'
+        status = StatusType.enable
+        elapsed = 0
 
-        if path in settings.OPERA_LOG_PATH_EXCLUDE or not path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+        try:
+            username = request.user.username
+        except AttributeError:
+            username = None
+
+        should_log_opera = (
+            path.startswith(f'{settings.FASTAPI_API_V1_PATH}') and path not in settings.OPERA_LOG_PATH_EXCLUDE
+        )
+
+        try:
             response = await call_next(request)
-        else:
-            method = request.method
-            args = await self.get_request_args(request)
+        except Exception as e:
+            elapsed = round((time.perf_counter() - ctx.perf_time) * 1000, 3)
+            log.error(f'请求异常: {e!s}')
 
-            # 执行请求
-            code = 200
-            msg = 'Success'
-            status = StatusType.enable
-            error = None
-            try:
-                response = await call_next(request)
-                elapsed = (time.perf_counter() - request.state.perf_time) * 1000
-                for state in [
+            if should_log_opera:
+                code = getattr(e, 'code', StandardResponseCode.HTTP_500)
+                msg = getattr(e, 'msg', str(e))
+                status = StatusType.disable
+
+            if path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+                PROMETHEUS_EXCEPTION_COUNTER.labels(
+                    app_name=PROMETHEUS_APP_NAME,
+                    method=method,
+                    path=path,
+                    exception_type=type(e).__name__,
+                ).inc()
+
+            raise
+        else:
+            elapsed = round((time.perf_counter() - ctx.perf_time) * 1000, 3)
+
+            if should_log_opera:
+                # 检查上下文中的异常信息
+                for exception_key in [
                     '__request_http_exception__',
                     '__request_validation_exception__',
                     '__request_assertion_error__',
                     '__request_custom_exception__',
                 ]:
-                    exception = getattr(request.state, state, None)
+                    exception = ctx.get(exception_key)
                     if exception:
                         code = exception.get('code')
                         msg = exception.get('msg')
+                        status = StatusType.disable
                         log.error(f'请求异常: {msg}')
                         break
-            except Exception as e:
-                elapsed = (time.perf_counter() - request.state.perf_time) * 1000
-                code = getattr(e, 'code', StandardResponseCode.HTTP_500)  # 兼容 SQLAlchemy 异常用法
-                msg = getattr(e, 'msg', str(e))  # 不建议使用 traceback 模块获取错误信息，会暴漏代码信息
-                status = StatusType.disable
-                error = e
-                log.error(f'请求异常: {str(e)}')
 
-            # 此信息只能在请求后获取
-            _route = request.scope.get('route')
-            summary = getattr(_route, 'summary', '')
+            if path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+                PROMETHEUS_REQUEST_COST_TIME_HISTOGRAM.labels(
+                    app_name=PROMETHEUS_APP_NAME, method=method, path=path
+                ).observe(amount=elapsed, exemplar={'TraceID': get_request_trace_id()})
+        finally:
+            # summary 只能在请求后获取
+            route = request.scope.get('route')
+            summary = route.summary or '' if route else ''
 
-            try:
-                # 此信息来源于 JWT 认证中间件
-                username = request.user.username
-            except AttributeError:
-                username = None
-
-            # 日志记录
             log.debug(f'接口摘要：[{summary}]')
-            log.debug(f'请求地址：[{request.state.ip}]')
+            log.debug(f'请求地址：[{ctx.ip}]')
             log.debug(f'请求参数：{args}')
 
-            # 日志创建
-            opera_log_in = CreateOperaLogParam(
-                trace_id=get_request_trace_id(request),
-                username=username,
-                method=method,
-                title=summary or '',
-                path=path,
-                ip=request.state.ip,
-                country=request.state.country,
-                region=request.state.region,
-                city=request.state.city,
-                user_agent=request.state.user_agent,
-                os=request.state.os,
-                browser=request.state.browser,
-                device=request.state.device,
-                args=args,
-                status=status,
-                code=str(code),
-                msg=msg,
-                cost_time=elapsed,  # 可能和日志存在微小差异（可忽略）
-                opera_time=request.state.start_time,
-            )
-            await self.opera_log_queue.put(opera_log_in)
+            if request.method != 'OPTIONS':
+                log.debug('<-- 请求结束')
 
-            # 错误抛出
-            if error:
-                raise error from None
+            if path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+                log.info(f'{ctx.ip: <15} | {method: <8} | {code!s: <6} | {path} | {elapsed:.3f}ms')
+
+            if should_log_opera and request.method != 'OPTIONS':
+                opera_log_in = CreateOperaLogParam(
+                    trace_id=get_request_trace_id(),
+                    username=username,
+                    method=method,
+                    title=summary,
+                    path=path,
+                    ip=ctx.ip,
+                    country=ctx.country,
+                    region=ctx.region,
+                    city=ctx.city,
+                    user_agent=ctx.user_agent,
+                    os=ctx.os,
+                    browser=ctx.browser,
+                    device=ctx.device,
+                    args=args,
+                    status=status,
+                    code=str(code),
+                    msg=msg,
+                    cost_time=elapsed,
+                    opera_time=ctx.start_time,
+                )
+                await self.opera_log_queue.put(opera_log_in)
+
+            if path.startswith(f'{settings.FASTAPI_API_V1_PATH}'):
+                PROMETHEUS_RESPONSE_COUNTER.labels(
+                    app_name=PROMETHEUS_APP_NAME, method=method, path=path, status_code=code
+                ).inc()
+                PROMETHEUS_REQUEST_IN_PROGRESS_GAUGE.labels(
+                    app_name=PROMETHEUS_APP_NAME, method=method, path=path
+                ).dec()
 
         return response
 
@@ -128,12 +161,12 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         # 查询参数
         query_params = dict(request.query_params)
         if query_params:
-            args['query_params'] = await self.desensitization(query_params)
+            args['query_params'] = self.desensitization(query_params)
 
         # 路径参数
         path_params = request.path_params
         if path_params:
-            args['path_params'] = await self.desensitization(path_params)
+            args['path_params'] = self.desensitization(path_params)
 
         # Tip: .body() 必须在 .form() 之前获取
         # https://github.com/encode/starlette/discussions/1933
@@ -144,31 +177,66 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         if body_data:
             # 注意：非 json 数据默认使用 data 作为键
             if 'application/json' not in content_type:
-                args['data'] = str(body_data)
+                args['data'] = body_data.decode('utf-8', 'ignore') if isinstance(body_data, bytes) else str(body_data)
             else:
                 json_data = await request.json()
                 if isinstance(json_data, dict):
-                    args['json'] = await self.desensitization(json_data)
+                    args['json'] = self.desensitization(json_data)
                 else:
-                    args['data'] = str(body_data)
+                    args['data'] = str(json_data)
 
         # 表单参数
         form_data = await request.form()
         if len(form_data) > 0:
+            serialized_form = {}
             for k, v in form_data.items():
                 if isinstance(v, UploadFile):
-                    form_data = {k: v.filename}
+                    serialized_form[k] = {
+                        'filename': v.filename,
+                        'content_type': v.content_type,
+                        'size': v.size,
+                    }
                 else:
-                    form_data = {k: v}
+                    serialized_form[k] = v
             if 'multipart/form-data' not in content_type:
-                args['x-www-form-urlencoded'] = await self.desensitization(form_data)
+                args['x-www-form-urlencoded'] = self.desensitization(serialized_form)
             else:
-                args['form-data'] = await self.desensitization(form_data)
+                args['form-data'] = self.desensitization(serialized_form)
 
-        return None if not args else args
+        if args:
+            args = self.truncate(args)
+
+        return args or None
 
     @staticmethod
-    @sync_to_async
+    def truncate(args: dict[str, Any]) -> dict[str, Any]:
+        """
+        截断处理
+
+        :param args: 需要截断的请求参数字典
+        :return:
+        """
+        max_size = 10240  # 数据最大大小（字节）
+
+        try:
+            args_str = json.dumps(args, ensure_ascii=False)
+            args_size = len(args_str.encode('utf-8'))
+
+            if args_size > max_size:
+                truncated_str = args_str[:max_size]
+                return {
+                    '_truncated': True,
+                    '_original_size': args_size,
+                    '_max_size': max_size,
+                    '_message': f'数据过大已截断：原始大小 {args_size} 字节，限制 {max_size} 字节',
+                    'data_preview': truncated_str,
+                }
+        except Exception as e:
+            log.error(f'请求参数截断处理失败：{e}')
+
+        return args
+
+    @staticmethod
     def desensitization(args: dict[str, Any]) -> dict[str, Any]:
         """
         脱敏处理
@@ -176,20 +244,9 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
         :param args: 需要脱敏的参数字典
         :return:
         """
-        for key, value in args.items():
-            if key in settings.OPERA_LOG_ENCRYPT_KEY_INCLUDE:
-                match settings.OPERA_LOG_ENCRYPT_TYPE:
-                    case OperaLogCipherType.aes:
-                        args[key] = (AESCipher(settings.OPERA_LOG_ENCRYPT_SECRET_KEY).encrypt(value)).hex()
-                    case OperaLogCipherType.md5:
-                        args[key] = Md5Cipher.encrypt(value)
-                    case OperaLogCipherType.itsdangerous:
-                        args[key] = ItsDCipher(settings.OPERA_LOG_ENCRYPT_SECRET_KEY).encrypt(value)
-                    case OperaLogCipherType.plan:
-                        pass
-                    case _:
-                        args[key] = '******'
-
+        for key in args:
+            if key in settings.OPERA_LOG_REDACT_KEYS:
+                args[key] = '[REDACTED]'
         return args
 
     @classmethod
@@ -205,7 +262,10 @@ class OperaLogMiddleware(BaseHTTPMiddleware):
                 try:
                     if settings.DATABASE_ECHO:
                         log.info('自动执行【操作日志批量创建】任务...')
-                    await opera_log_service.bulk_create(objs=logs)
+                    async with async_db_session.begin() as db:
+                        await opera_log_service.bulk_create(db=db, objs=logs)
+                except Exception as e:
+                    log.error(f'操作日志入库失败，丢失 {len(logs)} 条日志: {e}')
                 finally:
-                    if not cls.opera_log_queue.empty():
+                    for _ in range(len(logs)):
                         cls.opera_log_queue.task_done()

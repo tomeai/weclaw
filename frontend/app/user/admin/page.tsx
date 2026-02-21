@@ -82,39 +82,6 @@ export default function McpAdminPage() {
             </Card>
           ))}
         </div>
-
-        {/* 快速操作 */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="cursor-pointer transition-shadow hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Plus className="mr-2 h-5 w-5" />
-                添加新MCP
-              </CardTitle>
-              <CardDescription>上传或配置新的MCP服务器</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="cursor-pointer transition-shadow hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Server className="mr-2 h-5 w-5" />
-                管理服务器
-              </CardTitle>
-              <CardDescription>查看和管理所有MCP服务器</CardDescription>
-            </CardHeader>
-          </Card>
-
-          <Card className="cursor-pointer transition-shadow hover:shadow-md">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Activity className="mr-2 h-5 w-5" />
-                查看日志
-              </CardTitle>
-              <CardDescription>监控系统活动和使用情况</CardDescription>
-            </CardHeader>
-          </Card>
-        </div>
       </div>
     </AdminLayout>
   )

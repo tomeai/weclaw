@@ -194,7 +194,7 @@ export function McpEditModal({
 
             {/* 描述 */}
             <div className="space-y-2">
-              <Label htmlFor="description">描述 *</Label>
+              <Label htmlFor="description">描述</Label>
               <Textarea
                 id="description"
                 value={formData.description}
@@ -203,7 +203,6 @@ export function McpEditModal({
                 }
                 placeholder="请输入服务器描述"
                 rows={4}
-                required
               />
             </div>
 
@@ -241,15 +240,11 @@ export function McpEditModal({
                 </div>
                 <div>
                   <span className="text-muted-foreground">服务器类型:</span>
-                  <span className="ml-2">
-                    {serverDetail.server_type === "hosted" ? "托管" : "本地"}
-                  </span>
+                  <span className="ml-2">{serverDetail.server_type}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">编译类型:</span>
-                  <span className="ml-2">
-                    {serverDetail.compile_type === "package" ? "包" : "STDIO"}
-                  </span>
+                  <span className="ml-2">{serverDetail.compile_type}</span>
                 </div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Git仓库:</span>

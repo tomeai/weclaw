@@ -5,8 +5,7 @@ ARG SERVER_TYPE=fastapi_server
 FROM astral/uv:python3.12-bookworm-slim AS builder
 
 # Used for build Python packages
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc python3-dev \
     && rm -rf /var/lib/apt/lists/*
 

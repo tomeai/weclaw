@@ -4,11 +4,6 @@ FROM node:20-alpine AS base
 # ======================
 # Set build arguments for COS credentials
 # ======================
-ARG COS_SECRET_ID
-ARG COS_SECRET_KEY
-ARG COS_BUCKET
-ARG COS_REGION
-
 ENV COS_SECRET_ID=$COS_SECRET_ID
 ENV COS_SECRET_KEY=$COS_SECRET_KEY
 ENV COS_BUCKET=$COS_BUCKET
@@ -46,7 +41,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Copy production environment variables for build
-COPY deploy/.env.production .env.production
+COPY .env.production .env.production
 
 # Build the application
 RUN npm run build

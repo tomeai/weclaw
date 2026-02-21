@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
     # Token
     TOKEN_ALGORITHM: str = 'HS256'
-    TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24  # 1 天
+    TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 3  # 3 天
     TOKEN_REFRESH_EXPIRE_SECONDS: int = 60 * 60 * 24 * 7  # 7 天
     TOKEN_REDIS_PREFIX: str = 'wemcp:token'
     TOKEN_EXTRA_INFO_REDIS_PREFIX: str = 'wemcp:token_extra_info'
@@ -156,8 +156,7 @@ class Settings(BaseSettings):
     WS_NO_AUTH_MARKER: str = 'internal'
 
     # CORS
-    CORS_ALLOWED_ORIGINS: list[str] = [  # 末尾不带斜杠
-        'http://127.0.0.1:8000',
+    CORS_ALLOWED_ORIGINS: list[str] = [
         'http://127.0.0.1:3000',
         'http://localhost:3000',
         'https://www.wemcp.cn',

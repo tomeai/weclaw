@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ExternalLink, GitBranch, Package, Terminal, User } from "lucide-react"
+import { ExternalLink, GitBranch, User } from "lucide-react"
 import { useEffect, useState } from "react"
 
 interface McpDetailModalProps {
@@ -54,37 +54,6 @@ export function McpDetailModal({
     }
   }, [open, serverId])
 
-  // 获取服务器类型徽章
-  const getServerTypeBadge = (type: string) => {
-    const variants: Record<
-      string,
-      "default" | "secondary" | "destructive" | "outline"
-    > = {
-      hosted: "default",
-      local: "secondary",
-    }
-    return (
-      <Badge variant={variants[type] || "outline"}>
-        {type === "hosted" ? "托管" : "本地"}
-      </Badge>
-    )
-  }
-
-  // 获取编译类型徽章
-  const getCompileTypeBadge = (type: string) => {
-    const variants: Record<
-      string,
-      "default" | "secondary" | "destructive" | "outline"
-    > = {
-      package: "default",
-      stdio: "secondary",
-    }
-    return (
-      <Badge variant={variants[type] || "outline"}>
-        {type === "package" ? "包" : "STDIO"}
-      </Badge>
-    )
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,22 +104,13 @@ export function McpDetailModal({
                     <label className="text-muted-foreground text-sm font-medium">
                       服务器类型
                     </label>
-                    <div className="flex items-center gap-1">
-                      {getServerTypeBadge(serverDetail.server_type)}
-                    </div>
+                    <p className="text-sm">{serverDetail.server_type}</p>
                   </div>
                   <div>
                     <label className="text-muted-foreground text-sm font-medium">
                       编译类型
                     </label>
-                    <div className="flex items-center gap-1">
-                      {serverDetail.compile_type === "package" ? (
-                        <Package className="h-3 w-3" />
-                      ) : (
-                        <Terminal className="h-3 w-3" />
-                      )}
-                      {getCompileTypeBadge(serverDetail.compile_type)}
-                    </div>
+                    <p className="text-sm">{serverDetail.compile_type}</p>
                   </div>
                 </div>
               </div>

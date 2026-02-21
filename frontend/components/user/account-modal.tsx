@@ -93,15 +93,15 @@ function AccountPanel() {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground"
-          onClick={() => setIsEditing((v) => !v)}
-          title={isEditing ? "取消编辑" : "编辑资料"}
-        >
-          {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-        </Button>
+        {/*<Button*/}
+        {/*  variant="ghost"*/}
+        {/*  size="icon"*/}
+        {/*  className="text-muted-foreground hover:text-foreground"*/}
+        {/*  onClick={() => setIsEditing((v) => !v)}*/}
+        {/*  title={isEditing ? "取消编辑" : "编辑资料"}*/}
+        {/*>*/}
+        {/*  {isEditing ? <X className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}*/}
+        {/*</Button>*/}
       </div>
 
       {/* Plan / usage card */}

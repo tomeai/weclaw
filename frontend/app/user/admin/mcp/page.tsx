@@ -52,13 +52,11 @@ import {
   ChevronRight,
   Edit,
   Eye,
-  Package,
   Plus,
   RefreshCw,
   Search,
   Star,
   Tags,
-  Terminal,
   Trash2,
 } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -160,21 +158,9 @@ export default function McpAdminPage() {
     return new Date(dateString).toLocaleString("zh-CN")
   }
 
-  const getServerTypeBadge = (type: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      hosted: "default",
-      local: "secondary",
-    }
-    return <Badge variant={variants[type] || "outline"}>{type === "hosted" ? "托管" : "本地"}</Badge>
-  }
+  const getServerTypeBadge = (type: string) => type
 
-  const getCompileTypeBadge = (type: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      package: "default",
-      stdio: "secondary",
-    }
-    return <Badge variant={variants[type] || "outline"}>{type === "package" ? "包" : "STDIO"}</Badge>
-  }
+  const getCompileTypeBadge = (type: string) => type
 
   const handleViewDetail = (serverId: number) => {
     setSelectedServerId(serverId)
@@ -316,8 +302,8 @@ export default function McpAdminPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">部署类型</SelectItem>
-                      <SelectItem value="hosted">托管</SelectItem>
-                      <SelectItem value="local">本地</SelectItem>
+                      <SelectItem value="hosted">hosted</SelectItem>
+                      <SelectItem value="local">local</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select
@@ -412,16 +398,7 @@ export default function McpAdminPage() {
                               </div>
                             </TableCell>
                             <TableCell>{getServerTypeBadge(server.server_type)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                {server.compile_type === "package" ? (
-                                  <Package className="h-3 w-3" />
-                                ) : (
-                                  <Terminal className="h-3 w-3" />
-                                )}
-                                {getCompileTypeBadge(server.compile_type)}
-                              </div>
-                            </TableCell>
+                            <TableCell>{getCompileTypeBadge(server.compile_type)}</TableCell>
                             <TableCell>{formatDate(server.created_time)}</TableCell>
                             <TableCell>{formatDate(server.updated_time)}</TableCell>
                             <TableCell className="text-right">

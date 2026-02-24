@@ -36,9 +36,6 @@ COPY . .
 # Set Next.js telemetry to disabled
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy production environment variables for build
-COPY .env.production .env.production
-
 # Build the application
 RUN npm run build
 

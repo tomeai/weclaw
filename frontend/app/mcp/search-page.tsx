@@ -154,9 +154,9 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-      {/* Left Sidebar - Categories */}
-      <aside className="sticky top-[var(--spacing-app-header)] h-[calc(100vh-var(--spacing-app-header))] w-[220px] flex-shrink-0 border-r border-gray-200 dark:border-gray-800">
+    <div className="mx-auto flex w-full max-w-7xl flex-col px-4 sm:px-6 md:flex-row lg:px-8">
+      {/* Left Sidebar - Categories (Desktop only) */}
+      <aside className="sticky top-[var(--spacing-app-header)] hidden h-[calc(100vh-var(--spacing-app-header))] w-[220px] flex-shrink-0 border-r border-gray-200 dark:border-gray-800 md:block">
         <ScrollArea className="h-full">
           <div className="py-3 pr-2">
             {/* All category */}
@@ -212,7 +212,45 @@ export default function SearchPage() {
 
       {/* Right Content */}
       <main className="min-w-0 flex-1">
-        <div className="py-3 pl-6">
+        <div className="py-3 md:pl-6">
+          {/* Mobile Category Tabs */}
+          <div className="-mx-4 mb-4 overflow-x-auto px-4 md:hidden">
+            <div className="flex gap-2 pb-2">
+              <button
+                onClick={() => handleCategoryClick(0)}
+                className={cn(
+                  "flex-shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors",
+                  selectedCategoryId === 0
+                    ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                    : "border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400"
+                )}
+              >
+                全部
+              </button>
+              {isCategoryLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-8 w-16 flex-shrink-0 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800"
+                    />
+                  ))
+                : categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => handleCategoryClick(category.id)}
+                      className={cn(
+                        "flex-shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors",
+                        selectedCategoryId === category.id
+                          ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                          : "border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400"
+                      )}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+            </div>
+          </div>
+
           {/* Search Bar */}
           <div className="mb-6 flex items-center gap-3">
             <div className="relative flex-1">
@@ -231,14 +269,14 @@ export default function SearchPage() {
             <Link href="/build/mcp">
               <Button variant="outline" className="h-10 gap-2 whitespace-nowrap">
                 <CloudArrowDown className="h-4 w-4" />
-                提交 MCP
+                <span className="hidden sm:inline">提交 MCP</span>
               </Button>
             </Link>
           </div>
 
           {/* Loading state */}
           {isLoading && (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-[200px] animate-pulse rounded-xl border border-border/50 bg-card p-5">
                   <div className="mb-4 flex items-center gap-3">
@@ -260,7 +298,7 @@ export default function SearchPage() {
 
           {/* Server Cards Grid */}
           {!isLoading && (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {mcpServers.map((server) => (
                 <Link
                   href={`/mcp/${server.owner}/${server.server_name}`}
@@ -344,7 +382,7 @@ export default function SearchPage() {
 
           {/* Pagination */}
           {totalPages > 1 && !isLoading && (
-            <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+            <div className="mt-8 flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 共 {totalServers} 个服务器，第 {currentPage}/{totalPages} 页
               </p>

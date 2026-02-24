@@ -1,6 +1,6 @@
 import os
 
-from asyncio import create_task
+from asyncio import create_task, sleep
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -32,6 +32,25 @@ from backend.utils.serializers import MsgSpecJSONResponse
 from backend.utils.snowflake import snowflake
 
 
+async def _create_tables_with_lock() -> None:
+    """使用 Redis 分布式锁执行建表，避免多 worker 并发 DDL 冲突"""
+    lock_key = 'db:create_tables:lock'
+    lock_ttl = 60
+
+    acquired = await redis_client.set(lock_key, '1', nx=True, ex=lock_ttl)
+    if acquired:
+        try:
+            await create_tables()
+        finally:
+            await redis_client.delete(lock_key)
+    else:
+        # 等待持锁 worker 完成建表
+        for _ in range(lock_ttl):
+            await sleep(1)
+            if not await redis_client.exists(lock_key):
+                break
+
+
 @asynccontextmanager
 async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     """
@@ -40,11 +59,11 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     :param app: FastAPI 应用实例
     :return:
     """
-    # 创建数据库表
-    await create_tables()
-
-    # 初始化 redis
+    # 初始化 redis（需先初始化，供分布式锁使用）
     await redis_client.init()
+
+    # 创建数据库表（使用分布式锁，避免多 worker 并发 DDL 冲突）
+    await _create_tables_with_lock()
 
     # 初始化 snowflake 节点
     await snowflake.init()

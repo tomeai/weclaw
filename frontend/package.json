@@ -72,7 +72,11 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "overrides": {
-    "@ag-ui/client": "0.0.42"
+  "pnpm": {
+    "overrides": {
+      "@ag-ui/client": "0.0.43",
+      "@ag-ui/core": "0.0.43",
+      "@ag-ui/encoder": "0.0.43"
+    }
   }
 }

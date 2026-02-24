@@ -6,7 +6,7 @@
 export const COPILOT_AGENT_NAME = "wemcp_agent"
 
 // Runtime URL for CopilotKit API route
-export const COPILOT_RUNTIME_URL = "/api/copilotkit"
+export const COPILOT_RUNTIME_URL = "/agui/copilotkit"
 
 // Default chat configuration
 export const COPILOT_DEFAULT_CHAT_ID = "wemcp-chat"

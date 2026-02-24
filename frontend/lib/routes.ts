@@ -38,10 +38,6 @@ export const API_ROUTE_SKILL_ADMIN_SERVER_DETAIL = "/api/v1/admin/skill/servers"
 export const API_ROUTE_SKILL_ADMIN_CATEGORY = "/api/v1/admin/skill/categories/get"
 export const API_ROUTE_SKILL_ADMIN_CATEGORY_CREATE = "/api/v1/admin/skill/categories/create"
 
-// CopilotKit
-export const API_ROUTE_COPILOTKIT = "/api/copilotkit"
-export const API_ROUTE_AG_UI = "/ag-ui"
-
 // Sys - User & Role Management
 export const API_ROUTE_SYS_USERS = "/api/v1/admin/sys/users"
 export const API_ROUTE_SYS_ROLES = "/api/v1/admin/sys/roles"

@@ -14,7 +14,7 @@ export const POST = async (req: NextRequest) => {
   })
 
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    endpoint: "/api/copilotkit",
+    endpoint: "/agui/copilotkit",
     serviceAdapter: new ExperimentalEmptyAdapter(),
     runtime: new CopilotRuntime({
       agents: {

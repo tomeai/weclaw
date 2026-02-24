@@ -98,6 +98,7 @@ def register_app() -> FastAPI:
         openapi_url=settings.FASTAPI_OPENAPI_URL,
         default_response_class=MsgSpecJSONResponse,
         lifespan=register_init,
+        redirect_slashes=False,
     )
 
     # 注册组件

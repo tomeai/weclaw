@@ -161,6 +161,8 @@ class Settings(BaseSettings):
         'http://localhost:3000',
         'https://www.wemcp.cn',
         'https://wemcp.cn',
+        'https://www.wemcp.chat',
+        'https://wemcp.chat',
     ]
     CORS_EXPOSE_HEADERS: list[str] = [
         'X-Request-ID',

@@ -1,0 +1,141 @@
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: wemcp-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - wemcp_network
+    depends_on:
+      - wemcp_studio
+      - wemcp_server
+
+  wemcp_studio:
+    container_name: wemcp-studio
+    image: ghcr.io/tomeai/wemcp-frontend:sha-66083a6
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config/.env.fe.production:/app/.env.production
+    environment:
+      TZ: Asia/Shanghai
+    networks:
+      - wemcp_network
+    depends_on:
+      - wemcp_server
+    restart: always
+
+  wemcp_server:
+    image: ghcr.io/tomeai/wemcp-server:sha-66083a6
+    container_name: wemcp-server
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - wemcp_mysql
+      - wemcp_redis
+      - wemcp_worker
+    volumes:
+      - ./config/.env.be.production:/wemcp/backend/.env
+    networks:
+      - wemcp_network
+    command:
+      - bash
+      - -c
+      - |
+        wait-for-it -s wemcp_mysql:3306 -s wemcp_redis:6379 -t 300
+        supervisord -c /etc/supervisor/supervisord.conf
+        supervisorctl restart
+
+  wemcp_worker:
+    image: ghcr.io/tomeai/wemcp-celery:sha-66083a6
+    container_name: wemcp-worker
+    restart: always
+    ports:
+      - "8555:8555"
+    depends_on:
+      - wemcp_redis
+    volumes:
+      - ./config/.env.be.production:/wemcp/backend/.env
+    networks:
+      - wemcp_network
+    command:
+      - bash
+      - -c
+      - |
+        wait-for-it -s wemcp_redis:6379 -t 300
+        supervisord -c /etc/supervisor/supervisord.conf
+        supervisorctl restart
+
+  wemcp_mysql:
+    image: mysql:8.0.41
+    ports:
+      - "${DOCKER_MYSQL_MAP_PORT:-3306}:3306"
+    container_name: wemcp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      TZ: Asia/Shanghai
+    volumes:
+      - wemcp_mysql:/var/lib/mysql
+      - ./sql/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - wemcp_network
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --lower_case_table_names=1
+
+  #  wemcp_postgres:
+  #    image: postgres:16
+  #    ports:
+  #      - "${DOCKER_POSTGRES_MAP_PORT:-5432}:5432"
+  #    container_name: wemcp-postgres
+  #    restart: always
+  #    environment:
+  #      POSTGRES_DB: wemcp
+  #      POSTGRES_PASSWORD: 123456
+  #      TZ: Asia/Shanghai
+  #    volumes:
+  #      - wemcp_postgres:/var/lib/postgresql/data
+  #    networks:
+  #      - wemcp_network
+
+  wemcp_redis:
+    image: redis
+    ports:
+      - "${DOCKER_REDIS_MAP_PORT:-6379}:6379"
+    container_name: wemcp-redis
+    restart: always
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - wemcp_redis:/data
+    networks:
+      - wemcp_network
+
+networks:
+  wemcp_network:
+    name: wemcp_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.10.10.0/24
+
+volumes:
+  wemcp_mysql:
+    name: wemcp_mysql
+  wemcp_redis:
+    name: wemcp_redis
+  wemcp_postgres:
+    name: wemcp_postgres
+  caddy_data:
+  caddy_config:

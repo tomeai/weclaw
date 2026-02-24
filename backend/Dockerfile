@@ -26,8 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # === Runtime base server image ===
 FROM python:3.12-slim AS base_server
 
-RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && apt-get update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends supervisor \
     && rm -rf /var/lib/apt/lists/*
 

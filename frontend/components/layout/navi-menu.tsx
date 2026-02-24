@@ -1,6 +1,5 @@
 "use client";
 
-import { AddMcpButton } from "@/components/mcp/add-mcp-button";
 import { useUser } from "@/components/providers/user-provider";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { List } from "@phosphor-icons/react";
@@ -81,7 +80,7 @@ export function NaviMenu() {
                   }
                   onClick={() => setOpen(false)}
                 >
-                  Skills
+                  Skill
                 </Link>
                 {/*<Link*/}
                 {/*  href="/agent"*/}
@@ -92,24 +91,9 @@ export function NaviMenu() {
                 {/*>*/}
                 {/*  Agent*/}
                 {/*</Link>*/}
-                <div className="py-2">
-                  <AddMcpButton
-                    onClick={
-                      !isLoggedIn
-                        ? () => {
-                            setOpen(false)
-                            window.location.href = "/user/auth/login"
-                          }
-                        : () => {
-                            setOpen(false)
-                            window.location.href = "/build/mcp"
-                          }
-                    }
-                  />
-                </div>
                 {!isLoggedIn && (
                   <Link
-                    href="/auth/login"
+                    href="/user/auth/login"
                     onClick={() => setOpen(false)}
                     className="font-base text-foreground hover:text-primary block py-3 text-left text-lg transition-colors"
                   >

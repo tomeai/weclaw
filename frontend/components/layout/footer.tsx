@@ -27,7 +27,7 @@ export default function Footer() {
           {/* Social icons */}
           <div className="flex items-center gap-3">
             <a
-              href="https://twitter.com"
+              href="https://x.com/opentomeai"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-1.5 transition-colors"
@@ -44,7 +44,7 @@ export default function Footer() {
               </svg>
             </a>
             <a
-              href="https://github.com"
+              href="https://github.com/tomeai/wemcp"
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-1.5 transition-colors"

@@ -1,4 +1,4 @@
-export const API_ROUTE_MCPS = "/api/v1/mcp"
+export const API_ROUTE_MCPS = "/api/v1/mcp/"
 export const API_ROUTE_MY_MCPS = "/api/v1/mcp/mine"
 export const API_ROUTE_MCP_CATEGORIES = "/api/v1/mcp/categories"
 export const API_ROUTE_MCP_CATEGORIES_RECOMMEND = "/api/v1/mcp/categories/recommend"
@@ -18,7 +18,7 @@ export const API_ROUTE_SEND_EMAIL_CODE = "/api/v1/admin/auth/send-code"
 export const API_ROUTE_EMAIL_LOGIN = "/api/v1/admin/auth/email-login"
 
 // Agent
-export const API_ROUTE_AGENTS = "/api/v1/agent"
+export const API_ROUTE_AGENTS = "/api/v1/agent/"
 export const API_ROUTE_MY_AGENTS = "/api/v1/agent/mine"
 export const API_ROUTE_AGENT_CHAT = "/api/v1/agent/chat"
 export const API_ROUTE_AGENT_CATEGORIES = "/api/v1/agent/categories"
@@ -28,7 +28,7 @@ export const API_ROUTE_AGENT_ADMIN_CATEGORY = "/api/v1/admin/agent/categories/ge
 export const API_ROUTE_AGENT_ADMIN_CATEGORY_CREATE = "/api/v1/admin/agent/categories/create"
 
 // Skill
-export const API_ROUTE_SKILLS = "/api/v1/skill"
+export const API_ROUTE_SKILLS = "/api/v1/skill/"
 export const API_ROUTE_SKILL_CATEGORIES = "/api/v1/skill/categories"
 export const API_ROUTE_SKILL_PUBLISH = "/api/v1/skill/publish"
 export const API_ROUTE_MY_SKILLS = "/api/v1/skill/mine"

@@ -209,12 +209,10 @@ export function searchMcpServers(
   params: McpSearchParams = {}
 ): Promise<PaginatedData<McpSearchServerItem>> {
   return http.get<PaginatedData<McpSearchServerItem>>(API_ROUTE_MCPS, {
-    params: {
-      page: params.page || 1,
-      size: params.size || 10,
-      category_id: params.category_id ?? undefined,
-      keyword: params.keyword || undefined,
-    },
+    page: params.page || 1,
+    size: params.size || 10,
+    category_id: params.category_id || undefined,
+    keyword: params.keyword || undefined,
   })
 }
 

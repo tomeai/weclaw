@@ -46,12 +46,10 @@ export function searchSkills(
   params: SkillSearchParams = {}
 ): Promise<PaginatedData<SkillSearchItem>> {
   return http.get<PaginatedData<SkillSearchItem>>(API_ROUTE_SKILLS, {
-    params: {
-      page: params.page || 1,
-      size: params.size || 20,
-      category_id: params.category_id ?? undefined,
-      keyword: params.keyword || undefined,
-    },
+    page: params.page || 1,
+    size: params.size || 20,
+    category_id: params.category_id || undefined,
+    keyword: params.keyword || undefined,
   })
 }
 

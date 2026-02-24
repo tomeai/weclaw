@@ -1,9 +1,9 @@
 import { HttpAgent } from "@ag-ui/client";
 import { CopilotRuntime, copilotRuntimeNextJSAppRouterEndpoint, ExperimentalEmptyAdapter } from "@copilotkit/runtime";
 import { NextRequest } from "next/server";
+import { API_ROUTE_AGENT_CHAT } from "@/lib/routes";
 
-
-const BACKEND_URL = "http://127.0.0.1:8000/api/v1/agent/chat"
+const BACKEND_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}${API_ROUTE_AGENT_CHAT}`
 
 export const POST = async (req: NextRequest) => {
   // 不需要手动设置 Authorization header
@@ -14,7 +14,7 @@ export const POST = async (req: NextRequest) => {
   })
 
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    endpoint: "/api/copilotkit",
+    endpoint: "/agui/copilotkit",
     serviceAdapter: new ExperimentalEmptyAdapter(),
     runtime: new CopilotRuntime({
       agents: {

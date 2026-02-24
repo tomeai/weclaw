@@ -2,7 +2,7 @@
 ARG SERVER_TYPE=fastapi_server
 
 # === Python environment from uv ===
-FROM astral/uv:python3.12-bookworm-slim AS builder
+FROM astral/uv:python3.13-bookworm-slim AS builder
 
 # Used for build Python packages
 RUN apt-get update \
@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-default-groups --group server
 
 # === Runtime base server image ===
-FROM python:3.12-slim AS base_server
+FROM python:3.13-slim AS base_server
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends supervisor \

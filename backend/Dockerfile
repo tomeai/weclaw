@@ -54,6 +54,14 @@ COPY deploy/celery.conf /etc/supervisor/conf.d/
 
 RUN mkdir -p /var/log/celery
 
+RUN apt-get update && apt-get install -y curl gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
+RUN node -v && npm -v && npx -v
+
 EXPOSE 8555
 
 # Build image

@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 
 from collections import defaultdict
 from datetime import datetime
@@ -12,7 +11,7 @@ from ag_ui.core.events import (
 )
 from agentscope.agent import ReActAgent
 from agentscope.formatter import DashScopeChatFormatter
-from agentscope.mcp import HttpStatefulClient
+from agentscope.mcp import HttpStatefulClient, StdIOStatefulClient
 from agentscope.memory import (
     AsyncSQLAlchemyMemory,
 )
@@ -23,12 +22,14 @@ from agentscope.tool import Toolkit
 from agentscope_runtime.engine.deployers.adapter.agui.agui_adapter_utils import AGUIAdapter
 from app.agent.model.chat import AgentChat
 from app.agent.schema.agent import RunBody
+from app.mcp.service.mcp_server_service import mcp_server_service
+from app.skills.service.skill_service import skill_service
 from common.response.response_schema import response_base
 from common.security.jwt import DependsJwtAuth
 from core.conf import settings
 from database.chat_db import get_db as get_chat_db
 from database.db import async_db_session, get_db
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from sqlalchemy import select
@@ -66,6 +67,8 @@ async def generate_title(thread_id: str, query: str):
 async def chat_endpoint(
     request: Request,
     chat_req: RunBody,
+    mcps: str | None = Query(None, description='选中的MCP服务器，格式: owner/name，逗号分隔'),
+    skills: str | None = Query(None, description='选中的技能，格式: owner/name，逗号分隔'),
     db_session: AsyncSession = Depends(get_db),
     chat_db_session: AsyncSession = Depends(get_chat_db),
 ):
@@ -101,6 +104,42 @@ async def chat_endpoint(
     if need_title and first_query:
         asyncio.create_task(generate_title(thread_id, first_query))
 
+    # 加载选中的 MCP 配置（在生成器外提前加载，避免在 async generator 中做 DB 操作）
+    mcp_configs: list[tuple[str, dict, str]] = []  # (name, config, transport)
+    if mcps:
+        for item in mcps.split(','):
+            item = item.strip()
+            if '/' not in item:
+                continue
+            owner, server_name = item.split('/', 1)
+            try:
+                mcp_server = await mcp_server_service.get_mcp_by_user(username=owner, server_name=server_name)
+                if mcp_server and mcp_server.server_config:
+                    for mcp_name, mcp_cfg in mcp_server.server_config.get('mcpServers', {}).items():
+                        mcp_configs.append((mcp_name, mcp_cfg, mcp_server.transport))
+
+            except Exception as e:
+                logger.warning('Failed to load MCP %s: %s', item, e)
+
+    # 加载选中的技能描述，拼入 sys_prompt
+    skill_parts: list[str] = []
+    if skills:
+        for item in skills.split(','):
+            item = item.strip()
+            if '/' not in item:
+                continue
+            owner, skill_name = item.split('/', 1)
+            try:
+                skill = await skill_service.get_skill_by_user(username=owner, skill_name=skill_name)
+                if skill and skill.description:
+                    skill_parts.append(f"Skill '{skill.title}': {skill.description}")
+            except Exception as e:
+                logger.warning('Failed to load skill %s: %s', item, e)
+
+    sys_prompt = '你是一个名为 Jarvis 的助手'
+    if skill_parts:
+        sys_prompt += '\n\n可用技能:\n' + '\n'.join(skill_parts)
+
     async def event_generator():
         adapter = AGUIAdapter(thread_id=thread_id, run_id=run_id)
         # Track cumulative text length per msg.id to compute delta
@@ -112,21 +151,61 @@ async def chat_endpoint(
             session_id=thread_id,
         )
 
-        map_client = HttpStatefulClient(
-            name='mcp_services_stateless',
-            transport='streamable_http',
-            url='https://mcp.amap.com/mcp?key=16d2c1ab42a4fa07d82faf602af4bcef',
-        )
-
         toolkit = Toolkit()
+        mcp_clients: list[HttpStatefulClient | StdIOStatefulClient] = []
 
         try:
-            await map_client.connect()
-            await toolkit.register_mcp_client(map_client)
+            for name, config, transport in mcp_configs:
+                if transport == 'stdio':
+                    stdio_config = {
+                        'command': config.get('command'),
+                        'args': config.get('args'),
+                        'env': config.get('env'),
+                        'cwd': config.get('cwd'),
+                    }
+                    stdio_client = StdIOStatefulClient(
+                        name=name,
+                        **stdio_config,
+                    )
+                    await stdio_client.connect()
+                    await toolkit.register_mcp_client(stdio_client)
+                    mcp_clients.append(stdio_client)
+                elif transport == 'see':
+                    sse_config = {
+                        'transport': 'sse',
+                        'url': config.get('url'),
+                        'headers': config.get('headers'),
+                        'timeout': config.get('timeout'),
+                        'sse_read_timeout': config.get('sse_read_timeout'),
+                    }
+                    stateful_client = HttpStatefulClient(
+                        name=mcp_name,
+                        **sse_config,
+                    )
+
+                    await stateful_client.connect()
+                    await toolkit.register_mcp_client(stateful_client)
+                    mcp_clients.append(stateful_client)
+                elif transport == 'streamable_http':
+                    http_config = {
+                        'transport': 'streamable_http',
+                        'url': config.get('url'),
+                        'headers': config.get('headers'),
+                        'timeout': config.get('timeout'),
+                        'sse_read_timeout': config.get('sse_read_timeout'),
+                    }
+                    stateful_client = HttpStatefulClient(
+                        name=mcp_name,
+                        **http_config,
+                    )
+
+                    await stateful_client.connect()
+                    await toolkit.register_mcp_client(stateful_client)
+                    mcp_clients.append(stateful_client)
 
             agent = ReActAgent(
                 name='Jarvis',
-                sys_prompt='你是一个名为 Jarvis 的助手',
+                sys_prompt=sys_prompt,
                 model=DashScopeChatModel(
                     model_name='qwen-max',
                     api_key=settings.DASHSCOPE_API_KEY,
@@ -174,11 +253,7 @@ async def chat_endpoint(
                     await session.commit()
 
         except Exception as e:
-            logger.error(
-                'Error in chat event stream: %s\n%s',
-                e,
-                traceback.format_exc(),
-            )
+            logger.error('Failed to load thread %s: %s', thread_id, e)
             error_event = RunErrorEvent(
                 message=f'Unexpected stream error: {e}',
                 code='internal_error',
@@ -186,7 +261,9 @@ async def chat_endpoint(
             yield sse(error_event)
 
         finally:
-            await map_client.close()
+            # Close MCP clients in LIFO order
+            for client in reversed(mcp_clients):
+                await client.close()
 
     return StreamingResponse(
         event_generator(),

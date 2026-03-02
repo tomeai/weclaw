@@ -1,5 +1,5 @@
 import http from "@/lib/http";
-import { API_ROUTE_MCP_ADMIN_CATEGORY, API_ROUTE_MCP_ADMIN_CATEGORY_CREATE, API_ROUTE_MCP_ADMIN_SERVER_DETAIL, API_ROUTE_MCP_ADMIN_SERVERS, API_ROUTE_MCP_CATEGORIES, API_ROUTE_MCP_CATEGORIES_RECOMMEND, API_ROUTE_MCP_DEPLOY_PACKAGE, API_ROUTE_MCP_SERVER_DETAIL, API_ROUTE_MCP_SERVER_FEED, API_ROUTE_MCP_SERVER_RECOMMEND, API_ROUTE_MCPS, API_ROUTE_MY_MCPS } from "./routes";
+import { API_ROUTE_ADMIN_DEPLOY_LOGS, API_ROUTE_MCP_ADMIN_CATEGORY, API_ROUTE_MCP_ADMIN_CATEGORY_CREATE, API_ROUTE_MCP_ADMIN_SERVER_DETAIL, API_ROUTE_MCP_ADMIN_SERVERS, API_ROUTE_MCP_CATEGORIES, API_ROUTE_MCP_CATEGORIES_RECOMMEND, API_ROUTE_MCP_DEPLOY_PACKAGE, API_ROUTE_MCP_SERVER_DETAIL, API_ROUTE_MCP_SERVER_FEED, API_ROUTE_MCP_SERVER_RECOMMEND, API_ROUTE_MCPS, API_ROUTE_MY_DEPLOY_LOGS, API_ROUTE_MY_MCPS } from "./routes";
 
 
 // ============ 通用类型 ============
@@ -362,5 +362,56 @@ export function getMyMcps(
   return http.get<PaginatedData<MyMcpItem>>(API_ROUTE_MY_MCPS, {
     page: params.page ?? 1,
     size: params.size ?? 20,
+  })
+}
+
+// ============ Deploy Logs ============
+
+export type DeployLogStatus = 'PENDING' | 'STARTED' | 'SUCCESS' | 'FAILURE' | 'RETRY' | 'REVOKED'
+
+export interface DeployLogItem {
+  id: number
+  task_id: string
+  task_status: DeployLogStatus
+  task_result: string | null
+  traceback: string | null
+  server_title: string | null
+  created_time: string
+  updated_time: string | null
+}
+
+/** 获取我的部署记录 */
+export function getMyDeployLogs(
+  params: { page?: number; size?: number } = {}
+): Promise<PaginatedData<DeployLogItem>> {
+  return http.get<PaginatedData<DeployLogItem>>(API_ROUTE_MY_DEPLOY_LOGS, {
+    page: params.page ?? 1,
+    size: params.size ?? 20,
+  })
+}
+
+// ============ Admin Deploy Logs ============
+
+export interface AdminDeployLogItem extends DeployLogItem {
+  username: string | null
+}
+
+export interface AdminDeployLogSearchParams {
+  page?: number
+  size?: number
+  username?: string
+  server_title?: string
+  task_status?: string
+}
+
+/** 管理端 - 查询所有部署日志 */
+export function getAdminDeployLogs(
+  params: AdminDeployLogSearchParams = {}
+): Promise<PaginatedData<AdminDeployLogItem>> {
+  const { page = 1, size = 20, ...filters } = params
+  return http.post<PaginatedData<AdminDeployLogItem>>(API_ROUTE_ADMIN_DEPLOY_LOGS, {
+    page,
+    size,
+    ...filters,
   })
 }

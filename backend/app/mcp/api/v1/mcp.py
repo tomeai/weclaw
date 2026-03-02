@@ -88,13 +88,13 @@ async def get_mcp(
     return response_base.success(data=result)
 
 
-@router.post('/{username}/{server_name}/invoke')
+@router.post('/invoke')
 async def call_tool(
-    username: Annotated[str, Path(description='username')],
-    server_name: Annotated[str, Path(description='server_name')],
     call_param: CallToolParam,
 ):
-    mcp_server = await mcp_server_service.get_mcp_by_user(username=username, server_name=server_name)
+    mcp_server = await mcp_server_service.get_mcp_by_user(
+        username=call_param.username, server_name=call_param.server_name
+    )
     if not mcp_server:
         raise errors.NotFoundError(msg='MCP服务器不存在')
 

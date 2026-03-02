@@ -26,13 +26,11 @@ class McpServer(Base):
 
     # 原始协议: streamable-http、sse、stdio
     transport: Mapped[str | None] = mapped_column(String(20), default=None, comment='streamable-http、sse、stdio')
-    # mcp server 类型 hosted、local  对于 playwright、文件操作 等必须在本地执行
-    # local 类型的不进行编译，不会生成代理（wemcp）
+    # remote（可以通过 streamable-http ---> stdio 转发）、local（必须在本地）
     server_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='hosted、local')
     # 编译类型: package、openapi
     compile_type: Mapped[str | None] = mapped_column(String(20), default=None, comment='编译类型')
-    # 运行环境
-    runtime_type: Mapped[str] = mapped_column(String(20), default=None, comment='运行环境')
+
     # server信息
     server_config: Mapped[dict[str, Any] | None] = mapped_column(JSON, default=None, comment='server config')
     # 环境变量

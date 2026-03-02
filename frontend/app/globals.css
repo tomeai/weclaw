@@ -250,3 +250,14 @@ code {
 .copilotKitChat .copilotKitMessages {
   overflow-y: auto;
 }
+
+/* No messages: center the input vertically */
+[data-has-messages="false"] .copilotKitChat {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+[data-has-messages="false"] .copilotKitMessages {
+  display: none !important;
+}

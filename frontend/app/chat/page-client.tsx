@@ -1,11 +1,14 @@
 "use client";
 
 import { ChatBot } from "@/components/chat-bot";
-import { COPILOT_AGENT_NAME, COPILOT_RUNTIME_URL } from "@/lib/copilotkit/config";
+import type { SelectedContext } from "@/components/chat-bot/types";
+import { COPILOT_AGENT_NAME } from "@/lib/copilotkit/config";
 import { CopilotKit } from "@copilotkit/react-core";
 import "@copilotkit/react-ui/styles.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatSidebar, type ChatSidebarRef } from "./chat-sidebar";
+
+const COPILOT_BASE_URL = "/agui/copilotkit"
 
 type ChatClientProps = {
   type?: string
@@ -21,8 +24,7 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
   const handleNewChat = useCallback(() => {
     const newId = crypto.randomUUID()
     setThreadId(newId)
-    sidebarRef.current?.addThread({ thread_id: newId, chat_title: "新对话" })
-    addedToSidebarRef.current.add(newId)
+    // 不立即加入侧边栏，等发送第一条消息后再显示
   }, [])
 
   const handleSelectThread = useCallback((id: string) => {
@@ -39,6 +41,63 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
     }
     setAuthReady(true)
   }, [])
+
+  // Selected MCPs and skills (lifted here to build dynamic runtimeUrl)
+  const [selectedMcps, setSelectedMcps] = useState<SelectedContext[]>(() => {
+    if (type === "mcp" && owner && name) {
+      return [{ type: "mcp", owner, name, label: name }]
+    }
+    return []
+  })
+  const [selectedSkills, setSelectedSkills] = useState<SelectedContext[]>(() => {
+    if (type === "skill" && owner && name) {
+      return [{ type: "skill", owner, name, label: name }]
+    }
+    return []
+  })
+
+  const onToggleMcp = useCallback((ctx: SelectedContext) => {
+    setSelectedMcps((prev) => {
+      const exists = prev.some((s) => s.owner === ctx.owner && s.name === ctx.name)
+      return exists
+        ? prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
+        : [...prev, ctx]
+    })
+  }, [])
+
+  const onToggleSkill = useCallback((ctx: SelectedContext) => {
+    setSelectedSkills((prev) => {
+      const exists = prev.some((s) => s.owner === ctx.owner && s.name === ctx.name)
+      return exists
+        ? prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
+        : [...prev, ctx]
+    })
+  }, [])
+
+  const onRemoveMcp = useCallback((ctx: SelectedContext) => {
+    setSelectedMcps((prev) =>
+      prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
+    )
+  }, [])
+
+  const onRemoveSkill = useCallback((ctx: SelectedContext) => {
+    setSelectedSkills((prev) =>
+      prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
+    )
+  }, [])
+
+  // Build runtime URL with selected MCPs and skills as query params
+  const runtimeUrl = useMemo(() => {
+    const params = new URLSearchParams()
+    if (selectedMcps.length > 0) {
+      params.set("mcps", selectedMcps.map((m) => `${m.owner}/${m.name}`).join(","))
+    }
+    if (selectedSkills.length > 0) {
+      params.set("skills", selectedSkills.map((s) => `${s.owner}/${s.name}`).join(","))
+    }
+    const qs = params.toString()
+    return qs ? `${COPILOT_BASE_URL}?${qs}` : COPILOT_BASE_URL
+  }, [selectedMcps, selectedSkills])
 
   // 首次发消息时，将当前 thread 添加到 sidebar
   const handleSendMessage = useCallback(() => {
@@ -60,7 +119,7 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
         {authReady ? (
           <CopilotKit
             key={threadId ?? "new"}
-            runtimeUrl={COPILOT_RUNTIME_URL}
+            runtimeUrl={runtimeUrl}
             agent={COPILOT_AGENT_NAME}
             threadId={threadId}
             showDevConsole={false}
@@ -68,7 +127,19 @@ export default function ChatClient({ type, owner, name }: ChatClientProps) {
             publicApiKey="self-hosted"
             headers={authHeaders}
           >
-            <ChatBot type={type} owner={owner} name={name} threadId={threadId} onSendMessage={handleSendMessage} />
+            <ChatBot
+              type={type}
+              owner={owner}
+              name={name}
+              threadId={threadId}
+              onSendMessage={handleSendMessage}
+              selectedMcps={selectedMcps}
+              selectedSkills={selectedSkills}
+              onToggleMcp={onToggleMcp}
+              onToggleSkill={onToggleSkill}
+              onRemoveMcp={onRemoveMcp}
+              onRemoveSkill={onRemoveSkill}
+            />
           </CopilotKit>
         ) : (
           <div className="flex flex-1 items-center justify-center">

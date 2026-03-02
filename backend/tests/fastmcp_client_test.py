@@ -26,20 +26,20 @@ mcp_config = MCPConfig(
         #         "DINGTALK_Client_Secret": "your dingtalk client secret"
         #     }
         # }
-        '12306-mcp': {'args': ['-y', '12306-mcp'], 'command': 'npx'}
-        # 'amap-maps-streamableHTTP': {'url': 'https://mcp.amap.com/mcp?key=您在高德官网上申请的key'},
+        # '12306-mcp': {'args': ['-y', '12306-mcp'], 'command': 'npx'}
+        # 'amap-maps-streamableHTTP': {
+        #     # "type": "streamable_http",
+        #     # "type": "sse",
+        #     # 'url': 'https://mcp.amap.com/mcp?key=您在高德官网上申请的key'
+        #     'url': 'https://mcp.api-inference.modelscope.net/8edf6ad11e724f/mcp'
+        # },
+        'bing-cn-mcp-server': {
+            # "type": "streamable_http",
+            'url': 'https://mcp.api-inference.modelscope.net/5713e828be174e/mcp'
+        }
         # "amap-maps": {
         #     "type": "streamable_http",
         #     "url": "https://mcp.api-inference.modelscope.net/d1f3517751d743/mcp"
-        # }
-        # 'amap-maps': {
-        #     'type': 'streamable_http',
-        #     'url': 'https://mcp.api-inference.modelscope.net/b977104b502e4b/mcp',
-        #     'headers': {'Authorization': 'Bearer ms-d5361e07-3b6c-47d6-ba4a-701700fe0244'},
-        # },
-        # "amap-maps": {
-        #     "type": "sse",
-        #     "url": "https://mcp.api-inference.modelscope.net/da78b66c6ceb44/sse"
         # }
         # 'wuying-agentbay-mcp-server': {
         #     'args': ['-y', 'wuying-agentbay-mcp-server'],
@@ -76,9 +76,8 @@ mcp_config = MCPConfig(
     }
 )
 
-print(mcp_config)
-print(mcp_config.mcpServers)
-# Local Python script
+print('config', mcp_config)
+print('servers', mcp_config.mcpServers)
 client = Client(mcp_config)
 
 

@@ -1,40 +1,18 @@
-"use client"
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useUser } from "@/components/providers/user-provider"
-import {
-  getMcpCategories,
-  getMyMcps,
-  McpCategory,
-  McpSearchParams,
-  McpSearchServerItem,
-  MyMcpItem,
-  PaginatedData,
-  searchMcpServers,
-} from "@/lib/mcp"
-import { cn } from "@/lib/utils"
-import {
-  CaretLeft,
-  CaretRight,
-  CloudArrowDown,
-  MagnifyingGlass,
-} from "@phosphor-icons/react"
-import {
-  Cloud,
-  FolderOpen,
-  Globe,
-  MessageSquare,
-  Monitor,
-  Server,
-  User,
-  Wrench,
-} from "lucide-react"
-import Link from "next/link"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useUser } from "@/components/providers/user-provider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { getMcpCategories, getMyMcps, McpCategory, McpSearchParams, McpSearchServerItem, MyMcpItem, PaginatedData, searchMcpServers } from "@/lib/mcp";
+import { cn } from "@/lib/utils";
+import { CaretLeft, CaretRight, CloudArrowDown, MagnifyingGlass } from "@phosphor-icons/react";
+import { Cloud, FolderOpen, Globe, MessageSquare, Monitor, Server, User, Wrench } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 
 type ActiveTab = "community" | "mine"
 
@@ -251,44 +229,49 @@ export default function SearchPage() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col px-4 sm:px-6 md:flex-row lg:px-8">
       {/* Left Sidebar (Desktop only) */}
-      <aside className="sticky top-[var(--spacing-app-header)] hidden h-[calc(100vh-var(--spacing-app-header))] w-[220px] flex-shrink-0 border-r border-gray-200 dark:border-gray-800 md:block">
+      <aside className="sticky top-[var(--spacing-app-header)] hidden h-[calc(100vh-var(--spacing-app-header))] w-[220px] flex-shrink-0 border-r border-gray-200 md:block dark:border-gray-800">
         <ScrollArea className="h-full">
           <div className="py-3 pr-2">
-            {/* 社区 label */}
-            <div className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+            {/* 社区 */}
+            <div className="flex w-full items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
               <Globe className="h-4 w-4" />
               <span>社区</span>
             </div>
 
-            {/* Category list - only when community tab active */}
-            {activeTab === "community" && (
-              <div className="mt-1 ml-2">
-                {isCategoryLoading ? (
-                  <div className="space-y-2 px-4 py-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="h-8 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-0.5">
-                    {categories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategoryClick(category.id)}
-                        className={cn(
-                          "flex w-full items-center justify-between rounded-lg px-4 py-2 text-sm transition-colors",
+            {/* Category list - always visible */}
+            <div className="mt-1 ml-2">
+              {isCategoryLoading ? (
+                <div className="space-y-2 px-4 py-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-8 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setActiveTab("community")
+                        handleCategoryClick(category.id)
+                      }}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-4 py-2 text-sm transition-colors",
+                        activeTab === "community" &&
                           selectedCategoryId === category.id
-                            ? "bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                            : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50"
-                        )}
-                      >
-                        <span className="truncate">{category.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                          ? "bg-gray-100 font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50"
+                      )}
+                    >
+                      <span className="truncate">{category.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* 我的 tab */}
             <button
@@ -334,7 +317,10 @@ export default function SearchPage() {
                 <>
                   {isCategoryLoading
                     ? Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="h-8 w-16 flex-shrink-0 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800" />
+                        <div
+                          key={i}
+                          className="h-8 w-16 flex-shrink-0 animate-pulse rounded-full bg-gray-100 dark:bg-gray-800"
+                        />
                       ))
                     : categories.map((category) => (
                         <button
@@ -373,7 +359,10 @@ export default function SearchPage() {
                   />
                 </div>
                 <Link href="/build/mcp">
-                  <Button variant="outline" className="h-10 gap-2 whitespace-nowrap">
+                  <Button
+                    variant="outline"
+                    className="h-10 gap-2 whitespace-nowrap"
+                  >
                     <CloudArrowDown className="h-4 w-4" />
                     <span className="hidden sm:inline">提交 MCP</span>
                   </Button>
@@ -383,18 +372,21 @@ export default function SearchPage() {
               {isLoading && (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="h-[200px] animate-pulse rounded-xl border border-border/50 bg-card p-5">
+                    <div
+                      key={i}
+                      className="border-border/50 bg-card h-[200px] animate-pulse rounded-xl border p-5"
+                    >
                       <div className="mb-4 flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-muted" />
+                        <div className="bg-muted h-9 w-9 rounded-full" />
                         <div className="space-y-2">
-                          <div className="h-4 w-32 rounded bg-muted" />
-                          <div className="h-3 w-20 rounded bg-muted/60" />
+                          <div className="bg-muted h-4 w-32 rounded" />
+                          <div className="bg-muted/60 h-3 w-20 rounded" />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <div className="h-3 w-full rounded bg-muted/60" />
-                        <div className="h-3 w-4/5 rounded bg-muted/60" />
-                        <div className="h-3 w-3/5 rounded bg-muted/60" />
+                        <div className="bg-muted/60 h-3 w-full rounded" />
+                        <div className="bg-muted/60 h-3 w-4/5 rounded" />
+                        <div className="bg-muted/60 h-3 w-3/5 rounded" />
                       </div>
                     </div>
                   ))}
@@ -408,26 +400,31 @@ export default function SearchPage() {
                       href={`/mcp/${server.owner}/${server.server_name}`}
                       key={`${server.owner}/${server.server_name}`}
                     >
-                      <div className="group relative flex h-[200px] flex-col rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+                      <div className="group border-border/50 bg-card hover:border-primary/30 hover:shadow-primary/5 relative flex h-[200px] flex-col rounded-xl border p-5 transition-all duration-300 hover:shadow-xl">
                         <div className="mb-3 flex items-center gap-3">
-                          <Avatar className="h-9 w-9 flex-shrink-0 ring-1 ring-border/50">
-                            <AvatarImage src={server.avatar} alt={server.server_name} />
+                          <Avatar className="ring-border/50 h-9 w-9 flex-shrink-0 ring-1">
+                            <AvatarImage
+                              src={server.avatar}
+                              alt={server.server_name}
+                            />
                             <AvatarFallback className="text-xs font-medium">
                               {server.server_name.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
                             <h3
-                              className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                              className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400"
                               title={server.server_name}
                             >
                               {server.server_name}
                             </h3>
-                            <p className="truncate text-xs text-muted-foreground">{server.owner}</p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {server.owner}
+                            </p>
                           </div>
                         </div>
                         <p
-                          className="mb-auto line-clamp-3 text-sm leading-relaxed text-muted-foreground"
+                          className="text-muted-foreground mb-auto line-clamp-3 text-sm leading-relaxed"
                           title={server.description}
                         >
                           {server.description}
@@ -437,20 +434,32 @@ export default function SearchPage() {
                             {getServerTypeIcon(server.server_type)}
                             {getServerTypeLabel(server.server_type)}
                           </Badge>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-3 text-xs">
                             {server.tools > 0 && (
-                              <span className="flex items-center gap-1" title="工具数量">
-                                <Wrench className="h-3.5 w-3.5" />{server.tools}
+                              <span
+                                className="flex items-center gap-1"
+                                title="工具数量"
+                              >
+                                <Wrench className="h-3.5 w-3.5" />
+                                {server.tools}
                               </span>
                             )}
                             {server.prompts > 0 && (
-                              <span className="flex items-center gap-1" title="提示词数量">
-                                <MessageSquare className="h-3.5 w-3.5" />{server.prompts}
+                              <span
+                                className="flex items-center gap-1"
+                                title="提示词数量"
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                {server.prompts}
                               </span>
                             )}
                             {server.resources > 0 && (
-                              <span className="flex items-center gap-1" title="资源数量">
-                                <FolderOpen className="h-3.5 w-3.5" />{server.resources}
+                              <span
+                                className="flex items-center gap-1"
+                                title="资源数量"
+                              >
+                                <FolderOpen className="h-3.5 w-3.5" />
+                                {server.resources}
                               </span>
                             )}
                           </div>
@@ -462,13 +471,20 @@ export default function SearchPage() {
                   {mcpServers.length === 0 && (
                     <div className="col-span-full py-16 text-center">
                       <Server className="mx-auto mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">未找到匹配的 MCP 服务器</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        未找到匹配的 MCP 服务器
+                      </p>
                     </div>
                   )}
                 </div>
               )}
 
-              {renderPagination(currentPage, totalPages, totalServers, handlePageChange)}
+              {renderPagination(
+                currentPage,
+                totalPages,
+                totalServers,
+                handlePageChange
+              )}
             </>
           )}
 
@@ -478,7 +494,9 @@ export default function SearchPage() {
               {!isJwtAuthenticated ? (
                 <div className="py-16 text-center">
                   <User className="mx-auto mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
-                  <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">请先登录查看我的 MCP 服务器</p>
+                  <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                    请先登录查看我的 MCP 服务器
+                  </p>
                   <Link href="/user/auth/login">
                     <Button size="sm">登录</Button>
                   </Link>
@@ -488,17 +506,20 @@ export default function SearchPage() {
                   {isMyMcpLoading && (
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                       {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="h-[160px] animate-pulse rounded-xl border border-border/50 bg-card p-5">
+                        <div
+                          key={i}
+                          className="border-border/50 bg-card h-[160px] animate-pulse rounded-xl border p-5"
+                        >
                           <div className="mb-4 flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-muted" />
+                            <div className="bg-muted h-9 w-9 rounded-full" />
                             <div className="space-y-2">
-                              <div className="h-4 w-32 rounded bg-muted" />
-                              <div className="h-3 w-20 rounded bg-muted/60" />
+                              <div className="bg-muted h-4 w-32 rounded" />
+                              <div className="bg-muted/60 h-3 w-20 rounded" />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <div className="h-3 w-full rounded bg-muted/60" />
-                            <div className="h-3 w-4/5 rounded bg-muted/60" />
+                            <div className="bg-muted/60 h-3 w-full rounded" />
+                            <div className="bg-muted/60 h-3 w-4/5 rounded" />
                           </div>
                         </div>
                       ))}
@@ -512,35 +533,46 @@ export default function SearchPage() {
                           href={`/mcp/${server.user.username}/${server.server_name}`}
                           key={server.id}
                         >
-                          <div className="group relative flex h-[160px] flex-col rounded-xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+                          <div className="group border-border/50 bg-card hover:border-primary/30 hover:shadow-primary/5 relative flex h-[160px] flex-col rounded-xl border p-5 transition-all duration-300 hover:shadow-xl">
                             <div className="mb-3 flex items-center gap-3">
-                              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted ring-1 ring-border/50 text-xs font-medium">
-                                {server.server_name.substring(0, 2).toUpperCase()}
+                              <div className="bg-muted ring-border/50 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium ring-1">
+                                {server.server_name
+                                  .substring(0, 2)
+                                  .toUpperCase()}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3
-                                  className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400"
-                                  title={server.server_title || server.server_name}
+                                  className="text-foreground truncate text-sm font-semibold transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400"
+                                  title={
+                                    server.server_title || server.server_name
+                                  }
                                 >
                                   {server.server_title || server.server_name}
                                 </h3>
-                                <p className="truncate text-xs text-muted-foreground">{server.server_name}</p>
+                                <p className="text-muted-foreground truncate text-xs">
+                                  {server.server_name}
+                                </p>
                               </div>
                               <Badge
-                                variant={server.is_public ? "default" : "secondary"}
+                                variant={
+                                  server.is_public ? "default" : "secondary"
+                                }
                                 className="flex-shrink-0 text-xs"
                               >
                                 {server.is_public ? "公开" : "私有"}
                               </Badge>
                             </div>
                             <p
-                              className="mb-auto line-clamp-2 text-sm leading-relaxed text-muted-foreground"
+                              className="text-muted-foreground mb-auto line-clamp-2 text-sm leading-relaxed"
                               title={server.description || ""}
                             >
                               {server.description || "暂无描述"}
                             </p>
                             <div className="mt-3 flex items-center">
-                              <Badge variant="outline" className="gap-1 text-xs">
+                              <Badge
+                                variant="outline"
+                                className="gap-1 text-xs"
+                              >
                                 {getServerTypeIcon(server.server_type)}
                                 {getServerTypeLabel(server.server_type)}
                               </Badge>
@@ -552,9 +584,15 @@ export default function SearchPage() {
                       {myMcps.length === 0 && (
                         <div className="col-span-full py-16 text-center">
                           <Server className="mx-auto mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
-                          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">你还没有创建任何 MCP 服务器</p>
+                          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                            你还没有创建任何 MCP 服务器
+                          </p>
                           <Link href="/build/mcp">
-                            <Button size="sm" variant="outline" className="gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                            >
                               <CloudArrowDown className="h-4 w-4" />
                               提交 MCP
                             </Button>
@@ -564,7 +602,12 @@ export default function SearchPage() {
                     </div>
                   )}
 
-                  {renderPagination(myMcpPage, myTotalPages, myMcpResponse?.total || 0, handleMyMcpPageChange)}
+                  {renderPagination(
+                    myMcpPage,
+                    myTotalPages,
+                    myMcpResponse?.total || 0,
+                    handleMyMcpPageChange
+                  )}
                 </>
               )}
             </>

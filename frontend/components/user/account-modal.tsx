@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { AUTH_DAILY_MESSAGE_LIMIT } from "@/lib/config";
@@ -32,9 +33,10 @@ import { getMyAgents, MyAgentItem } from "@/lib/agent";
 import { getMySkills, MySkillItem } from "@/lib/skill";
 import { cn } from "@/lib/utils";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Bot, Clock, Languages, Monitor, Moon, MoreHorizontal, Pencil, Plus, Save, Server, Settings, Sparkles, Sun, User, X, Zap } from "lucide-react";
+import { Bot, CheckCircle2, Clock, History, Languages, Loader2, Monitor, Moon, MoreHorizontal, Pencil, Plus, Save, Server, Settings, Sparkles, Sun, User, X, XCircle, Zap } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { DeployLogItem, getMyDeployLogs } from "@/lib/mcp";
 
 
 // ---------- sidebar nav items ----------
@@ -49,6 +51,7 @@ const navItems: NavItem[] = [
   { key: "mcp", label: "我的MCP", icon: Server },
   // { key: "agent", label: "我的Agent", icon: Bot },
   { key: "skill", label: "我的Skill", icon: Sparkles },
+  { key: "deploy", label: "部署记录", icon: History },
   { key: "scheduled", label: "定时任务", icon: Clock },
   { key: "settings", label: "系统设置", icon: Settings },
 ]
@@ -391,6 +394,157 @@ function SkillPanel() {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ---------- deploy log panel ----------
+
+const STATUS_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
+  PENDING:  { label: "等待中", icon: Loader2,       className: "text-muted-foreground" },
+  STARTED:  { label: "进行中", icon: Loader2,       className: "text-blue-500" },
+  SUCCESS:  { label: "成功",   icon: CheckCircle2,  className: "text-green-500" },
+  FAILURE:  { label: "失败",   icon: XCircle,       className: "text-destructive" },
+  RETRY:    { label: "重试中", icon: Loader2,       className: "text-yellow-500" },
+  REVOKED:  { label: "已撤销", icon: XCircle,       className: "text-muted-foreground" },
+}
+
+function DeployStatusBadge({ status, tooltip }: { status: string; tooltip?: string | null }) {
+  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.PENDING
+  const Icon = cfg.icon
+
+  const badge = (
+    <span className={cn(
+      "inline-flex cursor-default items-center gap-1 text-xs font-medium",
+      cfg.className,
+      tooltip && "cursor-help underline decoration-dotted underline-offset-2",
+    )}>
+      <Icon className={cn("h-3.5 w-3.5 shrink-0", (status === "PENDING" || status === "STARTED" || status === "RETRY") && "animate-spin")} />
+      {cfg.label}
+    </span>
+  )
+
+  if (!tooltip) return badge
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent
+          side="right"
+          align="start"
+          className="max-w-[360px] max-h-[280px] overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] leading-relaxed"
+        >
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+function DeployLogPanel() {
+  const [logs, setLogs] = useState<DeployLogItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+
+  const fetchLogs = (p: number) => {
+    setIsLoading(true)
+    getMyDeployLogs({ page: p, size: 10 })
+      .then((data) => {
+        setLogs(data.items)
+        setTotalPages(data.total_pages)
+      })
+      .catch(() => setLogs([]))
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => { fetchLogs(1) }, [])
+
+  const handlePage = (p: number) => {
+    setPage(p)
+    fetchLogs(p)
+  }
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-muted/40 h-16 animate-pulse rounded-xl border" />
+        ))}
+      </div>
+    )
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <History className="text-muted-foreground mb-3 h-10 w-10" />
+        <p className="text-muted-foreground text-sm">暂无部署记录</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col gap-3">
+      {/* header */}
+      <div className="text-muted-foreground grid grid-cols-[1fr_100px_160px] border-b pb-2 text-xs">
+        <span>MCP 名称</span>
+        <span>状态</span>
+        <span>提交时间</span>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="divide-border divide-y">
+          {logs.map((log) => {
+            const tooltipContent =
+              log.task_status === "FAILURE"
+                ? (log.traceback ?? log.task_result)
+                : log.task_status === "SUCCESS"
+                ? log.task_result
+                : null
+
+            return (
+              <div key={log.id} className="grid grid-cols-[1fr_100px_160px] items-center gap-2 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{log.server_title ?? "—"}</p>
+                  <p className="text-muted-foreground mt-0.5 truncate font-mono text-[10px]">{log.task_id}</p>
+                </div>
+                <DeployStatusBadge status={log.task_status} tooltip={tooltipContent} />
+                <span className="text-muted-foreground text-xs">{formatTime(log.created_time)}</span>
+              </div>
+            )
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 border-t pt-3">
+          <Button
+            variant="ghost" size="sm"
+            disabled={page <= 1}
+            onClick={() => handlePage(page - 1)}
+            className="h-7 px-2 text-xs"
+          >
+            上一页
+          </Button>
+          <span className="text-muted-foreground text-xs">{page} / {totalPages}</span>
+          <Button
+            variant="ghost" size="sm"
+            disabled={page >= totalPages}
+            onClick={() => handlePage(page + 1)}
+            className="h-7 px-2 text-xs"
+          >
+            下一页
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -790,7 +944,7 @@ export function AccountModal({
           {/* Left sidebar */}
           <div className="bg-muted/30 flex w-[220px] shrink-0 flex-col border-r px-3 py-4">
             <p className="text-muted-foreground mb-3 px-2 text-xs font-medium uppercase tracking-wider">
-              设置
+              个人中心
             </p>
             <nav className="space-y-0.5">
               {navItems.map((item) => (
@@ -828,6 +982,7 @@ export function AccountModal({
               {activeKey === "mcp" && <McpPanel />}
               {activeKey === "agent" && <AgentPanel />}
               {activeKey === "skill" && <SkillPanel />}
+              {activeKey === "deploy" && <DeployLogPanel />}
               {activeKey === "scheduled" && <ScheduledTaskPanel />}
               {activeKey === "settings" && <SettingsPanel />}
             </div>

@@ -14,6 +14,12 @@ type ChatBotProps = {
   name?: string
   threadId?: string
   onSendMessage?: () => void
+  selectedMcps: SelectedContext[]
+  selectedSkills: SelectedContext[]
+  onToggleMcp: (ctx: SelectedContext) => void
+  onToggleSkill: (ctx: SelectedContext) => void
+  onRemoveMcp: (ctx: SelectedContext) => void
+  onRemoveSkill: (ctx: SelectedContext) => void
 }
 
 type ThreadMessage = {
@@ -22,8 +28,20 @@ type ThreadMessage = {
   content: string
 }
 
-export function ChatBot({ type, owner, name, threadId, onSendMessage }: ChatBotProps) {
-  const { setMessages } = useCopilotChatInternal()
+export function ChatBot({
+  type,
+  owner,
+  name,
+  threadId,
+  onSendMessage,
+  selectedMcps,
+  selectedSkills,
+  onToggleMcp,
+  onToggleSkill,
+  onRemoveMcp,
+  onRemoveSkill,
+}: ChatBotProps) {
+  const { setMessages, messages } = useCopilotChatInternal()
   const setMessagesRef = useRef(setMessages)
   setMessagesRef.current = setMessages
 
@@ -52,7 +70,8 @@ export function ChatBot({ type, owner, name, threadId, onSendMessage }: ChatBotP
     })()
     return () => { cancelled = true }
   }, [threadId])
-  // Initialize selected contexts from props
+
+  // Initialize selected agent from props
   const [selectedAgent, setSelectedAgent] = useState<SelectedContext | null>(
     () => {
       if (type === "agent" && owner && name) {
@@ -61,59 +80,11 @@ export function ChatBot({ type, owner, name, threadId, onSendMessage }: ChatBotP
       return null
     }
   )
-  const [selectedMcps, setSelectedMcps] = useState<SelectedContext[]>(() => {
-    if (type === "mcp" && owner && name) {
-      return [{ type: "mcp", owner, name, label: name }]
-    }
-    return []
-  })
-  const [selectedSkills, setSelectedSkills] = useState<SelectedContext[]>(
-    () => {
-      if (type === "skill" && owner && name) {
-        return [{ type: "skill", owner, name, label: name }]
-      }
-      return []
-    }
-  )
   const [mcpOpen, setMcpOpen] = useState(false)
   const [skillOpen, setSkillOpen] = useState(false)
 
   // Register all frontend tools
   useFrontendTools()
-
-  const onToggleMcp = useCallback((ctx: SelectedContext) => {
-    setSelectedMcps((prev) => {
-      const exists = prev.some(
-        (s) => s.owner === ctx.owner && s.name === ctx.name
-      )
-      return exists
-        ? prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
-        : [...prev, ctx]
-    })
-  }, [])
-
-  const onToggleSkill = useCallback((ctx: SelectedContext) => {
-    setSelectedSkills((prev) => {
-      const exists = prev.some(
-        (s) => s.owner === ctx.owner && s.name === ctx.name
-      )
-      return exists
-        ? prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
-        : [...prev, ctx]
-    })
-  }, [])
-
-  const onRemoveMcp = useCallback((ctx: SelectedContext) => {
-    setSelectedMcps((prev) =>
-      prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
-    )
-  }, [])
-
-  const onRemoveSkill = useCallback((ctx: SelectedContext) => {
-    setSelectedSkills((prev) =>
-      prev.filter((s) => !(s.owner === ctx.owner && s.name === ctx.name))
-    )
-  }, [])
 
   // Build system instructions from selected context
   const buildInstructions = useCallback(() => {
@@ -180,7 +151,7 @@ export function ChatBot({ type, owner, name, threadId, onSendMessage }: ChatBotP
   )
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 flex-col overflow-hidden" data-has-messages={String(messages.length > 0)}>
       <CopilotChat
         className="flex-1"
         instructions={buildInstructions()}

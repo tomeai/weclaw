@@ -3,6 +3,7 @@ from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
 from app.mcp.schema.enums import CompileType, RuntimeType, ServerType, TransportType
 from app.mcp.schema.mcp import AddMcpServerParam
+from common.exception import errors
 from database.db import async_db_session
 from fastmcp import Client
 from fastmcp.mcp_config import MCPConfig
@@ -18,10 +19,6 @@ class CompileMcpService:
         # 和serverInfo.name不一定一样
         mcp_name = list(mcp_config.mcpServers.keys())[0]
         server_cfg = mcp_config.mcpServers[mcp_name]
-        mcp_envs = server_cfg.env
-
-        for key, value in mcp_envs.items():
-            mcp_envs[key] = key.upper()
 
         async with Client(mcp_config) as client:
             await client.ping()
@@ -68,8 +65,12 @@ class CompileMcpService:
             logger.info('compile mcp_server success')
             async with async_db_session.begin() as db:
                 user = await user_dao.get_by_username(db, mcp_user)
-                if user:
-                    mcp_server.user_id = user.id
+                if not user:
+                    raise errors.NotFoundError(msg=f'用户 {mcp_user} 不存在')
+                existing = await mcp_server_dao.get_by_user_and_title(db, user.id, mcp_server_param.server_title)
+                if existing:
+                    raise errors.ConflictError(msg=f'已存在同名 MCP：{mcp_server_param.server_title}')
+                mcp_server.user_id = user.id
                 await mcp_server_dao.add_mcp(db, mcp_server)
             return 'success'
 

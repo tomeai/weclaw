@@ -1,11 +1,11 @@
 "use client"
 
 import type { SelectedContext } from "./types"
-import { AgentMentionDropdown } from "./agent-mention"
+// import { AgentMentionDropdown } from "./agent-mention" // TODO: @agent 本期暂不开发
 import { SearchPopover } from "./search-popover"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { ArrowUp, Paperclip, Server, Sparkles, Square, X } from "lucide-react"
+import { ArrowUp, Paperclip, Square, X } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 
 interface CustomInputProps {
@@ -50,38 +50,37 @@ export function CustomInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Agent mention state
-  const [mentionOpen, setMentionOpen] = useState(false)
-  const [mentionQuery, setMentionQuery] = useState("")
-  const [atPosition, setAtPosition] = useState(-1)
+  // TODO: @agent 本期暂不开发
+  // const [mentionOpen, setMentionOpen] = useState(false)
+  // const [mentionQuery, setMentionQuery] = useState("")
+  // const [atPosition, setAtPosition] = useState(-1)
 
-  const handleInputChange = useCallback(
-    (value: string) => {
-      setText(value)
+  const handleInputChange = useCallback((value: string) => {
+    setText(value)
 
-      const atMatch = value.match(/(^|\s|\n)@([^\s\n]*)$/)
-      if (atMatch) {
-        setAtPosition(atMatch.index! + atMatch[1].length)
-        setMentionQuery(atMatch[2])
-        setMentionOpen(true)
-      } else {
-        setMentionOpen(false)
-        setMentionQuery("")
-        setAtPosition(-1)
-      }
-    },
-    []
-  )
+    // TODO: @agent 本期暂不开发
+    // const atMatch = value.match(/(^|\s|\n)@([^\s\n]*)$/)
+    // if (atMatch) {
+    //   setAtPosition(atMatch.index! + atMatch[1].length)
+    //   setMentionQuery(atMatch[2])
+    //   setMentionOpen(true)
+    // } else {
+    //   setMentionOpen(false)
+    //   setMentionQuery("")
+    //   setAtPosition(-1)
+    // }
+  }, [])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Escape" && mentionOpen) {
-        e.preventDefault()
-        setMentionOpen(false)
-        setMentionQuery("")
-        setAtPosition(-1)
-        return
-      }
+      // TODO: @agent 本期暂不开发
+      // if (e.key === "Escape" && mentionOpen) {
+      //   e.preventDefault()
+      //   setMentionOpen(false)
+      //   setMentionQuery("")
+      //   setAtPosition(-1)
+      //   return
+      // }
 
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault()
@@ -91,36 +90,37 @@ export function CustomInput({
         }
       }
     },
-    [mentionOpen, inProgress, text, onSend]
+    [inProgress, text, onSend]
   )
 
-  const handleAgentSelect = useCallback(
-    (ctx: SelectedContext) => {
-      if (atPosition >= 0) {
-        const newValue =
-          text.slice(0, atPosition) +
-          text.slice(atPosition + 1 + mentionQuery.length)
-        setText(newValue)
-      }
-      setSelectedAgent(ctx)
-      setMentionOpen(false)
-      setMentionQuery("")
-      setAtPosition(-1)
-      setTimeout(() => textareaRef.current?.focus(), 0)
-    },
-    [atPosition, text, mentionQuery, setSelectedAgent]
-  )
+  // TODO: @agent 本期暂不开发
+  // const handleAgentSelect = useCallback(
+  //   (ctx: SelectedContext) => {
+  //     if (atPosition >= 0) {
+  //       const newValue =
+  //         text.slice(0, atPosition) +
+  //         text.slice(atPosition + 1 + mentionQuery.length)
+  //       setText(newValue)
+  //     }
+  //     setSelectedAgent(ctx)
+  //     setMentionOpen(false)
+  //     setMentionQuery("")
+  //     setAtPosition(-1)
+  //     setTimeout(() => textareaRef.current?.focus(), 0)
+  //   },
+  //   [atPosition, text, mentionQuery, setSelectedAgent]
+  // )
 
-  const handleSearchQueryChange = useCallback(
-    (newQuery: string) => {
-      setMentionQuery(newQuery)
-      if (atPosition >= 0) {
-        const newValue = text.slice(0, atPosition + 1) + newQuery
-        setText(newValue)
-      }
-    },
-    [atPosition, text]
-  )
+  // const handleSearchQueryChange = useCallback(
+  //   (newQuery: string) => {
+  //     setMentionQuery(newQuery)
+  //     if (atPosition >= 0) {
+  //       const newValue = text.slice(0, atPosition + 1) + newQuery
+  //       setText(newValue)
+  //     }
+  //   },
+  //   [atPosition, text]
+  // )
 
   const send = () => {
     if (inProgress || !text.trim()) return
@@ -130,7 +130,7 @@ export function CustomInput({
   }
 
   return (
-    <div ref={containerRef} className="relative border-t px-4 py-3">
+    <div ref={containerRef} className="relative px-4 py-3">
       <div className="mx-auto max-w-2xl">
         <div className="bg-muted/50 rounded-xl border">
           {/* Textarea row */}
@@ -154,7 +154,7 @@ export function CustomInput({
               value={text}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="输入 @ 选择Agent，分配任务或提问"
+              placeholder="用WeMCP创造无限可能"
               rows={4}
               className={cn(
                 "min-h-[100px] w-full resize-none bg-transparent px-3 py-2.5 text-sm outline-none",
@@ -171,71 +171,75 @@ export function CustomInput({
                 <Paperclip className="h-4 w-4" />
               </button>
 
-              {/* MCP group */}
-              <div
-                className={cn(
-                  "flex items-center gap-1",
-                  selectedMcps.length > 0 &&
-                    "border-border/60 rounded-full border py-0.5 pr-1.5 pl-0.5"
-                )}
-              >
-                <SearchPopover
-                  open={mcpOpen}
-                  onOpenChange={setMcpOpen}
-                  searchType="mcp"
-                  onToggle={onToggleMcp}
-                  selectedItems={selectedMcps}
-                  tooltip="MCP"
-                />
-                {selectedMcps.map((ctx) => (
-                  <Badge
-                    key={`${ctx.owner}/${ctx.name}`}
-                    variant="secondary"
-                    className="max-w-[120px] gap-1 pr-1 text-xs"
-                  >
-                    <span className="truncate">{ctx.label}</span>
-                    <button
-                      onClick={() => onRemoveMcp(ctx)}
-                      className="hover:bg-muted ml-0.5 shrink-0 rounded-full"
+              {/* MCP group - hidden when agent is selected */}
+              {!selectedAgent && (
+                <div
+                  className={cn(
+                    "flex items-center gap-1",
+                    selectedMcps.length > 0 &&
+                      "border-border/60 rounded-full border py-0.5 pr-1.5 pl-0.5"
+                  )}
+                >
+                  <SearchPopover
+                    open={mcpOpen}
+                    onOpenChange={setMcpOpen}
+                    searchType="mcp"
+                    onToggle={onToggleMcp}
+                    selectedItems={selectedMcps}
+                    tooltip="MCP"
+                  />
+                  {selectedMcps.map((ctx) => (
+                    <Badge
+                      key={`${ctx.owner}/${ctx.name}`}
+                      variant="secondary"
+                      className="max-w-[120px] gap-1 pr-1 text-xs"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
+                      <span className="truncate">{ctx.label}</span>
+                      <button
+                        onClick={() => onRemoveMcp(ctx)}
+                        className="hover:bg-muted ml-0.5 shrink-0 rounded-full"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
 
-              {/* Skill group */}
-              <div
-                className={cn(
-                  "flex items-center gap-1",
-                  selectedSkills.length > 0 &&
-                    "border-border/60 rounded-full border py-0.5 pr-1.5 pl-0.5"
-                )}
-              >
-                <SearchPopover
-                  open={skillOpen}
-                  onOpenChange={setSkillOpen}
-                  searchType="skill"
-                  onToggle={onToggleSkill}
-                  selectedItems={selectedSkills}
-                  tooltip="Skill"
-                />
-                {selectedSkills.map((ctx) => (
-                  <Badge
-                    key={`${ctx.owner}/${ctx.name}`}
-                    variant="secondary"
-                    className="max-w-[120px] gap-1 pr-1 text-xs"
-                  >
-                    <span className="truncate">{ctx.label}</span>
-                    <button
-                      onClick={() => onRemoveSkill(ctx)}
-                      className="hover:bg-muted ml-0.5 shrink-0 rounded-full"
+              {/* Skill group - hidden when agent is selected */}
+              {!selectedAgent && (
+                <div
+                  className={cn(
+                    "flex items-center gap-1",
+                    selectedSkills.length > 0 &&
+                      "border-border/60 rounded-full border py-0.5 pr-1.5 pl-0.5"
+                  )}
+                >
+                  <SearchPopover
+                    open={skillOpen}
+                    onOpenChange={setSkillOpen}
+                    searchType="skill"
+                    onToggle={onToggleSkill}
+                    selectedItems={selectedSkills}
+                    tooltip="Skill"
+                  />
+                  {selectedSkills.map((ctx) => (
+                    <Badge
+                      key={`${ctx.owner}/${ctx.name}`}
+                      variant="secondary"
+                      className="max-w-[120px] gap-1 pr-1 text-xs"
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
+                      <span className="truncate">{ctx.label}</span>
+                      <button
+                        onClick={() => onRemoveSkill(ctx)}
+                        className="hover:bg-muted ml-0.5 shrink-0 rounded-full"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Send / Stop button */}
@@ -260,8 +264,8 @@ export function CustomInput({
           </div>
         </div>
 
-        {/* Agent mention dropdown */}
-        <AgentMentionDropdown
+        {/* TODO: @agent 本期暂不开发 */}
+        {/* <AgentMentionDropdown
           open={mentionOpen}
           onClose={() => {
             setMentionOpen(false)
@@ -272,7 +276,7 @@ export function CustomInput({
           onQueryChange={handleSearchQueryChange}
           anchorRef={containerRef}
           onSelect={handleAgentSelect}
-        />
+        /> */}
       </div>
     </div>
   )

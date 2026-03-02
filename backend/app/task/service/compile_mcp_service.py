@@ -1,24 +1,53 @@
+from agentscope.mcp import HttpStatefulClient
 from app.admin.crud.crud_user import user_dao
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.model import McpServer
-from app.mcp.schema.enums import CompileType, RuntimeType, ServerType, TransportType
+from app.mcp.schema.enums import CompileType, ServerType, TransportType
 from app.mcp.schema.mcp import AddMcpServerParam
 from common.exception import errors
 from database.db import async_db_session
 from fastmcp import Client
-from fastmcp.mcp_config import MCPConfig
+from fastmcp.mcp_config import MCPConfig, RemoteMCPServer
 from loguru import logger
 
 
 class CompileMcpService:
-    @staticmethod
-    async def compile_mcp_by_mcp_config(mcp_user: str, obj_data: dict):
+    async def judge_mcp_transport(self, transport, url):
+        try:
+            stateful_client = HttpStatefulClient(
+                name='mcp_services_stateful',
+                transport=transport,
+                url=url,
+            )
+            await stateful_client.connect()
+            tools = await stateful_client.list_tools()
+            logger.info(f'tools: {tools}')
+            await stateful_client.close()
+            return transport
+        except Exception as e:
+            logger.error(f'judge_mcp_transport: {e}')
+            if transport == 'streamable_http':
+                return 'sse'
+            else:
+                return 'streamable_http'
+
+    async def compile_mcp_by_mcp_config(self, mcp_user: str, obj_data: dict):
         mcp_server_param = AddMcpServerParam(**obj_data)
         mcp_servers = mcp_server_param.mcpServers.mcpServers
         mcp_config = MCPConfig(mcpServers=mcp_servers)
         # 和serverInfo.name不一定一样
         mcp_name = list(mcp_config.mcpServers.keys())[0]
         server_cfg = mcp_config.mcpServers[mcp_name]
+
+        transport = TransportType.stdio.name
+        logger.info(f'server_cfg: {server_cfg}, {type(server_cfg)}')
+        if isinstance(server_cfg, RemoteMCPServer):
+            mcp_transport = await self.judge_mcp_transport('streamable_http', server_cfg.url)
+            logger.info(f'mcp_transport: {mcp_transport}')
+            if mcp_transport == 'sse':
+                transport = TransportType.sse.name
+            elif mcp_transport == 'streamable_http':
+                transport = TransportType.streamable_http.name
 
         async with Client(mcp_config) as client:
             await client.ping()
@@ -49,12 +78,10 @@ class CompileMcpService:
             mcp_server = McpServer(
                 server_title=mcp_server_param.server_title,
                 server_name=mcp_name,
-                transport=TransportType.stdio.name,
-                server_type=ServerType.hosted.name,
+                transport=transport,
+                server_type=ServerType.remote.name,
                 compile_type=CompileType.package.name,
-                runtime_type=RuntimeType.fastmcp.name,
                 server_config=mcp_config.model_dump(mode='json'),
-                envs=server_cfg.env,
                 server_metadata=server_meta.model_dump(mode='json'),
                 tools=results['tools'],
                 resources=results['resources'],
@@ -72,7 +99,7 @@ class CompileMcpService:
                     raise errors.ConflictError(msg=f'已存在同名 MCP：{mcp_server_param.server_title}')
                 mcp_server.user_id = user.id
                 await mcp_server_dao.add_mcp(db, mcp_server)
-            return 'success'
+            return f'compile mcp_server success: {obj_data}'
 
 
 compile_mcp_service = CompileMcpService()

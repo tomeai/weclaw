@@ -152,6 +152,8 @@ class AddMcpPackageParam(SchemaBase):
 
 
 class CallToolParam(SchemaBase):
+    username: str = Field(description='用户名')
+    server_name: str = Field(description='MCP server name')
     tool_name: str = Field(description='工具名称')
     arguments: Optional[Dict[str, Any]] = Field(description='工具参数')
 

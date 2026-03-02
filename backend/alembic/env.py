@@ -4,37 +4,40 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
+from app import get_app_models
 from common.model import MappedBase
 from core import path_conf
-from core.path_conf import BASE_PATH
 from database.db import SQLALCHEMY_DATABASE_URL
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
+
+# import models
+for cls in get_app_models():
+    class_name = cls.__name__
+    if class_name not in globals():
+        globals()[class_name] = cls
 
 if not os.path.exists(path_conf.ALEMBIC_VERSION_DIR):
     os.makedirs(path_conf.ALEMBIC_VERSION_DIR)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-config = context.config
+alembic_config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(BASE_PATH / config.config_file_name)
+if alembic_config.config_file_name is not None:
+    fileConfig(alembic_config.config_file_name)
 
-# add your model's MetaData object here
+# model's MetaData object
 # for 'autogenerate' support
 target_metadata = MappedBase.metadata
 
 # other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-config.set_main_option(
+alembic_config.set_main_option(
     'sqlalchemy.url',
-    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace('%', '%%'),
+    SQLALCHEMY_DATABASE_URL.render_as_string(hide_password=False).replace('%21', '!'),
 )
 
 
@@ -50,7 +53,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option('sqlalchemy.url')
+    url = alembic_config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -66,9 +69,9 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
+    # 当迁移无变化时，不生成迁移记录
     def process_revision_directives(context, revision, directives) -> None:
-        """当迁移无变化时，不生成迁移记录"""
-        if config.cmd_opts.autogenerate:
+        if alembic_config.cmd_opts.autogenerate:
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []
@@ -94,7 +97,7 @@ async def run_async_migrations() -> None:
     """
 
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        alembic_config.get_section(alembic_config.config_ini_section, {}),
         prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )

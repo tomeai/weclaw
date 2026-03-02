@@ -36,6 +36,7 @@ class Settings(BaseSettings):
 
     CELERY_BROKER_REDIS_DATABASE: int
     CELERY_TASK_MAX_RETRIES: int = 5
+    CELERY_REDIS_PREFIX: str = 'wemcp:celery'
 
     # .env Token
     TOKEN_SECRET_KEY: str  # 密钥 secrets.token_urlsafe(32)

@@ -29,7 +29,6 @@ from backend.middleware.opera_log_middleware import OperaLogMiddleware
 from backend.middleware.state_middleware import StateMiddleware
 from backend.utils.openapi import ensure_unique_route_names, simplify_operation_ids
 from backend.utils.serializers import MsgSpecJSONResponse
-from backend.utils.snowflake import snowflake
 
 
 async def _create_tables_with_lock() -> None:
@@ -66,7 +65,7 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     await _create_tables_with_lock()
 
     # 初始化 snowflake 节点
-    await snowflake.init()
+    # await snowflake.init()
 
     # 创建操作日志任务
     create_task(OperaLogMiddleware.consumer())
@@ -80,7 +79,7 @@ async def register_init(app: FastAPI) -> AsyncGenerator[None, None]:
     # await cache_pubsub_manager.stop_listener()
 
     # 释放 snowflake 节点
-    await snowflake.shutdown()
+    # await snowflake.shutdown()
 
     # 关闭 redis 连接
     await redis_client.aclose()

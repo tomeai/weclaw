@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from common.model import Base, id_key
 from sqlalchemy import String
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.dialects.postgresql import TEXT
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-if TYPE_CHECKING:
-    from app.admin.model.menu import Menu
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class Role(Base):
@@ -24,9 +17,4 @@ class Role(Base):
     status: Mapped[int] = mapped_column(default=1, comment='角色状态（0停用 1正常）')
     remark: Mapped[str | None] = mapped_column(
         LONGTEXT().with_variant(TEXT, 'postgresql'), default=None, comment='备注'
-    )
-
-    # Relationships
-    menus: Mapped[list['Menu']] = relationship(
-        'Menu', secondary='sys_role_menu', init=False, default_factory=list, lazy='noload'
     )

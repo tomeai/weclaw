@@ -9,6 +9,9 @@ class CRUDMcpAdminServer(CRUDPlus[McpServer]):
     async def update_is_public(self, db: AsyncSession, mcp_id, is_public: int) -> int:
         return await self.update_model(db, mcp_id, {'is_public': is_public})
 
+    async def update_is_recommend(self, db: AsyncSession, mcp_id, is_recommend: int) -> int:
+        return await self.update_model(db, mcp_id, {'is_recommend': is_recommend})
+
     async def update_category(self, db: AsyncSession, mcp_id, category_id: int) -> int:
         return await self.update_model(db, mcp_id, {'category_id': category_id})
 

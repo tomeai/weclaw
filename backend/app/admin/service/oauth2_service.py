@@ -68,6 +68,9 @@ class OAuth2Service:
             if not sys_user:
                 while await user_dao.get_by_username(db, username):
                     username = f'{username}_{text_captcha(5)}'
+
+                if not nickname:
+                    nickname = username
                 new_sys_user = AddOAuth2UserParam(
                     username=username,
                     password=None,
@@ -86,7 +89,6 @@ class OAuth2Service:
         # 创建 token
         access_token_data = await jwt.create_access_token(
             sys_user.id,
-            multi_login=sys_user.is_multi_login,
             # extra info
             username=sys_user.username,
             nickname=sys_user.nickname,
@@ -99,7 +101,6 @@ class OAuth2Service:
         refresh_token_data = await jwt.create_refresh_token(
             access_token_data.session_uuid,
             sys_user.id,
-            multi_login=sys_user.is_multi_login,
         )
         await user_dao.update_login_time(db, sys_user.username)
         await db.refresh(sys_user)

@@ -18,7 +18,6 @@ from backend.common.enums import UserPermissionType
 from backend.common.exception import errors
 from backend.common.pagination import paging_data
 from backend.common.response.response_code import CustomErrorCode
-from backend.common.security.jwt import get_token, jwt_decode
 from backend.core.conf import settings
 from backend.database.redis import redis_client
 
@@ -60,7 +59,7 @@ class UserService:
         *, db: AsyncSession, username: str | None, phone: str | None, status: int | None
     ) -> dict[str, Any]:
         """
-        获取用户列表
+        获取用户列表（含角色信息）
 
         :param db: 数据库会话
         :param username: 用户名
@@ -69,7 +68,20 @@ class UserService:
         :return:
         """
         user_select = await user_dao.get_select(username=username, phone=phone, status=status)
-        return await paging_data(db, user_select)
+        page_data = await paging_data(db, user_select)
+
+        users = page_data.get('items', [])
+        if users:
+            user_ids = [u['id'] for u in users]
+            enriched = await user_dao.get_with_roles(db, user_ids)
+            if enriched is None:
+                enriched = []
+            elif not isinstance(enriched, list):
+                enriched = [enriched]
+            enriched_map = {u.id: u for u in enriched}
+            page_data['items'] = [enriched_map.get(u['id'], u) for u in users]
+
+        return page_data
 
     @staticmethod
     async def create(*, db: AsyncSession, obj: AddUserParam) -> None:
@@ -145,28 +157,6 @@ class UserService:
                 if pk == request.user.id:
                     raise errors.ForbiddenError(msg='禁止修改自身权限')
                 count = await user_dao.set_status(db, pk, 0 if user.status == 1 else 1)
-            case UserPermissionType.multi_login:
-                user = await user_dao.get(db, pk)
-                if not user:
-                    raise errors.NotFoundError(msg='用户不存在')
-                multi_login = user.is_multi_login if pk != user.id else request.user.is_multi_login
-                new_multi_login = not multi_login
-                count = await user_dao.set_multi_login(db, pk, multi_login=new_multi_login)
-                token = get_token(request)
-                token_payload = jwt_decode(token)
-                if pk == user.id:
-                    # 系统管理员修改自身时，除当前 token 外，其他 token 失效
-                    if not new_multi_login:
-                        key_prefix = f'{settings.TOKEN_REDIS_PREFIX}:{user.id}'
-                        await redis_client.delete_prefix(
-                            key_prefix,
-                            exclude=f'{key_prefix}:{token_payload.session_uuid}',
-                        )
-                else:
-                    # 系统管理员修改他人时，他人 token 全部失效
-                    if not new_multi_login:
-                        key_prefix = f'{settings.TOKEN_REDIS_PREFIX}:{user.id}'
-                        await redis_client.delete_prefix(key_prefix)
             case _:
                 raise errors.RequestError(msg='权限类型不存在')
 

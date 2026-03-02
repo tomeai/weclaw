@@ -1,19 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from __future__ import annotations
-
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from common.model import Base, id_key
 from database.db import uuid4_str
 from sqlalchemy import VARBINARY, Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import BYTEA, INTEGER
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from utils.timezone import timezone
-
-if TYPE_CHECKING:
-    from app.admin.model.role import Role
 
 
 class User(Base):
@@ -37,9 +31,6 @@ class User(Base):
     is_staff: Mapped[bool] = mapped_column(
         Boolean().with_variant(INTEGER, 'postgresql'), default=False, comment='后台管理登陆(0否 1是)'
     )
-    is_multi_login: Mapped[bool] = mapped_column(
-        Boolean().with_variant(INTEGER, 'postgresql'), default=False, comment='是否重复登陆(0否 1是)'
-    )
     join_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), init=False, default_factory=timezone.now, comment='注册时间'
     )
@@ -48,9 +39,4 @@ class User(Base):
     )
     last_password_changed_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次密码变更时间'
-    )
-
-    # Relationships
-    roles: Mapped[list['Role']] = relationship(
-        'Role', secondary='sys_user_role', init=False, default_factory=list, lazy='noload'
     )

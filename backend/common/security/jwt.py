@@ -63,12 +63,11 @@ def jwt_decode(token: str) -> TokenPayload:
     )
 
 
-async def create_access_token(user_id: int, *, multi_login: bool, **kwargs) -> AccessToken:
+async def create_access_token(user_id: int, **kwargs) -> AccessToken:
     """
     生成加密 token
 
     :param user_id: 用户 ID
-    :param multi_login: 是否允许多端登录
     :param kwargs: token 额外信息
     :return:
     """
@@ -79,9 +78,6 @@ async def create_access_token(user_id: int, *, multi_login: bool, **kwargs) -> A
         'exp': timezone.to_utc(expire).timestamp(),
         'sub': str(user_id),
     })
-
-    if not multi_login:
-        await redis_client.delete_prefix(f'{settings.TOKEN_REDIS_PREFIX}:{user_id}')
 
     await redis_client.setex(
         f'{settings.TOKEN_REDIS_PREFIX}:{user_id}:{session_uuid}',
@@ -100,13 +96,12 @@ async def create_access_token(user_id: int, *, multi_login: bool, **kwargs) -> A
     return AccessToken(access_token=access_token, access_token_expire_time=expire, session_uuid=session_uuid)
 
 
-async def create_refresh_token(session_uuid: str, user_id: int, *, multi_login: bool) -> RefreshToken:
+async def create_refresh_token(session_uuid: str, user_id: int) -> RefreshToken:
     """
     生成加密刷新 token，仅用于创建新的 token
 
     :param session_uuid: 会话 UUID
     :param user_id: 用户 ID
-    :param multi_login: 是否允许多端登录
     :return:
     """
     expire = timezone.now() + timedelta(seconds=settings.TOKEN_REFRESH_EXPIRE_SECONDS)
@@ -115,9 +110,6 @@ async def create_refresh_token(session_uuid: str, user_id: int, *, multi_login: 
         'exp': timezone.to_utc(expire).timestamp(),
         'sub': str(user_id),
     })
-
-    if not multi_login:
-        await redis_client.delete_prefix(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}')
 
     await redis_client.setex(
         f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}:{session_uuid}',
@@ -131,8 +123,6 @@ async def create_new_token(
     refresh_token: str,
     session_uuid: str,
     user_id: int,
-    *,
-    multi_login: bool,
     **kwargs,
 ) -> NewToken:
     """
@@ -141,7 +131,6 @@ async def create_new_token(
     :param refresh_token: 刷新 token
     :param session_uuid: 会话 UUID
     :param user_id: 用户 ID
-    :param multi_login: 是否允许多端登录
     :param kwargs: token 附加信息
     :return:
     """
@@ -152,8 +141,8 @@ async def create_new_token(
     await redis_client.delete(f'{settings.TOKEN_REFRESH_REDIS_PREFIX}:{user_id}:{session_uuid}')
     await redis_client.delete(f'{settings.TOKEN_REDIS_PREFIX}:{user_id}:{session_uuid}')
 
-    new_access_token = await create_access_token(user_id, multi_login=multi_login, **kwargs)
-    new_refresh_token = await create_refresh_token(new_access_token.session_uuid, user_id, multi_login=multi_login)
+    new_access_token = await create_access_token(user_id, **kwargs)
+    new_refresh_token = await create_refresh_token(new_access_token.session_uuid, user_id)
     return NewToken(
         new_access_token=new_access_token.access_token,
         new_access_token_expire_time=new_access_token.access_token_expire_time,

@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
   getMcpAdminCategories,
@@ -55,6 +56,7 @@ export function McpEditModal({
     description: "",
     server_title: "",
     is_public: 0,
+    is_recommend: 0,
   })
 
   // 获取分类列表
@@ -78,6 +80,7 @@ export function McpEditModal({
         description: data.description || "",
         server_title: data.server_title || "",
         is_public: data.is_public || 0,
+        is_recommend: data.is_recommend || 0,
       })
     } catch (error) {
       console.error("Error fetching server detail:", error)
@@ -134,6 +137,7 @@ export function McpEditModal({
         description: "",
         server_title: "",
         is_public: 0,
+        is_recommend: 0,
       })
     }
   }, [open])
@@ -206,23 +210,27 @@ export function McpEditModal({
               />
             </div>
 
-            {/* 审核状态 */}
-            <div className="space-y-2">
-              <Label htmlFor="is_public">审核状态 *</Label>
-              <Select
-                value={formData.is_public.toString()}
-                onValueChange={(value) =>
-                  handleInputChange("is_public", parseInt(value))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择审核状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">未审核</SelectItem>
-                  <SelectItem value="1">已审核</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* 审核状态 & 推荐状态 */}
+            <div className="flex gap-8">
+
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={formData.is_recommend === 1}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("is_recommend", checked ? 1 : 0)
+                  }
+                />
+                <Label htmlFor="is_recommend">推荐</Label>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={formData.is_public === 1}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("is_public", checked ? 1 : 0)
+                  }
+                />
+                <Label htmlFor="is_public">通过</Label>
+              </div>
             </div>
 
             {/* 只读信息展示 */}

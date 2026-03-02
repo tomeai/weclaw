@@ -17,7 +17,6 @@ from app.admin.schema.user import (
 )
 from sqlalchemy import Select, delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlalchemy_crud_plus import CRUDPlus
 from utils.dynamic_import import import_module_cached
 from utils.password_security import get_hash_password
@@ -89,9 +88,27 @@ class CRUDUser(CRUDPlus[User]):
         return await self.select_order(
             'id',
             'desc',
-            load_options=[selectinload(User.roles).selectinload(Role.menus)],
             **filters,
         )
+
+    async def get_with_roles(self, db: AsyncSession, user_ids: list[int]) -> list[Any]:
+        """
+        批量获取用户及其角色信息
+
+        :param db: 数据库会话
+        :param user_ids: 用户 ID 列表
+        :return:
+        """
+        stmt = (
+            select(User, Role)
+            .outerjoin(user_role, user_role.c.user_id == User.id)
+            .outerjoin(Role, Role.id == user_role.c.role_id)
+            .where(User.id.in_(user_ids))
+            .order_by(User.id.desc())
+        )
+        result = await db.execute(stmt)
+        rows = result.all()
+        return select_join_serialize(rows, relationships=['User-m2m-Role:roles'])
 
     async def add(self, db: AsyncSession, obj: AddUserParam) -> None:
         """
@@ -272,17 +289,6 @@ class CRUDUser(CRUDPlus[User]):
         """
         return await self.update_model(db, user_id, {'status': status})
 
-    async def set_multi_login(self, db: AsyncSession, user_id: int, *, multi_login: bool) -> int:
-        """
-        设置用户多端登录状态
-
-        :param db: 数据库会话
-        :param user_id: 用户 ID
-        :param multi_login: 是否允许多端登录
-        :return:
-        """
-        return await self.update_model(db, user_id, {'is_multi_login': multi_login})
-
     async def delete(self, db: AsyncSession, user_id: int) -> int:
         """
         删除用户
@@ -342,7 +348,8 @@ class CRUDUser(CRUDPlus[User]):
         return select_join_serialize(
             rows,
             relationships=[
-                'Role-m2m-Menu',
+                'User-m2m-Role:roles',
+                'Role-m2m-Menu:menus',
             ],
         )
 

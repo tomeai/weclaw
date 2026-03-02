@@ -75,7 +75,7 @@ export default function McpAdminPage() {
   const [searchKeyword, setSearchKeyword] = useState("")
   const [serverType, setServerType] = useState<"hosted" | "local" | "all">("all")
   const [compileType, setCompileType] = useState<"package" | "stdio" | "all">("all")
-  const [isPublic, setIsPublic] = useState<number | "all">(1)
+  const [isPublic, setIsPublic] = useState<number | "all">(0)
   const [transport, setTransport] = useState<"stdio" | "sse" | "streamable" | "all">("all")
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
@@ -134,7 +134,7 @@ export default function McpAdminPage() {
     setSearchKeyword("")
     setServerType("all")
     setCompileType("all")
-    setIsPublic(1)
+    setIsPublic(0)
     setTransport("all")
     setCurrentPage(1)
     fetchServers({
@@ -142,7 +142,7 @@ export default function McpAdminPage() {
       keyword: "",
       server_type: undefined,
       compile_type: undefined,
-      is_public: 1,
+      is_public: 0,
       transport: undefined,
     })
   }

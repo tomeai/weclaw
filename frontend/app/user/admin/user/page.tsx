@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table"
 import {
   getAllSysRoles,
+  getSysUserRoles,
   getSysUsers,
   resetSysUserPassword,
   SysRoleDetail,
@@ -174,7 +175,7 @@ export default function UsersAdminPage() {
     setDetailOpen(true)
   }
 
-  // 打开编辑弹窗（同时刷新角色列表）
+  // 打开编辑弹窗（同时刷新角色列表和用户已分配角色）
   const handleEdit = async (user: SysUserDetail) => {
     setEditingUser(user)
     setEditForm({
@@ -182,13 +183,17 @@ export default function UsersAdminPage() {
       nickname: user.nickname,
       email: user.email ?? "",
       phone: user.phone ?? "",
-      roles: user.roles.map((r) => r.id),
+      roles: [],
     })
     setEditOpen(true)
     setRolesLoading(true)
     try {
-      const roles = await getAllSysRoles()
-      setAllRoles(roles)
+      const [allRolesData, userRoles] = await Promise.all([
+        getAllSysRoles(),
+        getSysUserRoles(user.id),
+      ])
+      setAllRoles(allRolesData)
+      setEditForm((prev) => ({ ...prev, roles: userRoles.map((r) => r.id) }))
     } catch {
       // handled by interceptor
     } finally {
@@ -643,12 +648,6 @@ export default function UsersAdminPage() {
                 <div>
                   <p className="text-muted-foreground">手机</p>
                   <p className="font-medium">{detailUser.phone ?? "-"}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">多端登录</p>
-                  <p className="font-medium">
-                    {detailUser.is_multi_login ? "允许" : "不允许"}
-                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">注册时间</p>

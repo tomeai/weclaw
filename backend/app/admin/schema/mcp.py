@@ -37,6 +37,7 @@ class GetAdminMcpDetail(SchemaBase):
     user: GetUserDetail = Field(description='用户信息')
     category: CategoryDetail | None = Field(None, description='分类信息')
     is_public: int | None = Field(None, description='是否公开')
+    is_recommend: int | None = Field(None, description='是否推荐')
 
 
 class MyMcpDetail(SchemaBase):
@@ -55,3 +56,4 @@ class UpdateMcpServerParam(SchemaBase):
     description: str | None = Field(None, description='描述')
     category_id: int | None = Field(None, description='分类ID')
     is_public: int | None = Field(None, description='是否公开')
+    is_recommend: int | None = Field(None, description='是否推荐')

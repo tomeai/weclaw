@@ -24,7 +24,6 @@ export interface SysUserDetail {
   status: 0 | 1
   is_superuser: boolean
   is_staff: boolean
-  is_multi_login: boolean
   join_time: string
   last_login_time: string | null
   roles: SysRoleDetail[]
@@ -56,7 +55,7 @@ export interface UpdateSysUserParam {
   roles: number[]
 }
 
-export type UserPermissionType = "superuser" | "staff" | "status" | "multi_login"
+export type UserPermissionType = "superuser" | "staff" | "status"
 
 // ============ 角色类型 ============
 
@@ -117,7 +116,7 @@ export function updateSysUser(
   return http.put<void>(`${API_ROUTE_SYS_USERS}/${pk}`, obj)
 }
 
-/** 更新用户权限（superuser/staff/status/multi_login） */
+/** 更新用户权限（superuser/staff/status） */
 export function updateUserPermission(
   pk: number,
   type: UserPermissionType

@@ -50,7 +50,7 @@ import {
   deleteSysMenu,
   deleteSysRoles,
   getRoleMenuTree,
-  getSysMenus,
+  getSysMenuTree,
   getSysRoles,
   getSysUsers,
   updateRoleMenus,
@@ -58,9 +58,14 @@ import {
   updateSysRole,
 } from "@/lib/admin-sys"
 import {
+  Check,
+  ChevronDown,
+  ChevronRight,
   Edit,
+  FileText,
   FolderOpen,
   KeyRound,
+  Minus,
   Plus,
   RefreshCw,
   Search,
@@ -72,31 +77,302 @@ import {
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-// ============ 常量 & 工具 ============
+// ============ 工具函数 ============
 
-const PERM_TYPES = [0, 2]
-
-interface PermGroup {
-  id: number
-  title: string
-  permissions: SysMenuDetail[]
+function collectIds(nodes: SysMenuDetail[]): number[] {
+  const ids: number[] = []
+  for (const node of nodes) {
+    ids.push(node.id)
+    if (node.children?.length) ids.push(...collectIds(node.children))
+  }
+  return ids
 }
 
-function buildPermGroups(menus: SysMenuDetail[]): PermGroup[] {
-  const directories = menus.filter((m) => m.type === 0)
-  const buttons = menus.filter((m) => m.type === 2)
-  return directories
-    .map((dir) => ({
-      id: dir.id,
-      title: dir.title,
-      permissions: buttons.filter((b) => b.parent_id === dir.id),
-    }))
-    .filter((g) => g.permissions.length > 0)
+function countAllNodes(nodes: SysMenuDetail[]): number {
+  let count = 0
+  for (const node of nodes) {
+    count++
+    if (node.children?.length) count += countAllNodes(node.children)
+  }
+  return count
 }
 
-const formatDate = (dateString: string | null | undefined) => {
-  if (!dateString) return "-"
-  return new Date(dateString).toLocaleString("zh-CN")
+function flattenTree(nodes: SysMenuDetail[]): SysMenuDetail[] {
+  const result: SysMenuDetail[] = []
+  for (const node of nodes) {
+    result.push(node)
+    if (node.children?.length) result.push(...flattenTree(node.children))
+  }
+  return result
+}
+
+function getNodeCheckState(
+  node: SysMenuDetail,
+  selected: Set<number>
+): "checked" | "indeterminate" | "unchecked" {
+  const allIds = collectIds([node])
+  const cnt = allIds.filter((id) => selected.has(id)).length
+  if (cnt === 0) return "unchecked"
+  if (cnt === allIds.length) return "checked"
+  return "indeterminate"
+}
+
+function toggleNodeIds(node: SysMenuDetail, selected: Set<number>): Set<number> {
+  const next = new Set(selected)
+  const allIds = collectIds([node])
+  const allChecked = allIds.every((id) => next.has(id))
+  if (allChecked) {
+    allIds.forEach((id) => next.delete(id))
+  } else {
+    allIds.forEach((id) => next.add(id))
+  }
+  return next
+}
+
+const formatDate = (d: string | null | undefined) => {
+  if (!d) return "-"
+  return new Date(d).toLocaleString("zh-CN")
+}
+
+function typeIcon(type: number) {
+  return type === 0 ? FolderOpen : type === 1 ? FileText : KeyRound
+}
+function typeColor(type: number) {
+  return type === 0 ? "text-blue-500" : type === 1 ? "text-green-600" : "text-purple-500"
+}
+function typeLabel(type: number) {
+  return type === 0 ? "目录" : type === 1 ? "菜单" : "按钮"
+}
+function typeBadgeClass(type: number) {
+  return type === 0
+    ? "bg-blue-50 text-blue-600 border-blue-100"
+    : type === 1
+      ? "bg-green-50 text-green-600 border-green-100"
+      : "bg-purple-50 text-purple-600 border-purple-100"
+}
+
+// ============ 权限树节点（角色分配用，带 checkbox）============
+
+interface PermTreeNodeProps {
+  node: SysMenuDetail
+  depth: number
+  selectedIds: Set<number>
+  onToggle: (node: SysMenuDetail) => void
+  readOnly?: boolean
+}
+
+function PermTreeNode({ node, depth, selectedIds, onToggle, readOnly }: PermTreeNodeProps) {
+  const [expanded, setExpanded] = useState(true)
+  const checkState = getNodeCheckState(node, selectedIds)
+  const hasChildren = !!(node.children?.length)
+  const Icon = typeIcon(node.type)
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 select-none ${readOnly ? "" : "cursor-pointer hover:bg-muted/50"}`}
+        style={{ paddingLeft: `${8 + depth * 20}px` }}
+        onClick={() => !readOnly && onToggle(node)}
+      >
+        {/* 展开/收起 */}
+        <span
+          className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+          onClick={(e) => {
+            if (!hasChildren) return
+            e.stopPropagation()
+            setExpanded((v) => !v)
+          }}
+        >
+          {hasChildren ? (
+            expanded ? (
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            )
+          ) : (
+            <span className="h-3 w-3" />
+          )}
+        </span>
+
+        {/* Checkbox */}
+        {!readOnly && (
+          <div
+            className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+              checkState === "checked"
+                ? "border-primary bg-primary text-primary-foreground"
+                : checkState === "indeterminate"
+                  ? "border-primary bg-primary/10"
+                  : "border-muted-foreground/40 bg-background"
+            }`}
+          >
+            {checkState === "checked" && <Check className="h-3 w-3" />}
+            {checkState === "indeterminate" && <Minus className="h-3 w-3 text-primary" />}
+          </div>
+        )}
+
+        <Icon className={`h-4 w-4 flex-shrink-0 ${typeColor(node.type)}`} />
+        <span className="flex-1 text-sm">{node.title}</span>
+
+        {node.type === 2 && node.perms && (
+          <span className="font-mono text-xs text-muted-foreground">{node.perms}</span>
+        )}
+
+        <Badge variant="outline" className={`px-1.5 py-0 text-xs ${typeBadgeClass(node.type)}`}>
+          {typeLabel(node.type)}
+        </Badge>
+
+        {readOnly && node.status === 0 && (
+          <Badge className="px-1.5 py-0 text-xs bg-gray-100 text-gray-500">禁用</Badge>
+        )}
+      </div>
+
+      {hasChildren && expanded && (
+        <div>
+          {node.children!.map((child) => (
+            <PermTreeNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              selectedIds={selectedIds}
+              onToggle={onToggle}
+              readOnly={readOnly}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============ 菜单节点树（节点管理用）============
+
+interface MenuTreeNodeProps {
+  node: SysMenuDetail
+  depth: number
+  onEdit: (menu: SysMenuDetail) => void
+  onDelete: (menu: SysMenuDetail) => void
+  onAddChild: (type: MenuType, parentId: number) => void
+}
+
+function MenuTreeNode({ node, depth, onEdit, onDelete, onAddChild }: MenuTreeNodeProps) {
+  const [expanded, setExpanded] = useState(true)
+  const hasChildren = !!(node.children?.length)
+  const Icon = typeIcon(node.type)
+
+  return (
+    <div className="space-y-1">
+      <div
+        className="flex items-center gap-2 rounded-md border bg-card px-3 py-2 transition-colors hover:bg-muted/30"
+        style={{ marginLeft: `${depth * 28}px` }}
+      >
+        {/* 展开/收起 */}
+        <button
+          type="button"
+          className="flex h-4 w-4 flex-shrink-0 items-center justify-center"
+          onClick={() => hasChildren && setExpanded((v) => !v)}
+        >
+          {hasChildren ? (
+            expanded ? (
+              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            )
+          ) : (
+            <span className="h-3 w-3" />
+          )}
+        </button>
+
+        <Icon className={`h-4 w-4 flex-shrink-0 ${typeColor(node.type)}`} />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-sm font-medium">{node.title}</span>
+            <Badge className={`px-1.5 py-0 text-xs ${typeBadgeClass(node.type)}`}>
+              {typeLabel(node.type)}
+            </Badge>
+            {node.status === 1 ? (
+              <Badge className="px-1.5 py-0 text-xs bg-green-100 text-green-700">启用</Badge>
+            ) : (
+              <Badge className="px-1.5 py-0 text-xs bg-gray-100 text-gray-700">禁用</Badge>
+            )}
+          </div>
+          <div className="mt-0.5 flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <span>标识: {node.name}</span>
+            {node.path && <span>路径: {node.path}</span>}
+            {node.perms && <span>权限: {node.perms}</span>}
+            <span>排序: {node.sort}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-shrink-0 items-center gap-1">
+          {node.type === 0 && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs text-green-600 hover:text-green-700"
+                onClick={() => onAddChild(1, node.id)}
+                title="新增菜单"
+              >
+                <Plus className="h-3 w-3" />菜单
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs text-purple-600 hover:text-purple-700"
+                onClick={() => onAddChild(2, node.id)}
+                title="新增按钮"
+              >
+                <Plus className="h-3 w-3" />按钮
+              </Button>
+            </>
+          )}
+          {node.type === 1 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs text-purple-600 hover:text-purple-700"
+              onClick={() => onAddChild(2, node.id)}
+              title="新增按钮"
+            >
+              <Plus className="h-3 w-3" />按钮
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => onEdit(node)}
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+            onClick={() => onDelete(node)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      {hasChildren && expanded && (
+        <div>
+          {node.children!.map((child) => (
+            <MenuTreeNode
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onAddChild={onAddChild}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ============ 主页面 ============
@@ -114,13 +390,16 @@ export default function PermissionsAdminPage() {
   const [statsTotal, setStatsTotal] = useState(0)
   const [statsActive, setStatsActive] = useState(0)
   const [statsUsers, setStatsUsers] = useState(0)
-  const [allPermMenus, setAllPermMenus] = useState<SysMenuDetail[]>([])
 
   // ---- 搜索 ----
   const [searchName, setSearchName] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "0" | "1">("all")
 
-  // ---- 角色弹窗（新增/编辑 + 权限分配合一）----
+  // ---- 菜单树（全局共享）----
+  const [menuTree, setMenuTree] = useState<SysMenuDetail[]>([])
+  const [treeLoading, setTreeLoading] = useState(false)
+
+  // ---- 角色弹窗 ----
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<SysRoleDetail | null>(null)
   const [formData, setFormData] = useState<CreateSysRoleParam>({
@@ -137,9 +416,7 @@ export default function PermissionsAdminPage() {
   const [deletingRole, setDeletingRole] = useState<SysRoleDetail | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // ---- 菜单节点 ----
-  const [menuNodes, setMenuNodes] = useState<SysMenuDetail[]>([])
-  const [menuNodesLoading, setMenuNodesLoading] = useState(false)
+  // ---- 菜单节点弹窗 ----
   const [menuDialogOpen, setMenuDialogOpen] = useState(false)
   const [editingMenu, setEditingMenu] = useState<SysMenuDetail | null>(null)
   const [menuFormData, setMenuFormData] = useState({
@@ -160,11 +437,25 @@ export default function PermissionsAdminPage() {
   const [deletingMenu, setDeletingMenu] = useState<SysMenuDetail | null>(null)
   const [menuDeleting, setMenuDeleting] = useState(false)
 
-  // 权限分组（目录 → 按钮）
-  const permGroups = buildPermGroups(allPermMenus)
-  const totalPermissions = allPermMenus.filter((m) => m.type === 2).length
+  const totalNodes = countAllNodes(menuTree)
+  // 可作为菜单父级的节点（目录）
+  const directoryNodes = flattenTree(menuTree).filter((m) => m.type === 0)
+  // 可作为按钮父级的节点（目录 + 菜单）
+  const parentNodes = flattenTree(menuTree).filter((m) => m.type === 0 || m.type === 1)
 
   // ============ 数据获取 ============
+
+  const fetchMenuTree = useCallback(async () => {
+    setTreeLoading(true)
+    try {
+      const tree = await getSysMenuTree()
+      setMenuTree(tree)
+    } catch {
+      // handled by interceptor
+    } finally {
+      setTreeLoading(false)
+    }
+  }, [])
 
   const fetchRoles = useCallback(async () => {
     setLoading(true)
@@ -187,51 +478,29 @@ export default function PermissionsAdminPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const [allData, activeData, usersData, permMenus] = await Promise.all([
+      const [allData, activeData, usersData] = await Promise.all([
         getSysRoles({ page: 1, size: 1 }),
         getSysRoles({ page: 1, size: 1, status: 1 }),
         getSysUsers({ page: 1, size: 1 }),
-        getSysMenus(PERM_TYPES),
       ])
       setStatsTotal(allData.total)
       setStatsActive(activeData.total)
       setStatsUsers(usersData.total)
-      setAllPermMenus(permMenus)
     } catch {
       // ignore
     }
   }, [])
 
-  useEffect(() => {
-    fetchRoles()
-  }, [fetchRoles])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
-
-  const fetchMenuNodes = useCallback(async () => {
-    setMenuNodesLoading(true)
-    try {
-      const menus = await getSysMenus(PERM_TYPES)
-      setMenuNodes(menus)
-    } catch {
-      // handled by interceptor
-    } finally {
-      setMenuNodesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchMenuNodes()
-  }, [fetchMenuNodes])
+  useEffect(() => { fetchRoles() }, [fetchRoles])
+  useEffect(() => { fetchStats() }, [fetchStats])
+  useEffect(() => { fetchMenuTree() }, [fetchMenuTree])
 
   // ============ 事件处理 ============
 
   const handleRefresh = () => {
     fetchRoles()
     fetchStats()
-    fetchMenuNodes()
+    fetchMenuTree()
   }
 
   const handleSearch = () => {
@@ -245,49 +514,22 @@ export default function PermissionsAdminPage() {
     setCurrentPage(1)
   }
 
-  // 新增角色
-  const handleAdd = async () => {
+  const handleAdd = () => {
     setEditingRole(null)
     setFormData({ name: "", status: 1, remark: "" })
     setSelectedMenuIds(new Set())
-    setMenuLoading(true)
     setDialogOpen(true)
-    try {
-      const menus = await getSysMenus(PERM_TYPES)
-      setAllPermMenus(menus)
-    } catch {
-      // handled by interceptor
-    } finally {
-      setMenuLoading(false)
-    }
   }
 
-  // 编辑角色（同时加载已分配权限）
   const handleEdit = async (role: SysRoleDetail) => {
     setEditingRole(role)
-    setFormData({
-      name: role.name,
-      status: role.status,
-      remark: role.remark ?? "",
-    })
+    setFormData({ name: role.name, status: role.status, remark: role.remark ?? "" })
     setSelectedMenuIds(new Set())
     setMenuLoading(true)
     setDialogOpen(true)
     try {
-      const [menus, roleMenus] = await Promise.all([
-        getSysMenus(PERM_TYPES),
-        getRoleMenuTree(role.id),
-      ])
-      setAllPermMenus(menus)
-      const collectIds = (items: SysMenuDetail[]): number[] => {
-        const ids: number[] = []
-        for (const item of items) {
-          ids.push(item.id)
-          if (item.children?.length) ids.push(...collectIds(item.children))
-        }
-        return ids
-      }
-      setSelectedMenuIds(new Set(collectIds(roleMenus)))
+      const roleMenus = await getRoleMenuTree(role.id)
+      setSelectedMenuIds(new Set(collectIds(roleMenus ?? [])))
     } catch {
       // handled by interceptor
     } finally {
@@ -295,35 +537,18 @@ export default function PermissionsAdminPage() {
     }
   }
 
-  // 切换单项权限
-  const togglePermission = (menuId: number) => {
-    setSelectedMenuIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(menuId)) {
-        next.delete(menuId)
-      } else {
-        next.add(menuId)
-      }
-      return next
-    })
+  const handleTogglePerm = (node: SysMenuDetail) => {
+    setSelectedMenuIds((prev) => toggleNodeIds(node, prev))
   }
 
-  // 切换整组权限（目录 + 该组所有按钮）
-  const toggleGroup = (group: PermGroup) => {
-    const allIds = [group.id, ...group.permissions.map((p) => p.id)]
-    const allSelected = allIds.every((id) => selectedMenuIds.has(id))
-    setSelectedMenuIds((prev) => {
-      const next = new Set(prev)
-      if (allSelected) {
-        allIds.forEach((id) => next.delete(id))
-      } else {
-        allIds.forEach((id) => next.add(id))
-      }
-      return next
-    })
+  const handleSelectAll = () => {
+    setSelectedMenuIds(new Set(collectIds(menuTree)))
   }
 
-  // 保存角色（基本信息 + 权限分配）
+  const handleClearAll = () => {
+    setSelectedMenuIds(new Set())
+  }
+
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error("请输入角色名称")
@@ -342,7 +567,6 @@ export default function PermissionsAdminPage() {
         toast.success("角色更新成功")
       } else {
         await createSysRole(payload)
-        // 创建后查找新角色 ID，再分配权限
         if (selectedMenuIds.size > 0) {
           const fresh = await getSysRoles({ name: payload.name, size: 5 })
           const newRole = fresh.items.find((r) => r.name === payload.name)
@@ -362,7 +586,6 @@ export default function PermissionsAdminPage() {
     }
   }
 
-  // 删除确认
   const handleDeleteConfirm = (role: SysRoleDetail) => {
     setDeletingRole(role)
     setDeleteOpen(true)
@@ -384,7 +607,6 @@ export default function PermissionsAdminPage() {
     }
   }
 
-  // 菜单节点事件处理
   const handleAddMenu = (type: MenuType, parentId?: number) => {
     setEditingMenu(null)
     setMenuFormData({
@@ -453,8 +675,7 @@ export default function PermissionsAdminPage() {
         toast.success("菜单创建成功")
       }
       setMenuDialogOpen(false)
-      fetchMenuNodes()
-      fetchStats()
+      fetchMenuTree()
     } catch {
       // handled by interceptor
     } finally {
@@ -474,8 +695,7 @@ export default function PermissionsAdminPage() {
       await deleteSysMenu(deletingMenu.id)
       toast.success("菜单已删除")
       setMenuDeleteOpen(false)
-      fetchMenuNodes()
-      fetchStats()
+      fetchMenuTree()
     } catch {
       // handled by interceptor
     } finally {
@@ -497,14 +717,8 @@ export default function PermissionsAdminPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
+            <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               刷新
             </Button>
             <Button onClick={handleAdd}>
@@ -543,8 +757,8 @@ export default function PermissionsAdminPage() {
               <div className="flex items-center space-x-2">
                 <KeyRound className="h-5 w-5 text-purple-500" />
                 <div>
-                  <p className="text-2xl font-bold">{totalPermissions}</p>
-                  <p className="text-muted-foreground text-sm">权限项</p>
+                  <p className="text-2xl font-bold">{totalNodes}</p>
+                  <p className="text-muted-foreground text-sm">菜单节点</p>
                 </div>
               </div>
             </CardContent>
@@ -568,10 +782,6 @@ export default function PermissionsAdminPage() {
               <Shield className="h-4 w-4" />
               角色管理
             </TabsTrigger>
-            <TabsTrigger value="permissions" className="gap-1.5">
-              <KeyRound className="h-4 w-4" />
-              权限总览
-            </TabsTrigger>
             <TabsTrigger value="menus" className="gap-1.5">
               <FolderOpen className="h-4 w-4" />
               菜单节点
@@ -580,7 +790,6 @@ export default function PermissionsAdminPage() {
 
           {/* ========== 角色管理 Tab ========== */}
           <TabsContent value="roles" className="mt-4 space-y-4">
-            {/* 搜索和筛选 */}
             <Card>
               <CardHeader>
                 <CardTitle>搜索和筛选</CardTitle>
@@ -602,9 +811,7 @@ export default function PermissionsAdminPage() {
                   </div>
                   <Select
                     value={statusFilter}
-                    onValueChange={(value: "all" | "0" | "1") =>
-                      setStatusFilter(value)
-                    }
+                    onValueChange={(value: "all" | "0" | "1") => setStatusFilter(value)}
                   >
                     <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="角色状态" />
@@ -628,7 +835,6 @@ export default function PermissionsAdminPage() {
               </CardContent>
             </Card>
 
-            {/* 角色列表 */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -666,9 +872,7 @@ export default function PermissionsAdminPage() {
                       <TableBody>
                         {roles.map((role) => (
                           <TableRow key={role.id}>
-                            <TableCell className="font-medium">
-                              {role.id}
-                            </TableCell>
+                            <TableCell className="font-medium">{role.id}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Shield className="text-muted-foreground h-4 w-4" />
@@ -685,13 +889,9 @@ export default function PermissionsAdminPage() {
                             </TableCell>
                             <TableCell>
                               {role.status === 1 ? (
-                                <Badge className="bg-green-100 text-green-700">
-                                  启用
-                                </Badge>
+                                <Badge className="bg-green-100 text-green-700">启用</Badge>
                               ) : (
-                                <Badge className="bg-gray-100 text-gray-700">
-                                  禁用
-                                </Badge>
+                                <Badge className="bg-gray-100 text-gray-700">禁用</Badge>
                               )}
                             </TableCell>
                             <TableCell className="text-sm">
@@ -727,16 +927,13 @@ export default function PermissionsAdminPage() {
                     {totalPages > 1 && (
                       <div className="flex items-center justify-between">
                         <div className="text-muted-foreground text-sm">
-                          第 {currentPage} 页，共 {totalPages} 页，共 {total}{" "}
-                          条
+                          第 {currentPage} 页，共 {totalPages} 页，共 {total} 条
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              setCurrentPage((p) => Math.max(1, p - 1))
-                            }
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage <= 1}
                           >
                             上一页
@@ -744,11 +941,7 @@ export default function PermissionsAdminPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              setCurrentPage((p) =>
-                                Math.min(totalPages, p + 1)
-                              )
-                            }
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage >= totalPages}
                           >
                             下一页
@@ -762,77 +955,18 @@ export default function PermissionsAdminPage() {
             </Card>
           </TabsContent>
 
-          {/* ========== 权限总览 Tab ========== */}
-          <TabsContent value="permissions" className="mt-4">
-            {permGroups.length === 0 ? (
-              <div className="text-muted-foreground py-12 text-center">
-                <KeyRound className="mx-auto mb-4 h-12 w-12" />
-                <p>暂无权限节点，请先添加目录和按钮类型的菜单</p>
-              </div>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {permGroups.map((group) => (
-                  <Card key={group.id}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">{group.title}</CardTitle>
-                      <CardDescription>
-                        {group.permissions.length} 项权限
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {group.permissions.map((perm) => (
-                          <div
-                            key={perm.id}
-                            className="flex items-center justify-between rounded-lg border p-3"
-                          >
-                            <div>
-                              <p className="text-sm font-medium">
-                                {perm.title}
-                              </p>
-                              <p className="text-muted-foreground font-mono text-xs">
-                                {perm.perms || perm.name}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {perm.status === 1 ? (
-                                <Badge className="bg-green-100 text-xs text-green-700">
-                                  启用
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-gray-100 text-xs text-gray-700">
-                                  禁用
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
           {/* ========== 菜单节点 Tab ========== */}
           <TabsContent value="menus" className="mt-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">菜单节点管理</h2>
                 <p className="text-muted-foreground text-sm">
-                  管理目录和按钮权限节点
+                  管理目录、菜单和按钮权限节点
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={fetchMenuNodes}
-                  disabled={menuNodesLoading}
-                >
-                  <RefreshCw
-                    className={`mr-2 h-4 w-4 ${menuNodesLoading ? "animate-spin" : ""}`}
-                  />
+                <Button variant="outline" onClick={fetchMenuTree} disabled={treeLoading}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${treeLoading ? "animate-spin" : ""}`} />
                   刷新
                 </Button>
                 <Button onClick={() => handleAddMenu(0)}>
@@ -842,135 +976,28 @@ export default function PermissionsAdminPage() {
               </div>
             </div>
 
-            {menuNodesLoading ? (
+            {treeLoading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
                 加载中...
               </div>
-            ) : menuNodes.filter((m) => m.type === 0).length === 0 ? (
+            ) : menuTree.length === 0 ? (
               <div className="text-muted-foreground py-12 text-center">
                 <FolderOpen className="mx-auto mb-4 h-12 w-12" />
                 <p>暂无菜单节点，点击「新增目录」开始创建</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {menuNodes
-                  .filter((m) => m.type === 0)
-                  .sort((a, b) => a.sort - b.sort || a.id - b.id)
-                  .map((dir) => {
-                    const buttons = menuNodes
-                      .filter((m) => m.type === 2 && m.parent_id === dir.id)
-                      .sort((a, b) => a.sort - b.sort || a.id - b.id)
-                    return (
-                      <Card key={dir.id}>
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <FolderOpen className="h-4 w-4 text-blue-500" />
-                              <CardTitle className="text-base">
-                                {dir.title}
-                              </CardTitle>
-                              {dir.status === 1 ? (
-                                <Badge className="bg-green-100 text-xs text-green-700">
-                                  启用
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-gray-100 text-xs text-gray-700">
-                                  禁用
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleAddMenu(2, dir.id)}
-                                title="新增按钮权限"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditMenu(dir)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteMenuConfirm(dir)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <CardDescription className="flex gap-4 text-xs">
-                            {dir.icon && <span>图标: {dir.icon}</span>}
-                            <span>路由: {dir.path || "-"}</span>
-                            <span>排序: {dir.sort}</span>
-                          </CardDescription>
-                        </CardHeader>
-                        {buttons.length > 0 && (
-                          <CardContent>
-                            <div className="space-y-2">
-                              {buttons.map((btn) => (
-                                <div
-                                  key={btn.id}
-                                  className="flex items-center justify-between rounded-lg border p-3"
-                                >
-                                  <div>
-                                    <p className="text-sm font-medium">
-                                      {btn.title}
-                                    </p>
-                                    <p className="text-muted-foreground font-mono text-xs">
-                                      {btn.perms || btn.name}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {btn.status === 1 ? (
-                                      <Badge className="bg-green-100 text-xs text-green-700">
-                                        启用
-                                      </Badge>
-                                    ) : (
-                                      <Badge className="bg-gray-100 text-xs text-gray-700">
-                                        禁用
-                                      </Badge>
-                                    )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleEditMenu(btn)}
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-destructive hover:text-destructive"
-                                      onClick={() =>
-                                        handleDeleteMenuConfirm(btn)
-                                      }
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </CardContent>
-                        )}
-                        {buttons.length === 0 && (
-                          <CardContent>
-                            <p className="text-muted-foreground text-xs">
-                              暂无按钮权限，点击 + 新增
-                            </p>
-                          </CardContent>
-                        )}
-                      </Card>
-                    )
-                  })}
+              <div className="space-y-1">
+                {menuTree.map((node) => (
+                  <MenuTreeNode
+                    key={node.id}
+                    node={node}
+                    depth={0}
+                    onEdit={handleEditMenu}
+                    onDelete={handleDeleteMenuConfirm}
+                    onAddChild={handleAddMenu}
+                  />
+                ))}
               </div>
             )}
           </TabsContent>
@@ -979,13 +1006,11 @@ export default function PermissionsAdminPage() {
 
       {/* ========== 新增/编辑角色弹窗 ========== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[640px]">
           <DialogHeader>
             <DialogTitle>{editingRole ? "编辑角色" : "新增角色"}</DialogTitle>
             <DialogDescription>
-              {editingRole
-                ? "修改角色信息和权限分配"
-                : "创建新角色并分配权限"}
+              {editingRole ? "修改角色信息和权限分配" : "创建新角色并分配权限"}
             </DialogDescription>
           </DialogHeader>
 
@@ -1009,10 +1034,7 @@ export default function PermissionsAdminPage() {
                   id="role-remark"
                   value={formData.remark ?? ""}
                   onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      remark: e.target.value,
-                    }))
+                    setFormData((prev) => ({ ...prev, remark: e.target.value }))
                   }
                   placeholder="请输入角色描述"
                   rows={2}
@@ -1028,10 +1050,7 @@ export default function PermissionsAdminPage() {
                 <Switch
                   checked={formData.status === 1}
                   onCheckedChange={(checked) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      status: checked ? 1 : 0,
-                    }))
+                    setFormData((prev) => ({ ...prev, status: checked ? 1 : 0 }))
                   }
                 />
               </div>
@@ -1039,92 +1058,54 @@ export default function PermissionsAdminPage() {
 
             {/* 权限分配 */}
             <div className="space-y-3">
-              <Label>权限分配</Label>
+              <div className="flex items-center justify-between">
+                <Label>权限分配</Label>
+                {menuTree.length > 0 && (
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleSelectAll}
+                    >
+                      全选
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={handleClearAll}
+                    >
+                      清空
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               {menuLoading ? (
                 <div className="flex items-center justify-center py-6">
                   <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
                   加载权限列表...
                 </div>
-              ) : permGroups.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  暂无可分配的权限节点
-                </p>
+              ) : menuTree.length === 0 ? (
+                <p className="text-muted-foreground text-sm">暂无可分配的权限节点</p>
               ) : (
                 <>
                   <p className="text-muted-foreground text-sm">
-                    已选择 {selectedMenuIds.size} / {totalPermissions} 项权限
+                    已选择 {selectedMenuIds.size} / {totalNodes} 个节点
                   </p>
-                  <div className="space-y-4">
-                    {permGroups.map((group) => {
-                      const allIds = [
-                        group.id,
-                        ...group.permissions.map((p) => p.id),
-                      ]
-                      const allSelected = allIds.every((id) =>
-                        selectedMenuIds.has(id)
-                      )
-                      return (
-                        <div
-                          key={group.id}
-                          className="rounded-lg border p-3"
-                        >
-                          <div className="mb-2 flex items-center justify-between">
-                            <span className="text-sm font-medium">
-                              {group.title}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => toggleGroup(group)}
-                            >
-                              {allSelected ? "取消全选" : "全选"}
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {group.permissions.map((perm) => {
-                              const isChecked = selectedMenuIds.has(perm.id)
-                              return (
-                                <div
-                                  key={perm.id}
-                                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
-                                    isChecked
-                                      ? "border-primary bg-primary/5 text-primary"
-                                      : "hover:bg-muted"
-                                  }`}
-                                  onClick={() => togglePermission(perm.id)}
-                                >
-                                  <div
-                                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
-                                      isChecked
-                                        ? "border-primary bg-primary text-primary-foreground"
-                                        : "border-muted-foreground/30"
-                                    }`}
-                                  >
-                                    {isChecked && (
-                                      <svg
-                                        className="h-3 w-3"
-                                        viewBox="0 0 12 12"
-                                        fill="none"
-                                      >
-                                        <path
-                                          d="M2 6L5 9L10 3"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                        />
-                                      </svg>
-                                    )}
-                                  </div>
-                                  <span className="truncate">{perm.title}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div className="max-h-[400px] overflow-y-auto rounded-lg border p-2">
+                    <div className="space-y-0.5">
+                      {menuTree.map((node) => (
+                        <PermTreeNode
+                          key={node.id}
+                          node={node}
+                          depth={0}
+                          selectedIds={selectedMenuIds}
+                          onToggle={handleTogglePerm}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </>
               )}
@@ -1136,11 +1117,7 @@ export default function PermissionsAdminPage() {
               取消
             </Button>
             <Button onClick={handleSave} disabled={saving || menuLoading}>
-              {saving
-                ? "保存中..."
-                : editingRole
-                  ? "保存修改"
-                  : "创建角色"}
+              {saving ? "保存中..." : editingRole ? "保存修改" : "创建角色"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1152,19 +1129,14 @@ export default function PermissionsAdminPage() {
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              确定要删除角色 <strong>{deletingRole?.name}</strong>{" "}
-              吗？此操作不可撤销。
+              确定要删除角色 <strong>{deletingRole?.name}</strong> 吗？此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>
               取消
             </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
               {deleting ? "删除中..." : "确认删除"}
             </Button>
           </DialogFooter>
@@ -1173,15 +1145,17 @@ export default function PermissionsAdminPage() {
 
       {/* ========== 菜单节点新增/编辑弹窗 ========== */}
       <Dialog open={menuDialogOpen} onOpenChange={setMenuDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
             <DialogTitle>
               {editingMenu ? "编辑菜单节点" : "新增菜单节点"}
             </DialogTitle>
             <DialogDescription>
               {menuFormData.type === 0
-                ? "目录节点显示在侧边栏导航中"
-                : "按钮节点用于接口访问控制"}
+                ? "目录节点，可包含菜单和按钮"
+                : menuFormData.type === 1
+                  ? "菜单节点，对应页面路由，可包含按钮"
+                  : "按钮节点，用于接口访问控制"}
             </DialogDescription>
           </DialogHeader>
 
@@ -1204,8 +1178,9 @@ export default function PermissionsAdminPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">目录（侧边栏）</SelectItem>
-                    <SelectItem value="2">按钮（权限）</SelectItem>
+                    <SelectItem value="0">目录（顶级容器）</SelectItem>
+                    <SelectItem value="1">菜单（页面路由）</SelectItem>
+                    <SelectItem value="2">按钮（权限控制）</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1217,10 +1192,7 @@ export default function PermissionsAdminPage() {
               <Input
                 value={menuFormData.title}
                 onChange={(e) =>
-                  setMenuFormData((prev) => ({
-                    ...prev,
-                    title: e.target.value,
-                  }))
+                  setMenuFormData((prev) => ({ ...prev, title: e.target.value }))
                 }
                 placeholder="显示名称"
               />
@@ -1232,76 +1204,60 @@ export default function PermissionsAdminPage() {
               <Input
                 value={menuFormData.name}
                 onChange={(e) =>
-                  setMenuFormData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
+                  setMenuFormData((prev) => ({ ...prev, name: e.target.value }))
                 }
                 placeholder="唯一标识符（英文）"
               />
             </div>
 
-            {/* 路由路径（仅目录） */}
-            {menuFormData.type === 0 && (
+            {/* 路由路径（目录和菜单） */}
+            {(menuFormData.type === 0 || menuFormData.type === 1) && (
               <div className="space-y-2">
                 <Label>路由路径</Label>
                 <Input
                   value={menuFormData.path}
                   onChange={(e) =>
-                    setMenuFormData((prev) => ({
-                      ...prev,
-                      path: e.target.value,
-                    }))
+                    setMenuFormData((prev) => ({ ...prev, path: e.target.value }))
                   }
                   placeholder="/user/admin/xxx"
                 />
               </div>
             )}
 
-            {/* 图标（仅目录） */}
-            {menuFormData.type === 0 && (
+            {/* 图标（目录和菜单） */}
+            {(menuFormData.type === 0 || menuFormData.type === 1) && (
               <div className="space-y-2">
                 <Label>图标名称</Label>
                 <Input
                   value={menuFormData.icon}
                   onChange={(e) =>
-                    setMenuFormData((prev) => ({
-                      ...prev,
-                      icon: e.target.value,
-                    }))
+                    setMenuFormData((prev) => ({ ...prev, icon: e.target.value }))
                   }
-                  placeholder="如: Shield, Settings, Users, Database..."
+                  placeholder="如: Shield, Settings, Users..."
                 />
               </div>
             )}
 
-            {/* 权限标识（仅按钮） */}
-            {menuFormData.type === 2 && (
+            {/* 权限标识（菜单和按钮） */}
+            {(menuFormData.type === 1 || menuFormData.type === 2) && (
               <div className="space-y-2">
                 <Label>权限标识</Label>
                 <Input
                   value={menuFormData.perms}
                   onChange={(e) =>
-                    setMenuFormData((prev) => ({
-                      ...prev,
-                      perms: e.target.value,
-                    }))
+                    setMenuFormData((prev) => ({ ...prev, perms: e.target.value }))
                   }
                   placeholder="如: sys:user:list"
                 />
               </div>
             )}
 
-            {/* 所属目录（仅按钮） */}
-            {menuFormData.type === 2 && (
+            {/* 所属目录（type=1 菜单，父级只能是目录） */}
+            {menuFormData.type === 1 && (
               <div className="space-y-2">
                 <Label>所属目录</Label>
                 <Select
-                  value={
-                    menuFormData.parent_id
-                      ? String(menuFormData.parent_id)
-                      : "none"
-                  }
+                  value={menuFormData.parent_id ? String(menuFormData.parent_id) : "none"}
                   onValueChange={(v) =>
                     setMenuFormData((prev) => ({
                       ...prev,
@@ -1314,13 +1270,40 @@ export default function PermissionsAdminPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">无（顶级）</SelectItem>
-                    {menuNodes
-                      .filter((m) => m.type === 0)
-                      .map((dir) => (
-                        <SelectItem key={dir.id} value={String(dir.id)}>
-                          {dir.title}
-                        </SelectItem>
-                      ))}
+                    {directoryNodes.map((dir) => (
+                      <SelectItem key={dir.id} value={String(dir.id)}>
+                        {dir.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* 所属父级（type=2 按钮，父级可以是目录或菜单） */}
+            {menuFormData.type === 2 && (
+              <div className="space-y-2">
+                <Label>所属父级</Label>
+                <Select
+                  value={menuFormData.parent_id ? String(menuFormData.parent_id) : "none"}
+                  onValueChange={(v) =>
+                    setMenuFormData((prev) => ({
+                      ...prev,
+                      parent_id: v === "none" ? null : Number(v),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择所属目录或菜单" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">无（顶级）</SelectItem>
+                    {parentNodes.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.type === 0 ? "📁 " : "📄 "}
+                        {p.title}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1357,18 +1340,11 @@ export default function PermissionsAdminPage() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setMenuDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setMenuDialogOpen(false)}>
               取消
             </Button>
             <Button onClick={handleSaveMenu} disabled={menuSaving}>
-              {menuSaving
-                ? "保存中..."
-                : editingMenu
-                  ? "保存修改"
-                  : "创建菜单"}
+              {menuSaving ? "保存中..." : editingMenu ? "保存修改" : "创建菜单"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1385,10 +1361,7 @@ export default function PermissionsAdminPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setMenuDeleteOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setMenuDeleteOpen(false)}>
               取消
             </Button>
             <Button

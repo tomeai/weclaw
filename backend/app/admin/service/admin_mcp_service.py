@@ -21,7 +21,13 @@ class McpAdminServerService:
 
     @staticmethod
     async def update_mcp(
-        db: AsyncSession, mcp_id: int, category_id: int, server_title: str, description: str, is_public: int
+        db: AsyncSession,
+        mcp_id: int,
+        category_id: int,
+        server_title: str,
+        description: str,
+        is_public: int,
+        is_recommend: int,
     ):
         count = 0
         if category_id:
@@ -29,8 +35,10 @@ class McpAdminServerService:
             if not category:
                 raise errors.NotFoundError(msg='类目不存在')
             count = await mcp_admin_server_dao.update_category(db, mcp_id, category_id)
-        if is_public:
+        if is_public is not None:
             count = await mcp_admin_server_dao.update_is_public(db, mcp_id, is_public)
+        if is_recommend is not None:
+            count = await mcp_admin_server_dao.update_is_recommend(db, mcp_id, is_recommend)
         if server_title:
             count = await mcp_admin_server_dao.update_server_title(db, mcp_id, server_title)
         if description:

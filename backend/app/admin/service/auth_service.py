@@ -65,7 +65,6 @@ class AuthService:
             await user_dao.update_login_time(db, obj.username)
             access_token = await create_access_token(
                 user.id,
-                user.is_multi_login,
                 # extra info
                 swagger=True,
             )
@@ -91,7 +90,6 @@ class AuthService:
                 await db.refresh(user)
                 access_token = await create_access_token(
                     user.id,
-                    user.is_multi_login,
                     # extra info
                     username=user.username,
                     nickname=user.nickname,
@@ -101,7 +99,7 @@ class AuthService:
                     browser=request.state.browser,
                     device=request.state.device,
                 )
-                refresh_token = await create_refresh_token(access_token.session_uuid, user.id, user.is_multi_login)
+                refresh_token = await create_refresh_token(access_token.session_uuid, user.id)
                 response.set_cookie(
                     key=settings.COOKIE_REFRESH_TOKEN_KEY,
                     value=refresh_token.refresh_token,
@@ -191,14 +189,10 @@ class AuthService:
                 raise errors.NotFoundError(msg='用户不存在')
             elif not user.status:
                 raise errors.AuthorizationError(msg='用户已被锁定, 请联系统管理员')
-            if not user.is_multi_login:
-                if await redis_client.keys(match=f'{settings.TOKEN_REDIS_PREFIX}:{user.id}:*'):
-                    raise errors.ForbiddenError(msg='此用户已在异地登录，请重新登录并及时修改密码')
             new_token = await create_new_token(
                 refresh_token,
                 token_payload.session_uuid,
                 user.id,
-                user.is_multi_login,
                 # extra info
                 username=user.username,
                 nickname=user.nickname,
@@ -294,7 +288,6 @@ class AuthService:
             # 签发 JWT
             access_token = await create_access_token(
                 user.id,
-                user.is_multi_login,
                 username=user.username,
                 nickname=user.nickname or f'#{text_captcha(5)}',
                 last_login_time=timezone.to_str(timezone.now()),
@@ -303,7 +296,7 @@ class AuthService:
                 browser=request.state.browser,
                 device=request.state.device,
             )
-            refresh_token = await create_refresh_token(access_token.session_uuid, user.id, user.is_multi_login)
+            refresh_token = await create_refresh_token(access_token.session_uuid, user.id)
             response.set_cookie(
                 key=settings.COOKIE_REFRESH_TOKEN_KEY,
                 value=refresh_token.refresh_token,

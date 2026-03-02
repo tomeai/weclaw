@@ -87,7 +87,6 @@ class GetUserInfoDetail(UserInfoSchemaBase):
     status: StatusType = Field(description='状态')
     is_superuser: bool = Field(description='是否超级管理员')
     is_staff: bool = Field(description='是否管理员')
-    is_multi_login: bool = Field(description='是否允许多端登录')
     join_time: datetime = Field(description='加入时间')
     last_login_time: datetime | None = Field(None, description='最后登录时间')
 

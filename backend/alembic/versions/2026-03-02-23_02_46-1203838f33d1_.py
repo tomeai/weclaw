@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: e517b6c7fdb0
+Revision ID: 1203838f33d1
 Revises:
-Create Date: 2026-02-20 16:20:28.792710
+Create Date: 2026-03-02 23:02:46.099378
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import mysql, postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'e517b6c7fdb0'
+revision = '1203838f33d1'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -113,7 +113,6 @@ def upgrade():
         sa.Column('transport', sa.String(length=20), nullable=True, comment='streamable-http、sse、stdio'),
         sa.Column('server_type', sa.String(length=20), nullable=True, comment='hosted、local'),
         sa.Column('compile_type', sa.String(length=20), nullable=True, comment='编译类型'),
-        sa.Column('runtime_type', sa.String(length=20), nullable=False, comment='运行环境'),
         sa.Column('server_config', sa.JSON(), nullable=True, comment='server config'),
         sa.Column('envs', sa.JSON(), nullable=True, comment='环境变量'),
         sa.Column('git', sa.String(length=255), nullable=True, comment='项目地址'),
@@ -149,47 +148,6 @@ def upgrade():
     )
     op.create_index(op.f('ix_skill_category_id'), 'skill_category', ['id'], unique=True)
     op.create_table(
-        'sys_data_rule',
-        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
-        sa.Column('name', sa.String(length=512), nullable=False, comment='名称'),
-        sa.Column('model', sa.String(length=64), nullable=False, comment='模型名称'),
-        sa.Column('column', sa.String(length=32), nullable=False, comment='模型字段名'),
-        sa.Column('operator', sa.Integer(), nullable=False, comment='运算符（0：and、1：or）'),
-        sa.Column(
-            'expression',
-            sa.Integer(),
-            nullable=False,
-            comment='表达式（0：==、1：!=、2：>、3：>=、4：<、5：<=、6：in、7：not_in）',
-        ),
-        sa.Column('value', sa.String(length=256), nullable=False, comment='规则值'),
-        sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
-        sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name'),
-        comment='数据规则表',
-    )
-    op.create_index(op.f('ix_sys_data_rule_id'), 'sys_data_rule', ['id'], unique=True)
-    op.create_table(
-        'sys_data_scope',
-        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
-        sa.Column('name', sa.String(length=64), nullable=False, comment='名称'),
-        sa.Column('status', sa.Integer(), nullable=False, comment='状态（0停用 1正常）'),
-        sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
-        sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name'),
-        comment='数据范围表',
-    )
-    op.create_index(op.f('ix_sys_data_scope_id'), 'sys_data_scope', ['id'], unique=True)
-    op.create_table(
-        'sys_data_scope_rule',
-        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键ID'),
-        sa.Column('data_scope_id', sa.BigInteger(), nullable=False, comment='数据范围 ID'),
-        sa.Column('data_rule_id', sa.BigInteger(), nullable=False, comment='数据规则 ID'),
-        sa.PrimaryKeyConstraint('id', 'data_scope_id', 'data_rule_id'),
-    )
-    op.create_index(op.f('ix_sys_data_scope_rule_id'), 'sys_data_scope_rule', ['id'], unique=True)
-    op.create_table(
         'sys_login_log',
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
         sa.Column('user_uuid', sa.String(length=50), nullable=False, comment='用户UUID'),
@@ -218,13 +176,12 @@ def upgrade():
         sa.Column('path', sa.String(length=200), nullable=True, comment='路由地址'),
         sa.Column('sort', sa.Integer(), nullable=False, comment='排序'),
         sa.Column('icon', sa.String(length=128), nullable=True, comment='菜单图标'),
-        sa.Column('type', sa.Integer(), nullable=False, comment='菜单类型（0目录 1菜单 2按钮 3内嵌 4外链）'),
+        sa.Column('type', sa.Integer(), nullable=False, comment='菜单类型（0目录 1菜单 2按钮）'),
         sa.Column('component', sa.String(length=256), nullable=True, comment='组件路径'),
         sa.Column('perms', sa.String(length=128), nullable=True, comment='权限标识'),
         sa.Column('status', sa.Integer(), nullable=False, comment='菜单状态（0停用 1正常）'),
         sa.Column('display', sa.Integer(), nullable=False, comment='是否显示（0否 1是）'),
         sa.Column('cache', sa.Integer(), nullable=False, comment='是否缓存（0否 1是）'),
-        sa.Column('link', mysql.LONGTEXT().with_variant(sa.TEXT(), 'postgresql'), nullable=True, comment='外链地址'),
         sa.Column('remark', mysql.LONGTEXT().with_variant(sa.TEXT(), 'postgresql'), nullable=True, comment='备注'),
         sa.Column('parent_id', sa.BigInteger(), nullable=True, comment='父菜单ID'),
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
@@ -266,7 +223,6 @@ def upgrade():
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
         sa.Column('name', sa.String(length=20), nullable=False, comment='角色名称'),
         sa.Column('status', sa.Integer(), nullable=False, comment='角色状态（0停用 1正常）'),
-        sa.Column('is_filter_scopes', sa.Boolean(), nullable=False, comment='过滤数据权限(0否 1是)'),
         sa.Column('remark', mysql.LONGTEXT().with_variant(sa.TEXT(), 'postgresql'), nullable=True, comment='备注'),
         sa.Column('created_time', sa.DateTime(timezone=True), nullable=False, comment='创建时间'),
         sa.Column('updated_time', sa.DateTime(timezone=True), nullable=True, comment='更新时间'),
@@ -275,14 +231,6 @@ def upgrade():
         comment='角色表',
     )
     op.create_index(op.f('ix_sys_role_id'), 'sys_role', ['id'], unique=True)
-    op.create_table(
-        'sys_role_data_scope',
-        sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键 ID'),
-        sa.Column('role_id', sa.BigInteger(), nullable=False, comment='角色 ID'),
-        sa.Column('data_scope_id', sa.BigInteger(), nullable=False, comment='数据范围 ID'),
-        sa.PrimaryKeyConstraint('id', 'role_id', 'data_scope_id'),
-    )
-    op.create_index(op.f('ix_sys_role_data_scope_id'), 'sys_role_data_scope', ['id'], unique=True)
     op.create_table(
         'sys_role_menu',
         sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False, comment='主键ID'),
@@ -319,12 +267,6 @@ def upgrade():
             sa.Boolean().with_variant(sa.INTEGER(), 'postgresql'),
             nullable=False,
             comment='后台管理登陆(0否 1是)',
-        ),
-        sa.Column(
-            'is_multi_login',
-            sa.Boolean().with_variant(sa.INTEGER(), 'postgresql'),
-            nullable=False,
-            comment='是否重复登陆(0否 1是)',
         ),
         sa.Column('join_time', sa.DateTime(timezone=True), nullable=False, comment='注册时间'),
         sa.Column('last_login_time', sa.DateTime(timezone=True), nullable=True, comment='上次登录时间'),
@@ -440,8 +382,6 @@ def downgrade():
     op.drop_table('sys_user')
     op.drop_index(op.f('ix_sys_role_menu_id'), table_name='sys_role_menu')
     op.drop_table('sys_role_menu')
-    op.drop_index(op.f('ix_sys_role_data_scope_id'), table_name='sys_role_data_scope')
-    op.drop_table('sys_role_data_scope')
     op.drop_index(op.f('ix_sys_role_id'), table_name='sys_role')
     op.drop_table('sys_role')
     op.drop_index(op.f('ix_sys_opera_log_id'), table_name='sys_opera_log')
@@ -451,12 +391,6 @@ def downgrade():
     op.drop_table('sys_menu')
     op.drop_index(op.f('ix_sys_login_log_id'), table_name='sys_login_log')
     op.drop_table('sys_login_log')
-    op.drop_index(op.f('ix_sys_data_scope_rule_id'), table_name='sys_data_scope_rule')
-    op.drop_table('sys_data_scope_rule')
-    op.drop_index(op.f('ix_sys_data_scope_id'), table_name='sys_data_scope')
-    op.drop_table('sys_data_scope')
-    op.drop_index(op.f('ix_sys_data_rule_id'), table_name='sys_data_rule')
-    op.drop_table('sys_data_rule')
     op.drop_index(op.f('ix_skill_category_id'), table_name='skill_category')
     op.drop_table('skill_category')
     op.drop_index(op.f('ix_mcp_server_user_id'), table_name='mcp_server')

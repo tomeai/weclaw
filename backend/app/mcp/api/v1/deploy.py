@@ -1,3 +1,4 @@
+from app.admin.crud.crud_user import user_dao
 from app.mcp.crud.crud_mcp_server import mcp_server_dao
 from app.mcp.schema.mcp import AddMcpServerParam
 from app.task.tasks.tasks import compile_mcp_server
@@ -19,15 +20,18 @@ async def compile_package(request: Request, obj: AddMcpServerParam) -> ResponseM
     :param obj:
     :return:
     """
-    # 校验 server_title 是否已存在
-    async with async_db_session() as db:
-        existing = await mcp_server_dao.get_by_server_title(db, obj.server_title)
-        if existing:
-            raise errors.ServerError(msg='server_title is exist')
-
     username = request.user.username
     if not username:
         raise errors.ServerError(msg='username is null')
+
+    # 校验同一用户下 server_title 是否已存在
+    async with async_db_session() as db:
+        user = await user_dao.get_by_username(db, username)
+        if not user:
+            raise errors.NotFoundError(msg=f'用户 {username} 不存在')
+        existing = await mcp_server_dao.get_by_user_and_title(db, user.id, obj.server_title)
+        if existing:
+            raise errors.ConflictError(msg=f'已存在同名 MCP：{obj.server_title}')
     result = compile_mcp_server.apply_async((username, obj.model_dump()))
     return response_base.success(data={'task_id': result.id, 'status': result.status})
 

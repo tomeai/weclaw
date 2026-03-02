@@ -241,8 +241,10 @@ export function callMcpServerTool(
   args: Record<string, any>
 ): Promise<McpServerCallResult> {
   return http.post<McpServerCallResult>(
-    `${API_ROUTE_MCPS}/${username}/${serverName}/invoke`,
+    `${API_ROUTE_MCPS}invoke`,
     {
+      username,
+      server_name: serverName,
       tool_name: toolName,
       arguments: args,
     }
@@ -345,7 +347,10 @@ export interface MyMcpItem {
   description: string | null
   server_type: "hosted" | "local"
   is_public: boolean | null
-  owner: string
+  user: {
+    username: string
+    avatar: string | null
+  }
   created_time: string
   updated_time: string | null
 }

@@ -29,6 +29,9 @@ class CRUDMcpServer(CRUDPlus[McpServer]):
     async def get_mcp_with_user(self, db: AsyncSession, server_name: str, user_id: int) -> McpServer:
         return await self.select_model_by_column(db, server_name=server_name, user_id=user_id)
 
+    async def get_by_user_and_title(self, db: AsyncSession, user_id: int, server_title: str) -> McpServer | None:
+        return await self.select_model_by_column(db, user_id=user_id, server_title=server_title)
+
     async def get_mcp_by_servername(self, db: AsyncSession, pk: int) -> McpServer:
         return await self.select_model(db, pk)
 

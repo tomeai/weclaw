@@ -124,17 +124,6 @@ class Settings(BaseSettings):
     COOKIE_REFRESH_TOKEN_KEY: str = 'wemcp_refresh_token'
     COOKIE_REFRESH_TOKEN_EXPIRE_SECONDS: int = 60 * 60 * 24 * 7  # 7 天
 
-    # 数据权限配置
-    DATA_PERMISSION_MODELS: dict[str, str] = {  # 允许进行数据过滤的 SQLA 模型，它必须以模块字符串的方式定义
-        'Api': 'plugin.casbin.model.Api',
-    }
-    DATA_PERMISSION_COLUMN_EXCLUDE: list[str] = [  # 排除允许进行数据过滤的 SQLA 模型列
-        'id',
-        'sort',
-        'created_time',
-        'updated_time',
-    ]
-
     # OAuth2
     # github oauth
     OAUTH2_GITHUB_CLIENT_ID: str = ''

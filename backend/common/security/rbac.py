@@ -44,7 +44,7 @@ async def rbac_verify(request: Request, _token: str = DependsJwtAuth) -> None:
 
     # 检测后台管理操作权限
     method = request.method
-    if (method != MethodType.GET or method != MethodType.OPTIONS) and not request.user.is_staff:
+    if (method != MethodType.GET and method != MethodType.OPTIONS) and not request.user.is_staff:
         raise errors.AuthorizationError(msg='用户已被禁止后台管理操作，请联系系统管理员')
 
     # RBAC 鉴权

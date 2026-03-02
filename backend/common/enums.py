@@ -48,26 +48,6 @@ class MenuType(IntEnum):
     link = 4
 
 
-class RoleDataRuleOperatorType(IntEnum):
-    """数据规则运算符"""
-
-    AND = 0
-    OR = 1
-
-
-class RoleDataRuleExpressionType(IntEnum):
-    """数据规则表达式"""
-
-    eq = 0  # ==
-    ne = 1  # !=
-    gt = 2  # >
-    ge = 3  # >=
-    lt = 4  # <
-    le = 5  # <=
-    in_ = 6
-    not_in = 7
-
-
 class MethodType(StrEnum):
     """HTTP 请求方法"""
 

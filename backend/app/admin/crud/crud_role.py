@@ -1,14 +1,12 @@
 from collections.abc import Sequence
 from typing import Any
 
-from app.admin.model import DataScope, Menu, Role, role_data_scope, role_menu
+from app.admin.model import Menu, Role, role_menu
 from app.admin.schema.role import (
     CreateRoleMenuParam,
     CreateRoleParam,
-    CreateRoleScopeParam,
     UpdateRoleMenuParam,
     UpdateRoleParam,
-    UpdateRoleScopeParam,
 )
 from sqlalchemy import Select, delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,18 +29,16 @@ class CRUDRole(CRUDPlus[Role]):
 
     async def get_join(self, db: AsyncSession, pk: int) -> Any | None:
         """
-        获取角色及关联菜单、数据范围
+        获取角色及关联菜单
 
         :param db: 数据库会话
         :param pk: 角色 ID
         :return:
         """
         stmt = (
-            select(Role, Menu, DataScope)
+            select(Role, Menu)
             .outerjoin(role_menu, role_menu.c.role_id == Role.id)
             .outerjoin(Menu, Menu.id == role_menu.c.menu_id)
-            .outerjoin(role_data_scope, role_data_scope.c.role_id == Role.id)
-            .outerjoin(DataScope, DataScope.id == role_data_scope.c.data_scope_id)
             .where(Role.id == pk)
         )
         result = await db.execute(stmt)
@@ -52,7 +48,6 @@ class CRUDRole(CRUDPlus[Role]):
             rows,
             relationships=[
                 'Role-m2m-Menu:menus',
-                'Role-m2m-DataScope:scopes',
             ],
         )
 
@@ -146,29 +141,6 @@ class CRUDRole(CRUDPlus[Role]):
             await db.execute(role_menu_stmt, role_menu_data)
 
         return len(menu_ids.menus)
-
-    @staticmethod
-    async def update_scopes(db: AsyncSession, role_id: int, scope_ids: UpdateRoleScopeParam) -> int:
-        """
-        更新角色数据范围
-
-        :param db: 数据库会话
-        :param role_id: 角色 ID
-        :param scope_ids: 数据范围 ID 列表
-        :return:
-        """
-        role_data_scope_stmt = delete(role_data_scope).where(role_data_scope.c.role_id == role_id)
-        await db.execute(role_data_scope_stmt)
-
-        if scope_ids.scopes:
-            role_data_scope_data = [
-                CreateRoleScopeParam(role_id=role_id, data_scope_id=scope_id).model_dump()
-                for scope_id in scope_ids.scopes
-            ]
-            role_data_scope_stmt = insert(role_data_scope)
-            await db.execute(role_data_scope_stmt, role_data_scope_data)
-
-        return len(scope_ids.scopes)
 
     async def delete(self, db: AsyncSession, role_ids: list[int]) -> int:
         """

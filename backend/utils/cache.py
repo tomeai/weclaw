@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from app.admin.model import data_scope_rule, role_data_scope, role_menu, user_role
+from app.admin.model import role_menu, user_role
 from core.conf import settings
 from database.redis import redis_client
 from sqlalchemy import select
@@ -47,45 +47,6 @@ class UserCacheManager:
             select(user_role.c.user_id)
             .join(role_menu, user_role.c.role_id == role_menu.c.role_id)
             .where(role_menu.c.menu_id.in_(menu_ids))
-            .distinct()
-        )
-        result = await db.execute(stmt)
-        user_ids = result.scalars().all()
-
-        await self.clear(user_ids)
-
-    async def clear_by_data_scope_id(self, db: AsyncSession, scope_ids: list[int]) -> None:
-        """
-        通过数据范围 ID 清理用户缓存
-
-        :param db: 数据库会话
-        :param scope_ids: 数据范围 ID 列表
-        :return:
-        """
-        stmt = (
-            select(user_role.c.user_id)
-            .join(role_data_scope, user_role.c.role_id == role_data_scope.c.role_id)
-            .where(role_data_scope.c.data_scope_id.in_(scope_ids))
-            .distinct()
-        )
-        result = await db.execute(stmt)
-        user_ids = result.scalars().all()
-
-        await self.clear(user_ids)
-
-    async def clear_by_data_rule_id(self, db: AsyncSession, rule_ids: list[int]) -> None:
-        """
-        通过数据规则 ID 清理用户缓存
-
-        :param db: 数据库会话
-        :param rule_ids: 数据规则 ID 列表
-        :return:
-        """
-        stmt = (
-            select(user_role.c.user_id)
-            .join(role_data_scope, user_role.c.role_id == role_data_scope.c.role_id)
-            .join(data_scope_rule, role_data_scope.c.data_scope_id == data_scope_rule.c.data_scope_id)
-            .where(data_scope_rule.c.data_rule_id.in_(rule_ids))
             .distinct()
         )
         result = await db.execute(stmt)

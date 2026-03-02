@@ -8,7 +8,6 @@ from app.admin.schema.role import (
     GetRoleWithRelationDetail,
     UpdateRoleMenuParam,
     UpdateRoleParam,
-    UpdateRoleScopeParam,
 )
 from app.admin.service.role_service import role_service
 from common.pagination import DependsPagination, PageData
@@ -35,14 +34,6 @@ async def get_role_menu_tree(
 ) -> ResponseSchemaModel[list[GetMenuTree] | None]:
     menu = await role_service.get_menu_tree(db=db, pk=pk)
     return response_base.success(data=menu)
-
-
-@router.get('/{pk}/scopes', summary='获取角色所有数据范围', dependencies=[DependsJwtAuth])
-async def get_role_scopes(
-    db: CurrentSession, pk: Annotated[int, Path(description='角色 ID')]
-) -> ResponseSchemaModel[list[int]]:
-    rule = await role_service.get_scopes(db=db, pk=pk)
-    return response_base.success(data=rule)
 
 
 @router.get('/{pk}', summary='获取角色详情', dependencies=[DependsJwtAuth])
@@ -114,25 +105,6 @@ async def update_role_menus(
     menu_ids: UpdateRoleMenuParam,
 ) -> ResponseModel:
     count = await role_service.update_role_menu(db=db, pk=pk, menu_ids=menu_ids)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
-
-
-@router.put(
-    '/{pk}/scopes',
-    summary='更新角色数据范围',
-    dependencies=[
-        Depends(RequestPermission('sys:role:scope:edit')),
-        DependsRBAC,
-    ],
-)
-async def update_role_scopes(
-    db: CurrentSessionTransaction,
-    pk: Annotated[int, Path(description='角色 ID')],
-    scope_ids: UpdateRoleScopeParam,
-) -> ResponseModel:
-    count = await role_service.update_role_scope(db=db, pk=pk, scope_ids=scope_ids)
     if count > 0:
         return response_base.success()
     return response_base.fail()

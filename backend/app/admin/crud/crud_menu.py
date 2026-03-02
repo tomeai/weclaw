@@ -13,9 +13,12 @@ class CRUDMenu(CRUDPlus[Menu]):
     async def get(self, db: AsyncSession, menu_id: int) -> Menu | None:
         return await self.select_model(db, menu_id)
 
-    async def get_all(self, db: AsyncSession) -> Sequence[Menu]:
-        """获取所有菜单，按 sort 排序"""
-        result = await db.execute(select(Menu).order_by(Menu.sort, Menu.id))
+    async def get_all(self, db: AsyncSession, types: list[int] | None = None) -> Sequence[Menu]:
+        """获取所有菜单，按 sort 排序，可按类型过滤"""
+        stmt = select(Menu).order_by(Menu.sort, Menu.id)
+        if types is not None:
+            stmt = stmt.where(Menu.type.in_(types))
+        result = await db.execute(stmt)
         return result.scalars().all()
 
     async def create(self, db: AsyncSession, obj: CreateMenuParam) -> None:

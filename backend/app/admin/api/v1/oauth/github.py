@@ -33,7 +33,9 @@ async def get_github_oauth2_url() -> ResponseSchemaModel[str]:
         json.dumps({'type': UserSocialAuthType.login.value}),
     )
 
-    auth_url = await github_client.get_authorization_url(redirect_uri=settings.OAUTH2_GITHUB_REDIRECT_URI, state=state)
+    auth_url = await github_client.get_authorization_url(
+        redirect_uri=settings.OAUTH2_GITHUB_REDIRECT_URI, state=state, scope=['user:email']
+    )
     return response_base.success(data=auth_url)
 
 

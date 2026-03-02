@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from common.model import Base, id_key
 from database.db import uuid4_str
 from sqlalchemy import VARBINARY, Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import BYTEA, INTEGER
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from utils.timezone import timezone
+
+if TYPE_CHECKING:
+    from app.admin.model.role import Role
 
 
 class User(Base):
@@ -44,4 +48,9 @@ class User(Base):
     )
     last_password_changed_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), init=False, onupdate=timezone.now, comment='上次密码变更时间'
+    )
+
+    # Relationships
+    roles: Mapped[list['Role']] = relationship(
+        'Role', secondary='sys_user_role', init=False, default_factory=list, lazy='noload'
     )

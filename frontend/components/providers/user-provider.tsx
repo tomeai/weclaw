@@ -1,5 +1,6 @@
 "use client"
 
+import { getUserMenus } from "@/lib/admin-sys"
 import { getAuthMe } from "@/lib/user"
 import { createContext, useContext, useEffect, useState } from "react"
 
@@ -20,6 +21,7 @@ type UserContextType = {
   isJwtAuthenticated: boolean
   setUser: (user: UserProfile | null) => void
   isInitialized: boolean
+  userMenuPaths: string[]
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -35,6 +37,7 @@ export function UserProvider({
   const [isLoading, setIsLoading] = useState(false)
   const [isJwtAuthenticated, setIsJwtAuthenticated] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false) // 添加初始化状态
+  const [userMenuPaths, setUserMenuPaths] = useState<string[]>([])
 
   useEffect(() => {
     const checkJwtToken = async () => {
@@ -50,7 +53,7 @@ export function UserProvider({
           try {
             const userData = await getAuthMe()
             console.log(`[UserData]: ${JSON.stringify(userData)}`)
-            setUser({
+            const profile: UserProfile = {
               id: userData.id || userData.nickname || "",
               nickname: userData.nickname || "",
               avatar: userData.avatar || "",
@@ -58,7 +61,20 @@ export function UserProvider({
               daily_message_count: 0,
               is_staff: userData.is_staff ?? false,
               is_superuser: userData.is_superuser ?? false,
-            })
+            }
+            setUser(profile)
+            // 若为管理员，拉取可访问的菜单路径用于路由权限校验
+            if (profile.is_staff || profile.is_superuser) {
+              try {
+                const menus = await getUserMenus()
+                const paths = menus
+                  .filter((m) => m.type === 0 && m.status === 1 && m.path)
+                  .map((m) => m.path as string)
+                setUserMenuPaths(paths)
+              } catch {
+                setUserMenuPaths([])
+              }
+            }
           } catch (error) {
             console.error("Failed to fetch user data with JWT token:", error)
             // If token is invalid, clear it
@@ -85,6 +101,7 @@ export function UserProvider({
         setIsJwtAuthenticated(false)
       }
       setUser(null)
+      setUserMenuPaths([])
     } catch (err) {
       console.error("Failed to sign out:", err)
     } finally {
@@ -101,6 +118,7 @@ export function UserProvider({
         isJwtAuthenticated,
         setUser,
         isInitialized,
+        userMenuPaths,
       }}
     >
       {children}

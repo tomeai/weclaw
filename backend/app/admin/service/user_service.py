@@ -1,16 +1,13 @@
-from collections import defaultdict
 from collections.abc import Sequence
 from typing import Any
 
 from fastapi import Request
-from fastapi_pagination.ext.sqlalchemy import paginate
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.password_security import password_verify
 
 from backend.app.admin.crud.crud_role import role_dao
 from backend.app.admin.crud.crud_user import user_dao
-from backend.app.admin.model import Role, User, user_role
+from backend.app.admin.model import Role, User
 from backend.app.admin.schema.user import (
     AddUserParam,
     ResetPasswordParam,
@@ -19,6 +16,7 @@ from backend.app.admin.schema.user import (
 from backend.common.context import ctx
 from backend.common.enums import UserPermissionType
 from backend.common.exception import errors
+from backend.common.pagination import paging_data
 from backend.common.response.response_code import CustomErrorCode
 from backend.common.security.jwt import get_token, jwt_decode
 from backend.core.conf import settings
@@ -58,7 +56,9 @@ class UserService:
         return user.roles
 
     @staticmethod
-    async def get_list(*, db: AsyncSession, username: str, phone: str, status: int) -> dict[str, Any]:
+    async def get_list(
+        *, db: AsyncSession, username: str | None, phone: str | None, status: int | None
+    ) -> dict[str, Any]:
         """
         获取用户列表
 
@@ -69,22 +69,7 @@ class UserService:
         :return:
         """
         user_select = await user_dao.get_select(username=username, phone=phone, status=status)
-        # Use paginate directly so items remain ORM objects for enrichment
-        paginated = await paginate(db, user_select)
-        if paginated.items:
-            user_ids = [u.id for u in paginated.items]
-            role_stmt = (
-                select(user_role.c.user_id, Role)
-                .join(Role, Role.id == user_role.c.role_id)
-                .where(user_role.c.user_id.in_(user_ids))
-            )
-            result = await db.execute(role_stmt)
-            roles_by_user: dict[int, list] = defaultdict(list)
-            for row in result.all():
-                roles_by_user[row.user_id].append(row.Role)
-            for user in paginated.items:
-                user.roles = roles_by_user.get(user.id, [])
-        return paginated.model_dump()
+        return await paging_data(db, user_select)
 
     @staticmethod
     async def create(*, db: AsyncSession, obj: AddUserParam) -> None:

@@ -8,7 +8,6 @@ export interface SysRoleDetail {
   id: number
   name: string
   status: 0 | 1
-  is_filter_scopes: boolean
   remark: string | null
   created_time: string
   updated_time: string | null
@@ -71,7 +70,6 @@ export interface GetSysRolesParams {
 export interface CreateSysRoleParam {
   name: string
   status: 0 | 1
-  is_filter_scopes?: boolean
   remark?: string | null
 }
 
@@ -241,9 +239,14 @@ export interface UpdateSysMenuParam extends CreateSysMenuParam {}
 
 // ============ 菜单 API ============
 
-/** 获取所有菜单（平铺） */
-export function getSysMenus(): Promise<SysMenuDetail[]> {
-  return http.get<SysMenuDetail[]>(API_ROUTE_SYS_MENUS)
+/** 获取所有菜单（平铺），可按类型过滤 */
+export function getSysMenus(types?: number[]): Promise<SysMenuDetail[]> {
+  return http.get<SysMenuDetail[]>(API_ROUTE_SYS_MENUS, types ? { types: types.join(',') } : {})
+}
+
+/** 获取当前用户可访问的侧边栏菜单（type=0 目录，基于角色权限） */
+export function getUserMenus(): Promise<SysMenuDetail[]> {
+  return http.get<SysMenuDetail[]>(`${API_ROUTE_SYS_MENUS}/user`)
 }
 
 /** 获取菜单树 */

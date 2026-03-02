@@ -6,6 +6,7 @@
 *.dylib
 *.db
 
+skills/
 design/
 references/
 

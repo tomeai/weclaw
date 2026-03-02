@@ -2,8 +2,9 @@ from collections.abc import Sequence
 
 from app.admin.crud.crud_menu import menu_dao
 from app.admin.model import Menu
-from app.admin.schema.menu import CreateMenuParam, GetMenuTree, UpdateMenuParam
+from app.admin.schema.menu import CreateMenuParam, GetMenuDetail, GetMenuTree, UpdateMenuParam
 from common.exception import errors
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -39,8 +40,8 @@ class MenuService:
         return _build_tree(menus)
 
     @staticmethod
-    async def get_all_flat(*, db: AsyncSession) -> Sequence[Menu]:
-        return await menu_dao.get_all(db)
+    async def get_all_flat(*, db: AsyncSession, types: list[int] | None = None) -> Sequence[Menu]:
+        return await menu_dao.get_all(db, types=types)
 
     @staticmethod
     async def get(*, db: AsyncSession, pk: int) -> Menu:
@@ -72,6 +73,30 @@ class MenuService:
         if not menu:
             raise errors.NotFoundError(msg='菜单不存在')
         return await menu_dao.delete(db, pk)
+
+    @staticmethod
+    async def get_user_menus(*, db: AsyncSession, request: Request) -> list[GetMenuDetail]:
+        """
+        获取当前用户可访问的侧边栏菜单（type=0 目录）
+        超级管理员返回全部启用的 type=0 菜单；
+        普通用户从其角色关联菜单中筛选 type=0 且启用的菜单
+        """
+        if request.user.is_superuser:
+            menus = await menu_dao.get_all(db, types=[0])
+            return [GetMenuDetail.model_validate(m, from_attributes=True) for m in menus]
+
+        seen_ids: set[int] = set()
+        result: list[GetMenuDetail] = []
+        for role in request.user.roles:
+            if role.status != 1:
+                continue
+            for menu in role.menus:
+                if menu and menu.id not in seen_ids and menu.type == 0 and menu.status == 1:
+                    result.append(menu if isinstance(menu, GetMenuDetail) else GetMenuDetail.model_validate(menu))
+                    seen_ids.add(menu.id)
+
+        result.sort(key=lambda m: (m.sort, m.id))
+        return result
 
 
 menu_service: MenuService = MenuService()

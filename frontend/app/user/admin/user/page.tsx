@@ -97,6 +97,7 @@ export default function UsersAdminPage() {
     roles: [] as number[],
   })
   const [editSaving, setEditSaving] = useState(false)
+  const [rolesLoading, setRolesLoading] = useState(false)
 
   // 重置密码弹窗
   const [pwdOpen, setPwdOpen] = useState(false)
@@ -149,9 +150,6 @@ export default function UsersAdminPage() {
 
   useEffect(() => {
     fetchStats()
-    getAllSysRoles()
-      .then(setAllRoles)
-      .catch(() => {})
   }, [fetchStats])
 
   const handleSearch = () => {
@@ -176,8 +174,8 @@ export default function UsersAdminPage() {
     setDetailOpen(true)
   }
 
-  // 打开编辑弹窗
-  const handleEdit = (user: SysUserDetail) => {
+  // 打开编辑弹窗（同时刷新角色列表）
+  const handleEdit = async (user: SysUserDetail) => {
     setEditingUser(user)
     setEditForm({
       username: user.username,
@@ -187,6 +185,15 @@ export default function UsersAdminPage() {
       roles: user.roles.map((r) => r.id),
     })
     setEditOpen(true)
+    setRolesLoading(true)
+    try {
+      const roles = await getAllSysRoles()
+      setAllRoles(roles)
+    } catch {
+      // handled by interceptor
+    } finally {
+      setRolesLoading(false)
+    }
   }
 
   // 保存编辑
@@ -694,12 +701,15 @@ export default function UsersAdminPage() {
 
       {/* ========== 编辑用户弹窗 ========== */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>编辑用户</DialogTitle>
-            <DialogDescription>修改用户信息和角色分配</DialogDescription>
+            <DialogDescription>
+              修改用户基本信息并分配系统角色权限
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="space-y-5 py-2">
+            {/* 基本信息 */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>用户名 *</Label>
@@ -743,22 +753,36 @@ export default function UsersAdminPage() {
                 placeholder="手机号"
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>分配角色</Label>
-              <div className="flex flex-wrap gap-2 rounded-md border p-3">
-                {allRoles.length === 0 ? (
-                  <span className="text-muted-foreground text-xs">
-                    加载角色中...
+
+            {/* 角色权限分配 */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>角色权限分配</Label>
+                <span className="text-muted-foreground text-xs">
+                  已选 {editForm.roles.length} 个角色
+                </span>
+              </div>
+              {rolesLoading ? (
+                <div className="flex items-center justify-center rounded-md border py-6">
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="text-muted-foreground text-sm">
+                    加载角色列表...
                   </span>
-                ) : (
-                  allRoles
+                </div>
+              ) : allRoles.filter((r) => r.status === 1).length === 0 ? (
+                <div className="text-muted-foreground rounded-md border p-3 text-sm">
+                  暂无可用角色
+                </div>
+              ) : (
+                <div className="space-y-1.5 rounded-md border p-3">
+                  {allRoles
                     .filter((r) => r.status === 1)
                     .map((r) => {
                       const selected = editForm.roles.includes(r.id)
                       return (
                         <div
                           key={r.id}
-                          className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm transition-colors ${
+                          className={`flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm transition-colors ${
                             selected
                               ? "border-primary bg-primary/5 text-primary"
                               : "hover:bg-muted"
@@ -772,19 +796,50 @@ export default function UsersAdminPage() {
                             }))
                           }
                         >
-                          {r.name}
+                          <div
+                            className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-muted-foreground/30"
+                            }`}
+                          >
+                            {selected && (
+                              <svg
+                                className="h-3 w-3"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                              >
+                                <path
+                                  d="M2 6L5 9L10 3"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-medium">{r.name}</span>
+                            {r.remark && (
+                              <span className="text-muted-foreground ml-2 text-xs">
+                                {r.remark}
+                              </span>
+                            )}
+                          </div>
+                          <Shield className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
                         </div>
                       )
-                    })
-                )}
-              </div>
+                    })}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleEditSave} disabled={editSaving}>
+            <Button onClick={handleEditSave} disabled={editSaving || rolesLoading}>
               {editSaving ? "保存中..." : "保存"}
             </Button>
           </DialogFooter>

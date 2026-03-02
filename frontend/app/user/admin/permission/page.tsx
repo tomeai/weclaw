@@ -59,8 +59,8 @@ import {
 } from "@/lib/admin-sys"
 import {
   Edit,
-  FolderTree,
-  Key,
+  FolderOpen,
+  KeyRound,
   Plus,
   RefreshCw,
   Search,
@@ -72,27 +72,37 @@ import {
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
-// ============ 常量 ============
+// ============ 常量 & 工具 ============
 
-const MENU_TYPE_LABELS: Record<MenuType, string> = {
-  0: "目录",
-  1: "菜单",
-  2: "按钮",
-  3: "内嵌",
-  4: "外链",
+const PERM_TYPES = [0, 2]
+
+interface PermGroup {
+  id: number
+  title: string
+  permissions: SysMenuDetail[]
 }
 
-const MENU_TYPE_COLORS: Record<MenuType, string> = {
-  0: "bg-purple-100 text-purple-700",
-  1: "bg-blue-100 text-blue-700",
-  2: "bg-orange-100 text-orange-700",
-  3: "bg-cyan-100 text-cyan-700",
-  4: "bg-green-100 text-green-700",
+function buildPermGroups(menus: SysMenuDetail[]): PermGroup[] {
+  const directories = menus.filter((m) => m.type === 0)
+  const buttons = menus.filter((m) => m.type === 2)
+  return directories
+    .map((dir) => ({
+      id: dir.id,
+      title: dir.title,
+      permissions: buttons.filter((b) => b.parent_id === dir.id),
+    }))
+    .filter((g) => g.permissions.length > 0)
 }
 
-// ============ 角色管理 Tab ============
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return "-"
+  return new Date(dateString).toLocaleString("zh-CN")
+}
 
-function RolesTab() {
+// ============ 主页面 ============
+
+export default function PermissionsAdminPage() {
+  // ---- 角色列表 ----
   const [roles, setRoles] = useState<SysRoleDetail[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
@@ -100,34 +110,61 @@ function RolesTab() {
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
 
+  // ---- 统计 ----
   const [statsTotal, setStatsTotal] = useState(0)
   const [statsActive, setStatsActive] = useState(0)
   const [statsUsers, setStatsUsers] = useState(0)
+  const [allPermMenus, setAllPermMenus] = useState<SysMenuDetail[]>([])
 
+  // ---- 搜索 ----
   const [searchName, setSearchName] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "0" | "1">("all")
 
+  // ---- 角色弹窗（新增/编辑 + 权限分配合一）----
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<SysRoleDetail | null>(null)
   const [formData, setFormData] = useState<CreateSysRoleParam>({
     name: "",
     status: 1,
-    is_filter_scopes: true,
     remark: "",
   })
   const [saving, setSaving] = useState(false)
+  const [selectedMenuIds, setSelectedMenuIds] = useState<Set<number>>(new Set())
+  const [menuLoading, setMenuLoading] = useState(false)
 
+  // ---- 删除弹窗 ----
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deletingRole, setDeletingRole] = useState<SysRoleDetail | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  // 分配菜单弹窗
+  // ---- 菜单节点 ----
+  const [menuNodes, setMenuNodes] = useState<SysMenuDetail[]>([])
+  const [menuNodesLoading, setMenuNodesLoading] = useState(false)
   const [menuDialogOpen, setMenuDialogOpen] = useState(false)
-  const [menuRole, setMenuRole] = useState<SysRoleDetail | null>(null)
-  const [allMenus, setAllMenus] = useState<SysMenuDetail[]>([])
-  const [selectedMenuIds, setSelectedMenuIds] = useState<Set<number>>(new Set())
+  const [editingMenu, setEditingMenu] = useState<SysMenuDetail | null>(null)
+  const [menuFormData, setMenuFormData] = useState({
+    title: "",
+    name: "",
+    path: "",
+    icon: "",
+    perms: "",
+    parent_id: null as number | null,
+    sort: 0,
+    status: 1 as 0 | 1,
+    display: 1 as 0 | 1,
+    cache: 0 as 0 | 1,
+    type: 0 as MenuType,
+  })
   const [menuSaving, setMenuSaving] = useState(false)
-  const [menuLoading, setMenuLoading] = useState(false)
+  const [menuDeleteOpen, setMenuDeleteOpen] = useState(false)
+  const [deletingMenu, setDeletingMenu] = useState<SysMenuDetail | null>(null)
+  const [menuDeleting, setMenuDeleting] = useState(false)
+
+  // 权限分组（目录 → 按钮）
+  const permGroups = buildPermGroups(allPermMenus)
+  const totalPermissions = allPermMenus.filter((m) => m.type === 2).length
+
+  // ============ 数据获取 ============
 
   const fetchRoles = useCallback(async () => {
     setLoading(true)
@@ -150,14 +187,16 @@ function RolesTab() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const [allData, activeData, usersData] = await Promise.all([
+      const [allData, activeData, usersData, permMenus] = await Promise.all([
         getSysRoles({ page: 1, size: 1 }),
         getSysRoles({ page: 1, size: 1, status: 1 }),
         getSysUsers({ page: 1, size: 1 }),
+        getSysMenus(PERM_TYPES),
       ])
       setStatsTotal(allData.total)
       setStatsActive(activeData.total)
       setStatsUsers(usersData.total)
+      setAllPermMenus(permMenus)
     } catch {
       // ignore
     }
@@ -171,6 +210,30 @@ function RolesTab() {
     fetchStats()
   }, [fetchStats])
 
+  const fetchMenuNodes = useCallback(async () => {
+    setMenuNodesLoading(true)
+    try {
+      const menus = await getSysMenus(PERM_TYPES)
+      setMenuNodes(menus)
+    } catch {
+      // handled by interceptor
+    } finally {
+      setMenuNodesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchMenuNodes()
+  }, [fetchMenuNodes])
+
+  // ============ 事件处理 ============
+
+  const handleRefresh = () => {
+    fetchRoles()
+    fetchStats()
+    fetchMenuNodes()
+  }
+
   const handleSearch = () => {
     setCurrentPage(1)
     fetchRoles()
@@ -182,23 +245,85 @@ function RolesTab() {
     setCurrentPage(1)
   }
 
-  const handleAdd = () => {
+  // 新增角色
+  const handleAdd = async () => {
     setEditingRole(null)
-    setFormData({ name: "", status: 1, is_filter_scopes: true, remark: "" })
+    setFormData({ name: "", status: 1, remark: "" })
+    setSelectedMenuIds(new Set())
+    setMenuLoading(true)
     setDialogOpen(true)
+    try {
+      const menus = await getSysMenus(PERM_TYPES)
+      setAllPermMenus(menus)
+    } catch {
+      // handled by interceptor
+    } finally {
+      setMenuLoading(false)
+    }
   }
 
-  const handleEdit = (role: SysRoleDetail) => {
+  // 编辑角色（同时加载已分配权限）
+  const handleEdit = async (role: SysRoleDetail) => {
     setEditingRole(role)
     setFormData({
       name: role.name,
       status: role.status,
-      is_filter_scopes: role.is_filter_scopes,
       remark: role.remark ?? "",
     })
+    setSelectedMenuIds(new Set())
+    setMenuLoading(true)
     setDialogOpen(true)
+    try {
+      const [menus, roleMenus] = await Promise.all([
+        getSysMenus(PERM_TYPES),
+        getRoleMenuTree(role.id),
+      ])
+      setAllPermMenus(menus)
+      const collectIds = (items: SysMenuDetail[]): number[] => {
+        const ids: number[] = []
+        for (const item of items) {
+          ids.push(item.id)
+          if (item.children?.length) ids.push(...collectIds(item.children))
+        }
+        return ids
+      }
+      setSelectedMenuIds(new Set(collectIds(roleMenus)))
+    } catch {
+      // handled by interceptor
+    } finally {
+      setMenuLoading(false)
+    }
   }
 
+  // 切换单项权限
+  const togglePermission = (menuId: number) => {
+    setSelectedMenuIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(menuId)) {
+        next.delete(menuId)
+      } else {
+        next.add(menuId)
+      }
+      return next
+    })
+  }
+
+  // 切换整组权限（目录 + 该组所有按钮）
+  const toggleGroup = (group: PermGroup) => {
+    const allIds = [group.id, ...group.permissions.map((p) => p.id)]
+    const allSelected = allIds.every((id) => selectedMenuIds.has(id))
+    setSelectedMenuIds((prev) => {
+      const next = new Set(prev)
+      if (allSelected) {
+        allIds.forEach((id) => next.delete(id))
+      } else {
+        allIds.forEach((id) => next.add(id))
+      }
+      return next
+    })
+  }
+
+  // 保存角色（基本信息 + 权限分配）
   const handleSave = async () => {
     if (!formData.name.trim()) {
       toast.error("请输入角色名称")
@@ -209,14 +334,22 @@ function RolesTab() {
       const payload: CreateSysRoleParam = {
         name: formData.name.trim(),
         status: formData.status,
-        is_filter_scopes: formData.is_filter_scopes ?? true,
         remark: formData.remark || null,
       }
       if (editingRole) {
         await updateSysRole(editingRole.id, payload)
+        await updateRoleMenus(editingRole.id, Array.from(selectedMenuIds))
         toast.success("角色更新成功")
       } else {
         await createSysRole(payload)
+        // 创建后查找新角色 ID，再分配权限
+        if (selectedMenuIds.size > 0) {
+          const fresh = await getSysRoles({ name: payload.name, size: 5 })
+          const newRole = fresh.items.find((r) => r.name === payload.name)
+          if (newRole) {
+            await updateRoleMenus(newRole.id, Array.from(selectedMenuIds))
+          }
+        }
         toast.success("角色创建成功")
       }
       setDialogOpen(false)
@@ -229,6 +362,7 @@ function RolesTab() {
     }
   }
 
+  // 删除确认
   const handleDeleteConfirm = (role: SysRoleDetail) => {
     setDeletingRole(role)
     setDeleteOpen(true)
@@ -250,53 +384,77 @@ function RolesTab() {
     }
   }
 
-  // 打开菜单分配弹窗
-  const handleOpenMenuDialog = async (role: SysRoleDetail) => {
-    setMenuRole(role)
-    setMenuDialogOpen(true)
-    setMenuLoading(true)
-    try {
-      const [menus, roleMenus] = await Promise.all([
-        getSysMenus(),
-        getRoleMenuTree(role.id),
-      ])
-      setAllMenus(menus)
-      // 收集角色已有的菜单 ID（树形结构需要递归提取）
-      const collectIds = (items: SysMenuDetail[]): number[] => {
-        const ids: number[] = []
-        for (const item of items) {
-          ids.push(item.id)
-          if (item.children?.length) ids.push(...collectIds(item.children))
-        }
-        return ids
-      }
-      setSelectedMenuIds(new Set(collectIds(roleMenus)))
-    } catch {
-      // handled by interceptor
-    } finally {
-      setMenuLoading(false)
-    }
-  }
-
-  const handleMenuToggle = (menuId: number) => {
-    setSelectedMenuIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(menuId)) {
-        next.delete(menuId)
-      } else {
-        next.add(menuId)
-      }
-      return next
+  // 菜单节点事件处理
+  const handleAddMenu = (type: MenuType, parentId?: number) => {
+    setEditingMenu(null)
+    setMenuFormData({
+      title: "",
+      name: "",
+      path: "",
+      icon: "",
+      perms: "",
+      parent_id: parentId ?? null,
+      sort: 0,
+      status: 1,
+      display: 1,
+      cache: 0,
+      type,
     })
+    setMenuDialogOpen(true)
   }
 
-  const handleSaveMenus = async () => {
-    if (!menuRole) return
+  const handleEditMenu = (menu: SysMenuDetail) => {
+    setEditingMenu(menu)
+    setMenuFormData({
+      title: menu.title,
+      name: menu.name,
+      path: menu.path ?? "",
+      icon: menu.icon ?? "",
+      perms: menu.perms ?? "",
+      parent_id: menu.parent_id,
+      sort: menu.sort,
+      status: menu.status,
+      display: menu.display,
+      cache: menu.cache,
+      type: menu.type,
+    })
+    setMenuDialogOpen(true)
+  }
+
+  const handleSaveMenu = async () => {
+    if (!menuFormData.title.trim()) {
+      toast.error("请输入菜单标题")
+      return
+    }
+    if (!menuFormData.name.trim()) {
+      toast.error("请输入菜单标识")
+      return
+    }
     setMenuSaving(true)
     try {
-      await updateRoleMenus(menuRole.id, Array.from(selectedMenuIds))
-      toast.success("菜单权限已更新")
+      const payload: CreateSysMenuParam = {
+        title: menuFormData.title.trim(),
+        name: menuFormData.name.trim(),
+        type: menuFormData.type,
+        status: menuFormData.status,
+        display: menuFormData.display,
+        cache: menuFormData.cache,
+        sort: menuFormData.sort,
+        path: menuFormData.path || null,
+        icon: menuFormData.icon || null,
+        perms: menuFormData.perms || null,
+        parent_id: menuFormData.parent_id,
+      }
+      if (editingMenu) {
+        await updateSysMenu(editingMenu.id, payload)
+        toast.success("菜单更新成功")
+      } else {
+        await createSysMenu(payload)
+        toast.success("菜单创建成功")
+      }
       setMenuDialogOpen(false)
+      fetchMenuNodes()
+      fetchStats()
     } catch {
       // handled by interceptor
     } finally {
@@ -304,313 +462,691 @@ function RolesTab() {
     }
   }
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "-"
-    return new Date(dateString).toLocaleString("zh-CN")
+  const handleDeleteMenuConfirm = (menu: SysMenuDetail) => {
+    setDeletingMenu(menu)
+    setMenuDeleteOpen(true)
   }
 
-  return (
-    <div className="space-y-6">
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{statsTotal}</p>
-                <p className="text-muted-foreground text-sm">总角色数</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <ShieldCheck className="h-5 w-5 text-green-500" />
-              <div>
-                <p className="text-2xl font-bold">{statsActive}</p>
-                <p className="text-muted-foreground text-sm">启用角色</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-orange-500" />
-              <div>
-                <p className="text-2xl font-bold">{statsUsers}</p>
-                <p className="text-muted-foreground text-sm">平台总用户</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  const handleDeleteMenu = async () => {
+    if (!deletingMenu) return
+    setMenuDeleting(true)
+    try {
+      await deleteSysMenu(deletingMenu.id)
+      toast.success("菜单已删除")
+      setMenuDeleteOpen(false)
+      fetchMenuNodes()
+      fetchStats()
+    } catch {
+      // handled by interceptor
+    } finally {
+      setMenuDeleting(false)
+    }
+  }
 
-      {/* 搜索和筛选 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>角色列表</span>
+  // ============ 渲染 ============
+
+  return (
+    <AdminLayout sidebar={<AdminSidebar />}>
+      <div className="space-y-6">
+        {/* 页面标题 */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">权限管理</h1>
+            <p className="text-muted-foreground">
+              管理系统角色和权限分配，控制用户访问权限
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              刷新
+            </Button>
             <Button onClick={handleAdd}>
               <Plus className="mr-2 h-4 w-4" />
               新增角色
             </Button>
-          </CardTitle>
-          <CardDescription>管理系统角色，控制用户访问权限</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col gap-4 md:flex-row">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  placeholder="搜索角色名称..."
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  className="pl-10"
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                />
-              </div>
-            </div>
-            <Select
-              value={statusFilter}
-              onValueChange={(value: "all" | "0" | "1") =>
-                setStatusFilter(value)
-              }
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="角色状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="1">启用</SelectItem>
-                <SelectItem value="0">禁用</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
-              <Button onClick={handleSearch}>
-                <Search className="mr-2 h-4 w-4" />
-                搜索
-              </Button>
-              <Button variant="outline" onClick={handleReset}>
-                重置
-              </Button>
-            </div>
           </div>
+        </div>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
-              加载中...
-            </div>
-          ) : roles.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">
-              <Shield className="mx-auto mb-4 h-12 w-12" />
-              <p>暂无匹配的角色</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>角色名称</TableHead>
-                    <TableHead>备注</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>数据过滤</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {roles.map((role) => (
-                    <TableRow key={role.id}>
-                      <TableCell className="font-medium">{role.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Shield className="text-muted-foreground h-4 w-4" />
-                          <span className="font-medium">{role.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="text-muted-foreground max-w-xs truncate text-sm"
-                          title={role.remark ?? ""}
-                        >
-                          {role.remark ?? "-"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {role.status === 1 ? (
-                          <Badge className="bg-green-100 text-green-700">
-                            启用
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-gray-100 text-gray-700">
-                            禁用
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {role.is_filter_scopes ? (
-                          <Badge variant="outline" className="text-xs">
-                            开启
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">
-                            关闭
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDate(role.created_time)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenMenuDialog(role)}
-                            title="配置菜单权限"
-                          >
-                            <Key className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(role)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDeleteConfirm(role)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Shield className="h-5 w-5 text-blue-500" />
+                <div>
+                  <p className="text-2xl font-bold">{statsTotal}</p>
+                  <p className="text-muted-foreground text-sm">总角色数</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <ShieldCheck className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-2xl font-bold">{statsActive}</p>
+                  <p className="text-muted-foreground text-sm">启用角色</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <KeyRound className="h-5 w-5 text-purple-500" />
+                <div>
+                  <p className="text-2xl font-bold">{totalPermissions}</p>
+                  <p className="text-muted-foreground text-sm">权限项</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Users className="h-5 w-5 text-orange-500" />
+                <div>
+                  <p className="text-2xl font-bold">{statsUsers}</p>
+                  <p className="text-muted-foreground text-sm">平台总用户</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                  <div className="text-muted-foreground text-sm">
-                    第 {currentPage} 页，共 {totalPages} 页，共 {total} 条
+        <Tabs defaultValue="roles">
+          <TabsList>
+            <TabsTrigger value="roles" className="gap-1.5">
+              <Shield className="h-4 w-4" />
+              角色管理
+            </TabsTrigger>
+            <TabsTrigger value="permissions" className="gap-1.5">
+              <KeyRound className="h-4 w-4" />
+              权限总览
+            </TabsTrigger>
+            <TabsTrigger value="menus" className="gap-1.5">
+              <FolderOpen className="h-4 w-4" />
+              菜单节点
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ========== 角色管理 Tab ========== */}
+          <TabsContent value="roles" className="mt-4 space-y-4">
+            {/* 搜索和筛选 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>搜索和筛选</CardTitle>
+                <CardDescription>根据角色名称或状态筛选角色</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4 md:flex-row">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                      <Input
+                        placeholder="搜索角色名称..."
+                        value={searchName}
+                        onChange={(e) => setSearchName(e.target.value)}
+                        className="pl-10"
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage <= 1}
-                    >
-                      上一页
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value: "all" | "0" | "1") =>
+                      setStatusFilter(value)
+                    }
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="角色状态" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部状态</SelectItem>
+                      <SelectItem value="1">启用</SelectItem>
+                      <SelectItem value="0">禁用</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSearch}>
+                      <Search className="mr-2 h-4 w-4" />
+                      搜索
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCurrentPage((p) => Math.min(totalPages, p + 1))
-                      }
-                      disabled={currentPage >= totalPages}
-                    >
-                      下一页
+                    <Button variant="outline" onClick={handleReset}>
+                      重置
                     </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
 
-      {/* 新增/编辑角色弹窗 */}
+            {/* 角色列表 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>角色列表</span>
+                  <span className="text-muted-foreground text-sm font-normal">
+                    共 {total} 个角色
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
+                    加载中...
+                  </div>
+                ) : roles.length === 0 ? (
+                  <div className="text-muted-foreground py-8 text-center">
+                    <Shield className="mx-auto mb-4 h-12 w-12" />
+                    <p>暂无匹配的角色</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>角色名称</TableHead>
+                          <TableHead>备注</TableHead>
+                          <TableHead>状态</TableHead>
+                          <TableHead>创建时间</TableHead>
+                          <TableHead>更新时间</TableHead>
+                          <TableHead className="text-right">操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {roles.map((role) => (
+                          <TableRow key={role.id}>
+                            <TableCell className="font-medium">
+                              {role.id}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <Shield className="text-muted-foreground h-4 w-4" />
+                                <span className="font-medium">{role.name}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span
+                                className="text-muted-foreground max-w-xs truncate text-sm"
+                                title={role.remark ?? ""}
+                              >
+                                {role.remark || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {role.status === 1 ? (
+                                <Badge className="bg-green-100 text-green-700">
+                                  启用
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-gray-700">
+                                  禁用
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(role.created_time)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(role.updated_time)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit(role)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteConfirm(role)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between">
+                        <div className="text-muted-foreground text-sm">
+                          第 {currentPage} 页，共 {totalPages} 页，共 {total}{" "}
+                          条
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage((p) => Math.max(1, p - 1))
+                            }
+                            disabled={currentPage <= 1}
+                          >
+                            上一页
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setCurrentPage((p) =>
+                                Math.min(totalPages, p + 1)
+                              )
+                            }
+                            disabled={currentPage >= totalPages}
+                          >
+                            下一页
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ========== 权限总览 Tab ========== */}
+          <TabsContent value="permissions" className="mt-4">
+            {permGroups.length === 0 ? (
+              <div className="text-muted-foreground py-12 text-center">
+                <KeyRound className="mx-auto mb-4 h-12 w-12" />
+                <p>暂无权限节点，请先添加目录和按钮类型的菜单</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {permGroups.map((group) => (
+                  <Card key={group.id}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{group.title}</CardTitle>
+                      <CardDescription>
+                        {group.permissions.length} 项权限
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {group.permissions.map((perm) => (
+                          <div
+                            key={perm.id}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">
+                                {perm.title}
+                              </p>
+                              <p className="text-muted-foreground font-mono text-xs">
+                                {perm.perms || perm.name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {perm.status === 1 ? (
+                                <Badge className="bg-green-100 text-xs text-green-700">
+                                  启用
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-xs text-gray-700">
+                                  禁用
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ========== 菜单节点 Tab ========== */}
+          <TabsContent value="menus" className="mt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">菜单节点管理</h2>
+                <p className="text-muted-foreground text-sm">
+                  管理目录和按钮权限节点
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={fetchMenuNodes}
+                  disabled={menuNodesLoading}
+                >
+                  <RefreshCw
+                    className={`mr-2 h-4 w-4 ${menuNodesLoading ? "animate-spin" : ""}`}
+                  />
+                  刷新
+                </Button>
+                <Button onClick={() => handleAddMenu(0)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增目录
+                </Button>
+              </div>
+            </div>
+
+            {menuNodesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
+                加载中...
+              </div>
+            ) : menuNodes.filter((m) => m.type === 0).length === 0 ? (
+              <div className="text-muted-foreground py-12 text-center">
+                <FolderOpen className="mx-auto mb-4 h-12 w-12" />
+                <p>暂无菜单节点，点击「新增目录」开始创建</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {menuNodes
+                  .filter((m) => m.type === 0)
+                  .sort((a, b) => a.sort - b.sort || a.id - b.id)
+                  .map((dir) => {
+                    const buttons = menuNodes
+                      .filter((m) => m.type === 2 && m.parent_id === dir.id)
+                      .sort((a, b) => a.sort - b.sort || a.id - b.id)
+                    return (
+                      <Card key={dir.id}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <FolderOpen className="h-4 w-4 text-blue-500" />
+                              <CardTitle className="text-base">
+                                {dir.title}
+                              </CardTitle>
+                              {dir.status === 1 ? (
+                                <Badge className="bg-green-100 text-xs text-green-700">
+                                  启用
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-xs text-gray-700">
+                                  禁用
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddMenu(2, dir.id)}
+                                title="新增按钮权限"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditMenu(dir)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteMenuConfirm(dir)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <CardDescription className="flex gap-4 text-xs">
+                            {dir.icon && <span>图标: {dir.icon}</span>}
+                            <span>路由: {dir.path || "-"}</span>
+                            <span>排序: {dir.sort}</span>
+                          </CardDescription>
+                        </CardHeader>
+                        {buttons.length > 0 && (
+                          <CardContent>
+                            <div className="space-y-2">
+                              {buttons.map((btn) => (
+                                <div
+                                  key={btn.id}
+                                  className="flex items-center justify-between rounded-lg border p-3"
+                                >
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {btn.title}
+                                    </p>
+                                    <p className="text-muted-foreground font-mono text-xs">
+                                      {btn.perms || btn.name}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {btn.status === 1 ? (
+                                      <Badge className="bg-green-100 text-xs text-green-700">
+                                        启用
+                                      </Badge>
+                                    ) : (
+                                      <Badge className="bg-gray-100 text-xs text-gray-700">
+                                        禁用
+                                      </Badge>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleEditMenu(btn)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() =>
+                                        handleDeleteMenuConfirm(btn)
+                                      }
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        )}
+                        {buttons.length === 0 && (
+                          <CardContent>
+                            <p className="text-muted-foreground text-xs">
+                              暂无按钮权限，点击 + 新增
+                            </p>
+                          </CardContent>
+                        )}
+                      </Card>
+                    )
+                  })}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* ========== 新增/编辑角色弹窗 ========== */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>{editingRole ? "编辑角色" : "新增角色"}</DialogTitle>
             <DialogDescription>
-              {editingRole ? "修改角色基本信息" : "创建新角色"}
+              {editingRole
+                ? "修改角色信息和权限分配"
+                : "创建新角色并分配权限"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="role-name">角色名称 *</Label>
-              <Input
-                id="role-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-                placeholder="请输入角色名称"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role-remark">备注说明</Label>
-              <Textarea
-                id="role-remark"
-                value={formData.remark ?? ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, remark: e.target.value }))
-                }
-                placeholder="请输入角色描述"
-                rows={2}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>启用状态</Label>
-                <p className="text-muted-foreground text-sm">
-                  禁用后该角色将不可使用
-                </p>
+
+          <div className="space-y-6 py-4">
+            {/* 基本信息 */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="role-name">角色名称 *</Label>
+                <Input
+                  id="role-name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="请输入角色名称"
+                />
               </div>
-              <Switch
-                checked={formData.status === 1}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    status: checked ? 1 : 0,
-                  }))
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>数据权限过滤</Label>
-                <p className="text-muted-foreground text-sm">
-                  开启后按数据范围过滤查询结果
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="role-remark">备注说明</Label>
+                <Textarea
+                  id="role-remark"
+                  value={formData.remark ?? ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      remark: e.target.value,
+                    }))
+                  }
+                  placeholder="请输入角色描述"
+                  rows={2}
+                />
               </div>
-              <Switch
-                checked={formData.is_filter_scopes ?? true}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    is_filter_scopes: checked,
-                  }))
-                }
-              />
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>启用状态</Label>
+                  <p className="text-muted-foreground text-sm">
+                    禁用后该角色下的用户将失去对应权限
+                  </p>
+                </div>
+                <Switch
+                  checked={formData.status === 1}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      status: checked ? 1 : 0,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            {/* 权限分配 */}
+            <div className="space-y-3">
+              <Label>权限分配</Label>
+              {menuLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+                  加载权限列表...
+                </div>
+              ) : permGroups.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  暂无可分配的权限节点
+                </p>
+              ) : (
+                <>
+                  <p className="text-muted-foreground text-sm">
+                    已选择 {selectedMenuIds.size} / {totalPermissions} 项权限
+                  </p>
+                  <div className="space-y-4">
+                    {permGroups.map((group) => {
+                      const allIds = [
+                        group.id,
+                        ...group.permissions.map((p) => p.id),
+                      ]
+                      const allSelected = allIds.every((id) =>
+                        selectedMenuIds.has(id)
+                      )
+                      return (
+                        <div
+                          key={group.id}
+                          className="rounded-lg border p-3"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {group.title}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => toggleGroup(group)}
+                            >
+                              {allSelected ? "取消全选" : "全选"}
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {group.permissions.map((perm) => {
+                              const isChecked = selectedMenuIds.has(perm.id)
+                              return (
+                                <div
+                                  key={perm.id}
+                                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors ${
+                                    isChecked
+                                      ? "border-primary bg-primary/5 text-primary"
+                                      : "hover:bg-muted"
+                                  }`}
+                                  onClick={() => togglePermission(perm.id)}
+                                >
+                                  <div
+                                    className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${
+                                      isChecked
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-muted-foreground/30"
+                                    }`}
+                                  >
+                                    {isChecked && (
+                                      <svg
+                                        className="h-3 w-3"
+                                        viewBox="0 0 12 12"
+                                        fill="none"
+                                      >
+                                        <path
+                                          d="M2 6L5 9L10 3"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <span className="truncate">{perm.title}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "保存中..." : editingRole ? "保存修改" : "创建角色"}
+            <Button onClick={handleSave} disabled={saving || menuLoading}>
+              {saving
+                ? "保存中..."
+                : editingRole
+                  ? "保存修改"
+                  : "创建角色"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 删除确认弹窗 */}
+      {/* ========== 删除确认弹窗 ========== */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-[360px]">
           <DialogHeader>
@@ -635,507 +1171,32 @@ function RolesTab() {
         </DialogContent>
       </Dialog>
 
-      {/* 分配菜单弹窗 */}
+      {/* ========== 菜单节点新增/编辑弹窗 ========== */}
       <Dialog open={menuDialogOpen} onOpenChange={setMenuDialogOpen}>
-        <DialogContent className="sm:max-w-[560px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>配置菜单权限 — {menuRole?.name}</DialogTitle>
+            <DialogTitle>
+              {editingMenu ? "编辑菜单节点" : "新增菜单节点"}
+            </DialogTitle>
             <DialogDescription>
-              勾选该角色可访问的菜单和操作权限
+              {menuFormData.type === 0
+                ? "目录节点显示在侧边栏导航中"
+                : "按钮节点用于接口访问控制"}
             </DialogDescription>
           </DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto py-2">
-            {menuLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-                加载中...
-              </div>
-            ) : allMenus.length === 0 ? (
-              <p className="text-muted-foreground text-center text-sm">
-                暂无菜单数据
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {/* 按父级分组显示 */}
-                {allMenus
-                  .filter((m) => !m.parent_id)
-                  .map((parent) => (
-                    <div key={parent.id} className="space-y-1">
-                      <div className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-muted/50">
-                        <input
-                          type="checkbox"
-                          id={`menu-${parent.id}`}
-                          checked={selectedMenuIds.has(parent.id)}
-                          onChange={() => handleMenuToggle(parent.id)}
-                          className="h-4 w-4 cursor-pointer accent-primary"
-                        />
-                        <label
-                          htmlFor={`menu-${parent.id}`}
-                          className="flex flex-1 cursor-pointer items-center gap-2 text-sm font-medium"
-                        >
-                          <Badge
-                            className={`text-xs ${MENU_TYPE_COLORS[parent.type]}`}
-                          >
-                            {MENU_TYPE_LABELS[parent.type]}
-                          </Badge>
-                          {parent.title}
-                        </label>
-                      </div>
-                      {/* 子菜单 */}
-                      {allMenus
-                        .filter((m) => m.parent_id === parent.id)
-                        .map((child) => (
-                          <div key={child.id} className="space-y-0.5">
-                            <div className="flex items-center gap-2 rounded px-2 py-1 pl-6 hover:bg-muted/50">
-                              <input
-                                type="checkbox"
-                                id={`menu-${child.id}`}
-                                checked={selectedMenuIds.has(child.id)}
-                                onChange={() => handleMenuToggle(child.id)}
-                                className="h-4 w-4 cursor-pointer accent-primary"
-                              />
-                              <label
-                                htmlFor={`menu-${child.id}`}
-                                className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
-                              >
-                                <Badge
-                                  className={`text-xs ${MENU_TYPE_COLORS[child.type]}`}
-                                >
-                                  {MENU_TYPE_LABELS[child.type]}
-                                </Badge>
-                                {child.title}
-                                {child.perms && (
-                                  <span className="text-muted-foreground font-mono text-xs">
-                                    ({child.perms})
-                                  </span>
-                                )}
-                              </label>
-                            </div>
-                            {/* 三级菜单（按钮/权限） */}
-                            {allMenus
-                              .filter((m) => m.parent_id === child.id)
-                              .map((btn) => (
-                                <div
-                                  key={btn.id}
-                                  className="flex items-center gap-2 rounded px-2 py-1 pl-12 hover:bg-muted/50"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    id={`menu-${btn.id}`}
-                                    checked={selectedMenuIds.has(btn.id)}
-                                    onChange={() => handleMenuToggle(btn.id)}
-                                    className="h-4 w-4 cursor-pointer accent-primary"
-                                  />
-                                  <label
-                                    htmlFor={`menu-${btn.id}`}
-                                    className="flex flex-1 cursor-pointer items-center gap-2 text-sm"
-                                  >
-                                    <Badge
-                                      className={`text-xs ${MENU_TYPE_COLORS[btn.type]}`}
-                                    >
-                                      {MENU_TYPE_LABELS[btn.type]}
-                                    </Badge>
-                                    {btn.title}
-                                    {btn.perms && (
-                                      <span className="text-muted-foreground font-mono text-xs">
-                                        ({btn.perms})
-                                      </span>
-                                    )}
-                                  </label>
-                                </div>
-                              ))}
-                          </div>
-                        ))}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <div className="flex w-full items-center justify-between">
-              <span className="text-muted-foreground text-sm">
-                已选 {selectedMenuIds.size} 项
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setMenuDialogOpen(false)}
-                >
-                  取消
-                </Button>
-                <Button onClick={handleSaveMenus} disabled={menuSaving}>
-                  {menuSaving ? "保存中..." : "保存权限"}
-                </Button>
-              </div>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
 
-// ============ 菜单权限 Tab ============
-
-const DEFAULT_MENU_FORM: CreateSysMenuParam = {
-  title: "",
-  name: "",
-  path: null,
-  parent_id: null,
-  sort: 0,
-  icon: null,
-  type: 1,
-  component: null,
-  perms: null,
-  status: 1,
-  display: 1,
-  cache: 1,
-  link: null,
-  remark: null,
-}
-
-function MenusTab() {
-  const [menus, setMenus] = useState<SysMenuDetail[]>([])
-  const [loading, setLoading] = useState(false)
-  const [typeFilter, setTypeFilter] = useState<"all" | string>("all")
-  const [searchTitle, setSearchTitle] = useState("")
-
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingMenu, setEditingMenu] = useState<SysMenuDetail | null>(null)
-  const [formData, setFormData] = useState<CreateSysMenuParam>(DEFAULT_MENU_FORM)
-  const [saving, setSaving] = useState(false)
-
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deletingMenu, setDeletingMenu] = useState<SysMenuDetail | null>(null)
-  const [deleting, setDeleting] = useState(false)
-
-  const fetchMenus = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await getSysMenus()
-      setMenus(data)
-    } catch {
-      // handled by interceptor
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchMenus()
-  }, [fetchMenus])
-
-  const filteredMenus = menus.filter((m) => {
-    const matchType = typeFilter === "all" || String(m.type) === typeFilter
-    const matchTitle =
-      !searchTitle ||
-      m.title.toLowerCase().includes(searchTitle.toLowerCase()) ||
-      (m.perms ?? "").toLowerCase().includes(searchTitle.toLowerCase())
-    return matchType && matchTitle
-  })
-
-  const handleAdd = () => {
-    setEditingMenu(null)
-    setFormData(DEFAULT_MENU_FORM)
-    setDialogOpen(true)
-  }
-
-  const handleEdit = (menu: SysMenuDetail) => {
-    setEditingMenu(menu)
-    setFormData({
-      title: menu.title,
-      name: menu.name,
-      path: menu.path,
-      parent_id: menu.parent_id,
-      sort: menu.sort,
-      icon: menu.icon,
-      type: menu.type,
-      component: menu.component,
-      perms: menu.perms,
-      status: menu.status,
-      display: menu.display,
-      cache: menu.cache,
-      link: menu.link,
-      remark: menu.remark,
-    })
-    setDialogOpen(true)
-  }
-
-  const handleSave = async () => {
-    if (!formData.title.trim()) {
-      toast.error("请输入菜单标题")
-      return
-    }
-    if (!formData.name.trim()) {
-      toast.error("请输入菜单名称")
-      return
-    }
-    setSaving(true)
-    try {
-      const payload: CreateSysMenuParam = {
-        ...formData,
-        title: formData.title.trim(),
-        name: formData.name.trim(),
-        path: formData.path || null,
-        icon: formData.icon || null,
-        component: formData.component || null,
-        perms: formData.perms || null,
-        link: formData.link || null,
-        remark: formData.remark || null,
-        parent_id: formData.parent_id || null,
-      }
-      if (editingMenu) {
-        await updateSysMenu(editingMenu.id, payload)
-        toast.success("菜单更新成功")
-      } else {
-        await createSysMenu(payload)
-        toast.success("菜单创建成功")
-      }
-      setDialogOpen(false)
-      fetchMenus()
-    } catch {
-      // handled by interceptor
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDeleteConfirm = (menu: SysMenuDetail) => {
-    setDeletingMenu(menu)
-    setDeleteOpen(true)
-  }
-
-  const handleDelete = async () => {
-    if (!deletingMenu) return
-    setDeleting(true)
-    try {
-      await deleteSysMenu(deletingMenu.id)
-      toast.success("菜单已删除")
-      setDeleteOpen(false)
-      fetchMenus()
-    } catch {
-      // handled by interceptor
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  const getParentTitle = (parentId: number | null) => {
-    if (!parentId) return "-"
-    const parent = menus.find((m) => m.id === parentId)
-    return parent ? parent.title : String(parentId)
-  }
-
-  return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>菜单 & 权限列表</span>
-            <Button onClick={handleAdd}>
-              <Plus className="mr-2 h-4 w-4" />
-              新增菜单
-            </Button>
-          </CardTitle>
-          <CardDescription>
-            管理菜单结构和操作权限标识（perms），权限标识用于 RBAC 鉴权
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 搜索 */}
-          <div className="flex flex-col gap-3 md:flex-row">
-            <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder="搜索标题或权限标识..."
-                value={searchTitle}
-                onChange={(e) => setSearchTitle(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select
-              value={typeFilter}
-              onValueChange={(v) => setTypeFilter(v)}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="菜单类型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部类型</SelectItem>
-                <SelectItem value="0">目录</SelectItem>
-                <SelectItem value="1">菜单</SelectItem>
-                <SelectItem value="2">按钮/权限</SelectItem>
-                <SelectItem value="3">内嵌</SelectItem>
-                <SelectItem value="4">外链</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTitle("")
-                setTypeFilter("all")
-              }}
-            >
-              重置
-            </Button>
-            <Button variant="outline" onClick={fetchMenus} disabled={loading}>
-              <RefreshCw
-                className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-              刷新
-            </Button>
-          </div>
-
-          {/* 类型统计 */}
-          <div className="flex flex-wrap gap-2">
-            {([0, 1, 2, 3, 4] as MenuType[]).map((type) => {
-              const count = menus.filter((m) => m.type === type).length
-              return (
-                <Badge
-                  key={type}
-                  className={`cursor-pointer text-xs ${MENU_TYPE_COLORS[type]}`}
-                  onClick={() =>
-                    setTypeFilter(
-                      typeFilter === String(type) ? "all" : String(type)
-                    )
-                  }
-                >
-                  {MENU_TYPE_LABELS[type]}: {count}
-                </Badge>
-              )
-            })}
-          </div>
-
-          {/* 菜单表格 */}
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
-              加载中...
-            </div>
-          ) : filteredMenus.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">
-              <FolderTree className="mx-auto mb-4 h-12 w-12" />
-              <p>暂无匹配的菜单</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>标题</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>权限标识</TableHead>
-                  <TableHead>父级</TableHead>
-                  <TableHead>排序</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMenus.map((menu) => (
-                  <TableRow key={menu.id}>
-                    <TableCell className="font-medium text-sm">{menu.id}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-sm">{menu.title}</p>
-                        <p className="text-muted-foreground font-mono text-xs">{menu.name}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`text-xs ${MENU_TYPE_COLORS[menu.type]}`}>
-                        {MENU_TYPE_LABELS[menu.type]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {menu.perms ? (
-                        <code className="bg-muted rounded px-1.5 py-0.5 text-xs">
-                          {menu.perms}
-                        </code>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {getParentTitle(menu.parent_id)}
-                    </TableCell>
-                    <TableCell className="text-sm">{menu.sort}</TableCell>
-                    <TableCell>
-                      {menu.status === 1 ? (
-                        <Badge className="bg-green-100 text-green-700 text-xs">
-                          启用
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-gray-100 text-gray-700 text-xs">
-                          禁用
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(menu)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteConfirm(menu)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 新增/编辑菜单弹窗 */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{editingMenu ? "编辑菜单" : "新增菜单"}</DialogTitle>
-            <DialogDescription>
-              {editingMenu ? "修改菜单配置" : "创建菜单或权限节点"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto py-2">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4 py-2">
+            {/* 节点类型（新增时可切换） */}
+            {!editingMenu && (
               <div className="space-y-2">
-                <Label>菜单标题 *</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, title: e.target.value }))
-                  }
-                  placeholder="如：用户管理"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>菜单名称 *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((p) => ({ ...p, name: e.target.value }))
-                  }
-                  placeholder="如：UserManage（唯一标识）"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>菜单类型 *</Label>
+                <Label>节点类型</Label>
                 <Select
-                  value={String(formData.type)}
+                  value={String(menuFormData.type)}
                   onValueChange={(v) =>
-                    setFormData((p) => ({
-                      ...p,
+                    setMenuFormData((prev) => ({
+                      ...prev,
                       type: Number(v) as MenuType,
+                      parent_id: null,
                     }))
                   }
                 >
@@ -1143,266 +1204,203 @@ function MenusTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">目录</SelectItem>
-                    <SelectItem value="1">菜单</SelectItem>
-                    <SelectItem value="2">按钮/权限</SelectItem>
-                    <SelectItem value="3">内嵌</SelectItem>
-                    <SelectItem value="4">外链</SelectItem>
+                    <SelectItem value="0">目录（侧边栏）</SelectItem>
+                    <SelectItem value="2">按钮（权限）</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            )}
+
+            {/* 标题 */}
+            <div className="space-y-2">
+              <Label>标题 *</Label>
+              <Input
+                value={menuFormData.title}
+                onChange={(e) =>
+                  setMenuFormData((prev) => ({
+                    ...prev,
+                    title: e.target.value,
+                  }))
+                }
+                placeholder="显示名称"
+              />
+            </div>
+
+            {/* 标识 */}
+            <div className="space-y-2">
+              <Label>标识 *</Label>
+              <Input
+                value={menuFormData.name}
+                onChange={(e) =>
+                  setMenuFormData((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="唯一标识符（英文）"
+              />
+            </div>
+
+            {/* 路由路径（仅目录） */}
+            {menuFormData.type === 0 && (
               <div className="space-y-2">
-                <Label>父级菜单</Label>
+                <Label>路由路径</Label>
+                <Input
+                  value={menuFormData.path}
+                  onChange={(e) =>
+                    setMenuFormData((prev) => ({
+                      ...prev,
+                      path: e.target.value,
+                    }))
+                  }
+                  placeholder="/user/admin/xxx"
+                />
+              </div>
+            )}
+
+            {/* 图标（仅目录） */}
+            {menuFormData.type === 0 && (
+              <div className="space-y-2">
+                <Label>图标名称</Label>
+                <Input
+                  value={menuFormData.icon}
+                  onChange={(e) =>
+                    setMenuFormData((prev) => ({
+                      ...prev,
+                      icon: e.target.value,
+                    }))
+                  }
+                  placeholder="如: Shield, Settings, Users, Database..."
+                />
+              </div>
+            )}
+
+            {/* 权限标识（仅按钮） */}
+            {menuFormData.type === 2 && (
+              <div className="space-y-2">
+                <Label>权限标识</Label>
+                <Input
+                  value={menuFormData.perms}
+                  onChange={(e) =>
+                    setMenuFormData((prev) => ({
+                      ...prev,
+                      perms: e.target.value,
+                    }))
+                  }
+                  placeholder="如: sys:user:list"
+                />
+              </div>
+            )}
+
+            {/* 所属目录（仅按钮） */}
+            {menuFormData.type === 2 && (
+              <div className="space-y-2">
+                <Label>所属目录</Label>
                 <Select
                   value={
-                    formData.parent_id !== null
-                      ? String(formData.parent_id)
+                    menuFormData.parent_id
+                      ? String(menuFormData.parent_id)
                       : "none"
                   }
                   onValueChange={(v) =>
-                    setFormData((p) => ({
-                      ...p,
+                    setMenuFormData((prev) => ({
+                      ...prev,
                       parent_id: v === "none" ? null : Number(v),
                     }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="无（顶级）" />
+                    <SelectValue placeholder="选择所属目录" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">无（顶级）</SelectItem>
-                    {menus
-                      .filter(
-                        (m) =>
-                          m.type !== 2 &&
-                          (!editingMenu || m.id !== editingMenu.id)
-                      )
-                      .map((m) => (
-                        <SelectItem key={m.id} value={String(m.id)}>
-                          {m.title}
+                    {menuNodes
+                      .filter((m) => m.type === 0)
+                      .map((dir) => (
+                        <SelectItem key={dir.id} value={String(dir.id)}>
+                          {dir.title}
                         </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>权限标识</Label>
-                <Input
-                  value={formData.perms ?? ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      perms: e.target.value || null,
-                    }))
-                  }
-                  placeholder="如：sys:user:list"
-                  className="font-mono text-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>排序</Label>
-                <Input
-                  type="number"
-                  value={formData.sort}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      sort: Number(e.target.value),
-                    }))
-                  }
-                  min={0}
-                />
-              </div>
-              {formData.type !== 2 && (
-                <div className="col-span-2 space-y-2">
-                  <Label>路由地址</Label>
-                  <Input
-                    value={formData.path ?? ""}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        path: e.target.value || null,
-                      }))
-                    }
-                    placeholder="如：/user/manage"
-                  />
-                </div>
-              )}
-              {formData.type === 1 && (
-                <div className="col-span-2 space-y-2">
-                  <Label>组件路径</Label>
-                  <Input
-                    value={formData.component ?? ""}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        component: e.target.value || null,
-                      }))
-                    }
-                    placeholder="如：views/user/index"
-                  />
-                </div>
-              )}
-              {formData.type === 4 && (
-                <div className="col-span-2 space-y-2">
-                  <Label>外链地址</Label>
-                  <Input
-                    value={formData.link ?? ""}
-                    onChange={(e) =>
-                      setFormData((p) => ({
-                        ...p,
-                        link: e.target.value || null,
-                      }))
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label>图标</Label>
-                <Input
-                  value={formData.icon ?? ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      icon: e.target.value || null,
-                    }))
-                  }
-                  placeholder="图标名称"
-                />
-              </div>
-              <div className="col-span-2 space-y-2">
-                <Label>备注</Label>
-                <Input
-                  value={formData.remark ?? ""}
-                  onChange={(e) =>
-                    setFormData((p) => ({
-                      ...p,
-                      remark: e.target.value || null,
-                    }))
-                  }
-                  placeholder="备注说明"
-                />
-              </div>
-              <div className="flex items-center justify-between rounded border p-3">
-                <div>
-                  <p className="text-sm font-medium">启用状态</p>
-                  <p className="text-muted-foreground text-xs">禁用后不可用</p>
-                </div>
-                <Switch
-                  checked={formData.status === 1}
-                  onCheckedChange={(c) =>
-                    setFormData((p) => ({ ...p, status: c ? 1 : 0 }))
-                  }
-                />
-              </div>
-              {formData.type !== 2 && (
-                <>
-                  <div className="flex items-center justify-between rounded border p-3">
-                    <div>
-                      <p className="text-sm font-medium">显示</p>
-                      <p className="text-muted-foreground text-xs">
-                        是否在菜单中显示
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.display === 1}
-                      onCheckedChange={(c) =>
-                        setFormData((p) => ({ ...p, display: c ? 1 : 0 }))
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center justify-between rounded border p-3">
-                    <div>
-                      <p className="text-sm font-medium">缓存</p>
-                      <p className="text-muted-foreground text-xs">
-                        是否缓存页面
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.cache === 1}
-                      onCheckedChange={(c) =>
-                        setFormData((p) => ({ ...p, cache: c ? 1 : 0 }))
-                      }
-                    />
-                  </div>
-                </>
-              )}
+            )}
+
+            {/* 排序 */}
+            <div className="space-y-2">
+              <Label>排序</Label>
+              <Input
+                type="number"
+                value={menuFormData.sort}
+                onChange={(e) =>
+                  setMenuFormData((prev) => ({
+                    ...prev,
+                    sort: Number(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+
+            {/* 启用状态 */}
+            <div className="flex items-center justify-between">
+              <Label>启用状态</Label>
+              <Switch
+                checked={menuFormData.status === 1}
+                onCheckedChange={(checked) =>
+                  setMenuFormData((prev) => ({
+                    ...prev,
+                    status: checked ? 1 : 0,
+                  }))
+                }
+              />
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setMenuDialogOpen(false)}
+            >
               取消
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "保存中..." : editingMenu ? "保存修改" : "创建菜单"}
+            <Button onClick={handleSaveMenu} disabled={menuSaving}>
+              {menuSaving
+                ? "保存中..."
+                : editingMenu
+                  ? "保存修改"
+                  : "创建菜单"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 删除确认弹窗 */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      {/* ========== 菜单节点删除确认弹窗 ========== */}
+      <Dialog open={menuDeleteOpen} onOpenChange={setMenuDeleteOpen}>
         <DialogContent className="sm:max-w-[360px]">
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              确定要删除菜单 <strong>{deletingMenu?.title}</strong>{" "}
-              吗？此操作不可撤销。
+              确定要删除菜单节点{" "}
+              <strong>{deletingMenu?.title}</strong> 吗？此操作不可撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setMenuDeleteOpen(false)}
+            >
               取消
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting}
+              onClick={handleDeleteMenu}
+              disabled={menuDeleting}
             >
-              {deleting ? "删除中..." : "确认删除"}
+              {menuDeleting ? "删除中..." : "确认删除"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  )
-}
-
-// ============ 主页面 ============
-
-export default function PermissionsAdminPage() {
-  return (
-    <AdminLayout sidebar={<AdminSidebar />}>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">权限管理</h1>
-          <p className="text-muted-foreground">
-            管理系统角色与菜单权限，控制用户访问
-          </p>
-        </div>
-
-        <Tabs defaultValue="roles">
-          <TabsList>
-            <TabsTrigger value="roles" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              角色管理
-            </TabsTrigger>
-            <TabsTrigger value="menus" className="flex items-center gap-2">
-              <FolderTree className="h-4 w-4" />
-              菜单权限
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="roles" className="mt-4">
-            <RolesTab />
-          </TabsContent>
-
-          <TabsContent value="menus" className="mt-4">
-            <MenusTab />
-          </TabsContent>
-        </Tabs>
-      </div>
     </AdminLayout>
   )
 }

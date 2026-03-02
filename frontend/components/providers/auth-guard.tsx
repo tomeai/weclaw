@@ -28,8 +28,20 @@ function isAdminRoute(pathname: string) {
   )
 }
 
+/** 管理后台根路径，任何管理员均可访问 */
+const ADMIN_ROOT = "/user/admin"
+
+function hasMenuAccess(pathname: string, menuPaths: string[]): boolean {
+  // 根路径始终允许
+  if (pathname === ADMIN_ROOT) return true
+  return menuPaths.some(
+    (menuPath) =>
+      pathname === menuPath || pathname.startsWith(`${menuPath}/`)
+  )
+}
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isJwtAuthenticated, isInitialized } = useUser()
+  const { user, isJwtAuthenticated, isInitialized, userMenuPaths } = useUser()
   const router = useRouter()
   const pathname = usePathname()
   const [authorized, setAuthorized] = useState(false)
@@ -50,11 +62,22 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setAuthorized(false)
         return
       }
+      // 菜单路径权限校验：非超级管理员需校验具体路径
+      if (
+        isAdminRoute(pathname) &&
+        user &&
+        !user.is_superuser &&
+        !hasMenuAccess(pathname, userMenuPaths)
+      ) {
+        router.push(ADMIN_ROOT)
+        setAuthorized(false)
+        return
+      }
       setAuthorized(true)
     } else {
       setAuthorized(true)
     }
-  }, [user, isJwtAuthenticated, pathname, isInitialized, router])
+  }, [user, isJwtAuthenticated, pathname, isInitialized, router, userMenuPaths])
 
   if (!isInitialized && isProtected(pathname)) {
     return (

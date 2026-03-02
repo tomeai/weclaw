@@ -3,13 +3,9 @@ from typing import Any
 import bcrypt
 
 from app.admin.model import (
-    DataRule,
-    DataScope,
     Menu,
     Role,
     User,
-    data_scope_rule,
-    role_data_scope,
     role_menu,
     user_role,
 )
@@ -19,8 +15,9 @@ from app.admin.schema.user import (
     AddUserRoleParam,
     UpdateUserParam,
 )
-from sqlalchemy import Select, delete, insert, select
+from sqlalchemy import Select, delete, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlalchemy_crud_plus import CRUDPlus
 from utils.dynamic_import import import_module_cached
 from utils.password_security import get_hash_password
@@ -89,7 +86,12 @@ class CRUDUser(CRUDPlus[User]):
         if status is not None:
             filters['status'] = status
 
-        return await self.select_order('id', 'desc', **filters)
+        return await self.select_order(
+            'id',
+            'desc',
+            load_options=[selectinload(User.roles).selectinload(Role.menus)],
+            **filters,
+        )
 
     async def add(self, db: AsyncSession, obj: AddUserParam) -> None:
         """
@@ -125,8 +127,12 @@ class CRUDUser(CRUDPlus[User]):
         :param obj: 注册用户参数
         :return:
         """
+        # 检查是否是第一个用户，第一个用户设为超级管理员
+        user_count_result = await db.execute(select(func.count()).select_from(User))
+        is_first_user = user_count_result.scalar() == 0
+
         dict_obj = obj.model_dump()
-        dict_obj.update({'is_staff': True, 'salt': None})
+        dict_obj.update({'is_staff': is_first_user, 'is_superuser': is_first_user, 'salt': None})
         new_user = self.model(**dict_obj)
         db.add(new_user)
         await db.flush()
@@ -135,8 +141,11 @@ class CRUDUser(CRUDPlus[User]):
         result = await db.execute(role_stmt)
         role = result.scalars().first()  # 默认绑定第一个角色
 
-        user_role_stmt = insert(user_role).values(AddUserRoleParam(user_id=new_user.id, role_id=role.id).model_dump())
-        await db.execute(user_role_stmt)
+        if role:
+            user_role_stmt = insert(user_role).values(
+                AddUserRoleParam(user_id=new_user.id, role_id=role.id).model_dump()
+            )
+            await db.execute(user_role_stmt)
 
     async def update(self, db: AsyncSession, user_id: int, obj: UpdateUserParam) -> int:
         """
@@ -148,9 +157,7 @@ class CRUDUser(CRUDPlus[User]):
         :return:
         """
         role_ids = obj.roles
-        del obj.roles
-
-        count = await self.update_model(db, user_id, obj)
+        count = await self.update_model(db, user_id, obj.model_dump(exclude_unset=True, exclude={'roles'}))
 
         user_role_stmt = delete(user_role).where(user_role.c.user_id == user_id)
         await db.execute(user_role_stmt)
@@ -320,15 +327,11 @@ class CRUDUser(CRUDPlus[User]):
             filters.append(User.username == username)
 
         stmt = (
-            select(User, Role, Menu, DataScope, DataRule)
+            select(User, Role, Menu)
             .outerjoin(user_role, user_role.c.user_id == User.id)
             .outerjoin(Role, Role.id == user_role.c.role_id)
             .outerjoin(role_menu, role_menu.c.role_id == Role.id)
             .outerjoin(Menu, Menu.id == role_menu.c.menu_id)
-            .outerjoin(role_data_scope, role_data_scope.c.role_id == Role.id)
-            .outerjoin(DataScope, DataScope.id == role_data_scope.c.data_scope_id)
-            .outerjoin(data_scope_rule, data_scope_rule.c.data_scope_id == DataScope.id)
-            .outerjoin(DataRule, DataRule.id == data_scope_rule.c.data_rule_id)
         )
         if filters:
             stmt = stmt.where(*filters)
@@ -339,10 +342,7 @@ class CRUDUser(CRUDPlus[User]):
         return select_join_serialize(
             rows,
             relationships=[
-                'User-m2m-Role',
                 'Role-m2m-Menu',
-                'Role-m2m-DataScope:scopes',
-                'DataScope-m2m-DataRule:rules',
             ],
         )
 

@@ -3,10 +3,11 @@ from typing import Annotated
 from app.admin.schema.menu import CreateMenuParam, GetMenuDetail, GetMenuTree, UpdateMenuParam
 from app.admin.service.menu_service import menu_service
 from common.response.response_schema import ResponseModel, ResponseSchemaModel, response_base
+from common.security.jwt import DependsJwtAuth
 from common.security.permission import RequestPermission
 from common.security.rbac import DependsRBAC
 from database.db import CurrentSession, CurrentSessionTransaction
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, Query, Request
 
 router = APIRouter()
 
@@ -32,8 +33,25 @@ async def get_menu_tree(db: CurrentSession) -> ResponseSchemaModel[list[GetMenuT
         DependsRBAC,
     ],
 )
-async def get_menus(db: CurrentSession) -> ResponseSchemaModel[list[GetMenuDetail]]:
-    data = await menu_service.get_all_flat(db=db)
+async def get_menus(
+    db: CurrentSession,
+    types: Annotated[str | None, Query(description='菜单类型过滤，逗号分隔，如 0,2')] = None,
+) -> ResponseSchemaModel[list[GetMenuDetail]]:
+    type_list = [int(t) for t in types.split(',') if t.strip().isdigit()] if types else None
+    data = await menu_service.get_all_flat(db=db, types=type_list)
+    return response_base.success(data=data)
+
+
+@router.get(
+    '/user',
+    summary='获取当前用户可访问的侧边栏菜单',
+    dependencies=[DependsJwtAuth],
+)
+async def get_user_menus(
+    db: CurrentSession,
+    request: Request,
+) -> ResponseSchemaModel[list[GetMenuDetail]]:
+    data = await menu_service.get_user_menus(db=db, request=request)
     return response_base.success(data=data)
 
 

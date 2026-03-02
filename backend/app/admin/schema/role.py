@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from app.admin.schema.data_scope import GetDataScopeWithRelationDetail
 from app.admin.schema.menu import GetMenuDetail
 from common.enums import StatusType
 from common.schema import SchemaBase
@@ -12,7 +11,6 @@ class RoleSchemaBase(SchemaBase):
 
     name: str = Field(description='角色名称')
     status: StatusType = Field(description='状态')
-    is_filter_scopes: bool = Field(True, description='过滤数据权限')
     remark: str | None = Field(None, description='备注')
 
 
@@ -43,19 +41,6 @@ class UpdateRoleMenuParam(SchemaBase):
     menus: list[int] = Field(description='菜单 ID 列表')
 
 
-class CreateRoleScopeParam(SchemaBase):
-    """创建角色数据范围参数"""
-
-    role_id: int = Field(description='角色 ID')
-    data_scope_id: int = Field(description='数据范围 ID')
-
-
-class UpdateRoleScopeParam(SchemaBase):
-    """更新角色数据范围参数"""
-
-    scopes: list[int] = Field(description='数据范围 ID 列表')
-
-
 class GetRoleDetail(RoleSchemaBase):
     """角色详情"""
 
@@ -70,4 +55,3 @@ class GetRoleWithRelationDetail(GetRoleDetail):
     """角色关联详情"""
 
     menus: list[GetMenuDetail | None] = Field([], description='菜单详情列表')
-    scopes: list[GetDataScopeWithRelationDetail | None] = Field([], description='数据范围列表')

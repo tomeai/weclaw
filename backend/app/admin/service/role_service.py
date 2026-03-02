@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import Any
 
-from app.admin.crud.crud_data_scope import data_scope_dao
 from app.admin.crud.crud_role import role_dao
 from app.admin.model import Role
 from app.admin.schema.role import (
@@ -9,7 +8,6 @@ from app.admin.schema.role import (
     DeleteRoleParam,
     UpdateRoleMenuParam,
     UpdateRoleParam,
-    UpdateRoleScopeParam,
 )
 from common.exception import errors
 from common.pagination import paging_data
@@ -79,22 +77,6 @@ class RoleService:
         return menu_tree
 
     @staticmethod
-    async def get_scopes(*, db: AsyncSession, pk: int) -> list[int]:
-        """
-        获取角色数据范围列表
-
-        :param db: 数据库会话
-        :param pk:
-        :return:
-        """
-
-        role = await role_dao.get_join(db, pk)
-        if not role:
-            raise errors.NotFoundError(msg='角色不存在')
-        scope_ids = [scope.id for scope in role.scopes]
-        return scope_ids
-
-    @staticmethod
     async def create(*, db: AsyncSession, obj: CreateRoleParam) -> None:
         """
         创建角色
@@ -144,28 +126,6 @@ class RoleService:
         if not role:
             raise errors.NotFoundError(msg='角色不存在')
         count = await role_dao.update_menus(db, pk, menu_ids)
-        await user_cache_manager.clear_by_role_id(db, [pk])
-        return count
-
-    @staticmethod
-    async def update_role_scope(*, db: AsyncSession, pk: int, scope_ids: UpdateRoleScopeParam) -> int:
-        """
-        更新角色数据范围
-
-        :param db: 数据库会话
-        :param pk: 角色 ID
-        :param scope_ids: 权限规则 ID 列表
-        :return:
-        """
-
-        role = await role_dao.get(db, pk)
-        if not role:
-            raise errors.NotFoundError(msg='角色不存在')
-        for scope_id in scope_ids.scopes:
-            scope = await data_scope_dao.get(db, scope_id)
-            if not scope:
-                raise errors.NotFoundError(msg='数据范围不存在')
-        count = await role_dao.update_scopes(db, pk, scope_ids)
         await user_cache_manager.clear_by_role_id(db, [pk])
         return count
 

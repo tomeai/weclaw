@@ -60,7 +60,7 @@ async def get_user_roles(
         DependsPagination,
     ],
 )
-async def get_users_paginated(
+async def get_users(
     db: CurrentSession,
     username: Annotated[str | None, Query(description='用户名')] = None,
     phone: Annotated[str | None, Query(description='手机号')] = None,
@@ -99,10 +99,8 @@ async def update_user(
     pk: Annotated[int, Path(description='用户 ID')],
     obj: UpdateUserParam,
 ) -> ResponseModel:
-    count = await user_service.update(db=db, pk=pk, obj=obj)
-    if count > 0:
-        return response_base.success()
-    return response_base.fail()
+    await user_service.update(db=db, pk=pk, obj=obj)
+    return response_base.success()
 
 
 @router.put(

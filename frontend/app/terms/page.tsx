@@ -12,7 +12,7 @@ export default function TermsPage() {
 
   return (
     <LayoutApp>
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         <div className="mb-12">
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
             服务条款
@@ -236,37 +236,6 @@ export default function TermsPage() {
             <p className="text-muted-foreground leading-relaxed">
               本条款受中华人民共和国法律管辖并依其解释。与本条款相关的任何争议，双方应首先协商解决；协商不成的，提交有管辖权的人民法院裁决。
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">
-              12. 联系我们
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              如果您对本服务条款有任何疑问或意见，请通过以下方式联系我们：
-            </p>
-            <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-4 text-muted-foreground">
-              <p>
-                <span className="font-medium text-foreground">项目地址：</span>{" "}
-                <a
-                  href="https://github.com/tomeai/wemcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  github.com/tomeai/wemcp
-                </a>
-              </p>
-              <p className="mt-1">
-                <span className="font-medium text-foreground">官方网站：</span>{" "}
-                <a
-                  href={APP_DOMAIN}
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {APP_DOMAIN}
-                </a>
-              </p>
-            </div>
           </section>
         </div>
       </div>

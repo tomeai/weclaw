@@ -1,5 +1,6 @@
 "use client";
 
+import { APP_NAME } from "@/lib/config";
 import Link from "next/link";
 
 
@@ -12,11 +13,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded bg-blue-600">
-                <span className="text-xs font-bold text-white">M</span>
-              </div>
               <span className="text-foreground text-sm font-semibold">
-                WeMCP
+                {APP_NAME}
               </span>
             </Link>
             <span className="text-muted-foreground hidden text-sm sm:inline">
@@ -65,7 +63,9 @@ export default function Footer() {
 
         {/* Bottom row */}
         <div className="border-border/50 text-muted-foreground mt-6 flex flex-col items-center justify-between gap-3 border-t pt-6 text-xs sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} WeMCP. All rights reserved.</p>
+          <p>
+            &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
+          </p>
           <div className="flex gap-4">
             <Link
               href="/privacy"

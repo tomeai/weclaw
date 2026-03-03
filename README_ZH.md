@@ -1,6 +1,8 @@
-# WeMCP
+# WeClaw
 
-WeMCP 是一个开源的 **MCP 与 Skills 市场平台** 用于实时发现、发布和调试 MCP 服务器与 AI 技能。通过托管代理层将它们连接到你的
+[英文](README.md) [中文](README_ZH.md)
+
+WeClaw 是一个开源的 **MCP 与 Skills 市场平台** 用于实时发现、发布和调试 MCP 服务器与 AI 技能。通过托管代理层将它们连接到你的
 AI Agent，并在统一的 Web UI 中完成所有操作。
 
 ![](imgs/ui-1.png)
@@ -43,8 +45,8 @@ AI Agent，并在统一的 Web UI 中完成所有操作。
 ## 快速开始
 
 ``` shell
-git clone https://github.com/tomeai/wemcp.git
-cd wemcp
+git clone https://github.com/tomeai/weclaw.git
+cd weclaw
 
 # 复制并修改环境变量文件
 cp backend/deploy/.env.server.example backend/deploy/.env.server

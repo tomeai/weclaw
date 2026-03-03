@@ -7,6 +7,7 @@ from app.admin.model import User
 from app.admin.schema.token import GetLoginToken, GetNewToken
 from app.admin.schema.user import AddOAuth2UserParam, AuthLoginParam
 from app.admin.service.login_log_service import login_log_service
+from common.context import ctx
 from common.enums import LoginLogStatusType
 from common.exception import errors
 from common.i18n import t
@@ -291,10 +292,10 @@ class AuthService:
                 username=user.username,
                 nickname=user.nickname or f'#{text_captcha(5)}',
                 last_login_time=timezone.to_str(timezone.now()),
-                ip=request.state.ip,
-                os=request.state.os,
-                browser=request.state.browser,
-                device=request.state.device,
+                ip=ctx.ip,
+                os=ctx.os,
+                browser=ctx.browser,
+                device=ctx.device,
             )
             refresh_token = await create_refresh_token(access_token.session_uuid, user.id)
             response.set_cookie(

@@ -1,6 +1,8 @@
-# WeMCP
+# WeClaw
 
-WeMCP is an open-source **MCP & Skills Marketplace** — discover, publish, and debug MCP servers and AI skills in real
+[英文](README.md) [中文](README_ZH.md)
+
+WeClaw is an open-source **MCP & Skills Marketplace** — discover, publish, and debug MCP servers and AI skills in real
 time. Connect them to your AI agents via a hosted proxy layer, all from a unified web UI.
 
 ![](imgs/ui-1.png)
@@ -46,8 +48,8 @@ time. Connect them to your AI agents via a hosted proxy layer, all from a unifie
 ## Quick Start
 
 ```shell
-git clone https://github.com/tomeai/wemcp.git
-cd wemcp
+git clone https://github.com/tomeai/weclaw.git
+cd weclaw
 
 # Copy and edit the environment file
 cp backend/deploy/.env.server.example backend/deploy/.env.server

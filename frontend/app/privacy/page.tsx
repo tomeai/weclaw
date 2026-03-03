@@ -12,7 +12,7 @@ export default function PrivacyPage() {
 
   return (
     <LayoutApp>
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
         <div className="mb-12">
           <h1 className="text-4xl font-bold tracking-tight text-foreground">
             隐私政策
@@ -177,37 +177,6 @@ export default function PrivacyPage() {
             <p className="text-muted-foreground leading-relaxed">
               我们可能不时更新本隐私政策。重大变更时，我们将通过电子邮件或平台公告通知您。我们建议您定期查阅本政策以了解最新内容。继续使用我们的服务即表示您接受更新后的政策。
             </p>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-foreground mb-4">
-              11. 联系我们
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              如果您对本隐私政策有任何疑问、意见或投诉，请通过以下方式联系我们：
-            </p>
-            <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-4 text-muted-foreground">
-              <p>
-                <span className="font-medium text-foreground">项目地址：</span>{" "}
-                <a
-                  href="https://github.com/tomeai/wemcp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  github.com/tomeai/wemcp
-                </a>
-              </p>
-              <p className="mt-1">
-                <span className="font-medium text-foreground">官方网站：</span>{" "}
-                <a
-                  href={APP_DOMAIN}
-                  className="text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {APP_DOMAIN}
-                </a>
-              </p>
-            </div>
           </section>
         </div>
       </div>

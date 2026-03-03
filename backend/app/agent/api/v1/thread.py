@@ -207,7 +207,7 @@ async def chat_endpoint(
                 name='Jarvis',
                 sys_prompt=sys_prompt,
                 model=DashScopeChatModel(
-                    model_name='qwen-max',
+                    model_name='qwen3-max',
                     api_key=settings.DASHSCOPE_API_KEY,
                     stream=True,
                     enable_thinking=False,

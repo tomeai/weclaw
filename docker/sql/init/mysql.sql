@@ -8,11 +8,11 @@ VALUES (1, '系统概览', 'dashboard', '/user/admin', 1, 'LayoutDashboard', 0, 
         NULL),
        (4, 'Agent 管理', 'agent-manage', '/user/admin/agent', 3, 'Bot', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(),
         NULL),
-       (5, '用户管理', 'user-manage', '/user/admin/user', 5, 'Users', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL),
-       (6, '权限管理', 'permission-manage', '/user/admin/permission', 6, 'Shield', 0, NULL, NULL, 1, 1, 1, NULL, NULL,
+       (5, '部署日志', 'deploy-log', '/user/admin/deploy', 8, 'History', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL),
+       (6, '用户管理', 'user-manage', '/user/admin/user', 5, 'Users', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL),
+       (7, '权限管理', 'permission-manage', '/user/admin/permission', 6, 'Shield', 0, NULL, NULL, 1, 1, 1, NULL, NULL,
         NOW(), NULL),
-       (7, '日志管理', 'log-manage', '/user/admin/log', 7, 'FileText', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL),
-       (8, '部署日志', 'deploy-log', '/user/admin/deploy', 8, 'History', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL);
+       (8, '日志管理', 'log-manage', '/user/admin/log', 7, 'FileText', 0, NULL, NULL, 1, 1, 1, NULL, NULL, NOW(), NULL);
 
 INSERT INTO `sys_menu` (`id`, `title`, `name`, `path`, `sort`, `icon`, `type`, `component`, `perms`, `status`,
                         `display`, `cache`,
